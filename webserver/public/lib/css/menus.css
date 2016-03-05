@@ -231,7 +231,7 @@ div.minicolors{
 .lib-sng .text, .yt-sng .text, .hist-sng .text {
 	margin: 0 10px;
 	float: left;
-	width: calc(100% - 201px);
+	width: calc(100% - 252px);
 	overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
