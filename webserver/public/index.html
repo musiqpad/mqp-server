@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=0.8">
+		<meta name="theme-color" content="1C1C1F">
+		<title>musiqpad - join us!</title>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.0.0/assets/css/emojione.min.css"/>
+		<link rel="shortcut icon" type="image/png" href="/pads/lib/img/icon.png" id="dynamic-favicon"/>
+		<link href="https://cdn.musiqpad.com/css/mdi.min.css" media="all" rel="stylesheet" type="text/css" />
+		<!--<script src="//code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>-->
+		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+		<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/tour.min.css">
+		<link rel="stylesheet" type="text/css" href="/pads/lib/css/back.css">
+		<link rel="stylesheet" type="text/css" href="/pads/lib/css/dash.css">
+		<link rel="stylesheet" type="text/css" href="/pads/lib/css/video.css">
+		<link rel="stylesheet" type="text/css" href="/pads/lib/css/chat.css">
+		<link rel="stylesheet" type="text/css" href="/pads/lib/css/icons.css">
+		<link rel="stylesheet" type="text/css" href="/pads/lib/css/menus.css">
+		<!--<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/emojify.css">-->
+		<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/minicolors.css">
+	</head>
+	<body data-ng-app="musiqpad" data-ng-controller="MainController">
+		<div id="creds-back">
+		<div id="creds-container">
+		<div id="creds">
+			<form id="login">
+				<div class="logo"></div>
+				<input type="text" name="email" class="hidden"><!-- Disables autocomplete -->
+				<input id="l-email" name="email" type="text" autofocus placeholder="E-mail" />
+            	<input id="l-password" name="password" type="password" placeholder="Password" />
+            	<div class="creds-controls"><div class="ctrl btn-fgt-pw">Forgot Password</div><div class="ctrl btn-login">Login</div></div>
+			</form>
+			<form id="register">
+				<p>Don't have an account? Get one now!</p>
+				<input type="text" name="email" class="hidden"><!-- Disables autocomplete -->
+				<input type="password" name="password" class="hidden"><!-- Disables autocomplete -->
+				<input id="r-email" name="email" type="text" autofocus placeholder="E-mail" />
+            	<input id="r-username" name="username" type="text" placeholder="Username" />
+            	<input id="r-password" name="password" type="password" placeholder="Password" />
+            	<div id="recaptcha"></div>
+            	<div class="creds-controls"><div class="ctrl">Register</div></div>
+			</form>
+			</div>
+		</div>
+		</div>
+		</div>
+		<div class="load">
+			<div class="loading">Turning up the music...</div>
+			<div class="loader"></div>
+		</div>
+		<div id="app">
+			<div id="room-bg"></div>
+			<div class="logo-menu">
+				<div class="logo-dash">
+					<div ng-click="prop.t = 1" data-ng-class="{'active' : prop.t == 1 || prop.t == undefined}" class="nav logo-btn-home" title="Home"><div class="mdi mdi-apps"></div></div>
+					<div ng-click="prop.t = 5" data-ng-class="{'active' : prop.t == 5}" class="nav logo-btn-description" title="Pad Description"><div class="mdi mdi-file-document-box"></div></div>
+					<div ng-click="prop.t = 2" data-ng-show="isLoggedIn" data-ng-class="{'active' : prop.t == 2}" class="nav logo-btn-settings" title="Settings"><div class="mdi mdi-settings"></div></div>
+					<div ng-click="prop.t = 3" data-ng-show="isLoggedIn && checkPerm('playlist.create')" data-ng-class="{'active' : prop.t == 3}" class="nav logo-btn-library" title="Your Library"><div class="mdi mdi-library-music"></div></div>
+					<div ng-click="prop.t = 4" data-ng-class="{'active' : prop.t == 4}" class="nav logo-btn-history" title="Queue History"><div class="mdi mdi-history"></div></div>
+					<div class="nav logo-btn-tour" title="Start Tour"><div class="mdi mdi-help-circle"></div></div>
+					<div class="nav logo-btn-logout" title="Logout"><div class="mdi mdi-power-settings"></div></div>
+				</div>
+				<div ng-show="prop.t == 1" class="logo-tab lobby">
+					<iframe src="/lounge"></iframe>
+				</div>
+				<!--<div ng-show="prop.t == 2" class="logo-tab settings">
+					<div class="settings-wrapper">
+						<div class="section-label">User settings</div>
+						<input id="username-change" type="text" placeholder="{{user.un}}" data-ng-model="userSettings.newUserName"></input>
+						<div class="form-group">
+	  						<label for="color-input" class="form-control">Badge Top Color:</label>
+	  						<input minicolors="customSettings" id="badge-top-color-input" class="form-control minicolors-position-bottom minicolors-position-left" type="hidden" ng-model="userSettings.newBadgeTop">
+	  					</div>
+	  					<div class="form-group">
+	  						<label for="color-input" class="form-control">Badge Bottom Color:</label>
+	  						<input minicolors="customSettings" id="badge-bottom-color-input" class="form-control minicolors-position-bottom minicolors-position-left" type="hidden" ng-model="userSettings.newBadgeBottom">
+	  					</div>
+						
+						
+						<div class="section-label">Room settings</div>
+						
+						<label>Show User Join/Leave Messages: <input type="checkbox" ng-model="roomSettings.userJoinLeaveMessages"></input></label>
+						<br>
+						<label>Time format: <div class="settings-timestamp format-12" ng-class="{active:roomSettings.chatTimestampFormat == '12hr'}">12 hour</div><div class="settings-timestamp format-24" ng-class="{active:roomSettings.chatTimestampFormat == '24hr'}">24 hour</div></label>
+						<div ng-click="saveSettings()" class="mdi mdi-check modal-yes"><span class="settings-yes">Save</span></div>
+					</div>
+				</div>-->
+				<div ng-show="prop.t == 2" class="logo-tab settings">
+					<section>
+						<div class="label">Account Settings</div>
+						<!--
+						<input class="set-text-longer form-control">
+						<span>Username Change</span>
+						<br>
+						<input class="set-text-longer form-control">
+						<span>Password Change</span>
+						<br>
+						-->
+						<div class="badge-selection">
+							<div class="form-group">
+								<label for="color-input" class="form-control">Badge Top</label>
+								<input minicolors="customSettings" id="badge-top-color-input" class="form-control minicolors-position-bottom minicolors-position-left" type="hidden" ng-model="userSettings.newBadgeTop">
+							</div>
+							<div class="form-group">
+								<label for="color-input" class="form-control">Badge Bottom</label>
+								<input minicolors="customSettings" id="badge-bottom-color-input" class="form-control minicolors-position-bottom minicolors-position-left" type="hidden" ng-model="userSettings.newBadgeBottom">
+							</div>
+						</div>
+						<div ng-bind-html="makeBadgeStyle({ user: { badge: { top: userSettings.newBadgeTop, bottom: userSettings.newBadgeBottom }, role: user.role }, type: 's' }) | to_trusted" class="badge-preview ng-binding">
+						</div>
+						<div ng-click="saveSettings()" class="btn btn-apply">Apply</div>
+					</section>
+					<section>
+						<div class="label">UI Settings</div>
+						<!--<input type="checkbox" ng-model="roomSettings.userJoinLeaveMessages"></input>-->
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.enableEmojis" id="set-input-emojis" name="check" />
+						</label>
+						<span>Enable emojis</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.showImages" id="set-input-autoimg" name="check" />
+						</label>
+						<span>Auto show images</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.library.thumbnails" id="set-input-lib-thumbs" name="check" />
+						</label>
+						<span>Show thumbnails in playlist view</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.soundMention" id="set-input-mention-sound" name="check" />
+						</label>
+						<span>Mention sound</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.leaveConfirmation" id="set-input-leave-alert" name="check" />
+						</label>
+						<span>Leave confirmation</span>
+						<br>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.emojis.basic" id="set-input-emojis-basic" name="check" />
+						</label>
+						<span>Enable regular emojis</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.emojis.twitch" id="set-input-emojis-twitch" name="check" />
+						</label>
+						<span>Enable Twitch.tv emojis</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.emojis.tastycat" id="set-input-emojis-tastycat" name="check" />
+						</label>
+						<span>Enable Tastycat emojis</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.emojis.betterttv" id="set-input-emojis-betterttv" name="check" />
+						</label>
+						<span>Enable BetterTTV emojis</span>
+						<br>
+						<br>
+						<input class="set-text form-control" ng-model="roomSettings.chatlimit">
+						<span>Chat limit (0 for no limit)</span>
+						<br>
+						<br>
+						<label class="set-check timeFormat">
+							<input type="checkbox" ng-model="roomSettings.chatTimestampFormat" ng-true-value="'12hr'" ng-false-value="'24hr'" id="set-input-style-timestamp" name="check" />
+						</label>
+						<span>Time format</span>
+					</section>
+					<section>
+						<div class="label">Chat notifications</div>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.justplayed" id="set-input-notif-justplayed" name="check" />
+						</label>
+						<span>Show DJ and song title after a song finishes playing</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.userJoinLeaveMessages" id="set-input-notif-joinleave" name="check" />
+						</label>
+						<span>Show user join/leave messages</span>
+					</section>
+				</div>
+				<div ng-show="prop.t == 3 && isLoggedIn" class="logo-tab library" style="display: block;">
+					<div class="lib-folders" >
+						<div class="lib-fdr-search">
+							<input id="lib-add" type="text" placeholder="Add a Playlist" autocomplete="off"></input>
+							<div class="nav btn-add-playlist"><div class="mdi mdi-playlist-plus"></div></div>
+						</div>
+						<div class="lib-fdr-list">
+						<div class="lib-fdr" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}" ng-class="{selected: x.id == viewedPl}">
+							<div class="text" title="{{x.name}}" data-ng-bind="x.name"></div>
+							<div class="nav"><span class="icon-info" data-ng-bind="x.num"></span></div>
+							<div class="nav"><div ng-if="activepl == x.id" class="mdi mdi-checkbox-marked-circle small green"></div></div>
+						</div>
+						</div>
+						<div class="lib-fdr-search btn-import">
+							<div class="text">Import Playlists</div>
+							<div class="nav"><div class="mdi mdi-import"></div></div>
+						</div>
+					</div>
+					<div class="lib-songs">
+						<div class="lib-header">
+							<div class="lib-sng-search">
+								<input id="lib-search" type="text" placeholder="Search for a Song" autocomplete="off"></input>
+								<div class="nav btn-search"><div class="mdi mdi-magnify small"></div></div>
+								<div class="nav load-spin hidden"><div class="mdi mdi-autorenew small"></div></div>
+							</div>
+							<div class="lib-tray">
+								<div class="nav btn-delete-playlist" title="Delete" data-ng-show="viewedPl"><div class="mdi mdi-delete small"></div></div>
+								<div class="nav btn-export-playlist" title="Export" data-ng-show="viewedPl"><div class="mdi mdi-export small"></div></div>
+								<div class="nav btn-shuffle-playlist" title="Shuffle" data-ng-show="viewedPl"><div class="mdi mdi-shuffle-variant small"></div></div>
+								<div class="nav btn-rename-playlist" title="Rename" data-ng-show="viewedPl"><div class="mdi mdi-pencil small"></div></div>
+
+							</div>
+						</div>
+						<div class="lib-song-list" data-ng-show="viewedPl">
+							<div class="lib-sng" data-ng-class="{'lib-history' : inHistory(y.cid), 'lib-unavailable' : y.unavailable}" data-ng-repeat="y in viewedPlContents" data-cid="{{y.cid}}" title="{{y.title}}">
+								<img src="https://i.ytimg.com/vi/{{y.cid}}/default.jpg" class="lib-thumb" data-ng-show="roomSettings.library.thumbnails" >
+								<div class="text" data-ng-bind="y.title" title="{{y.title}}"></div>
+								<div class="nav btn-song-bot" title="Move to the Bottom"><div class="mdi mdi-arrow-down small"></div></div>
+								<div class="nav btn-song-top" title="Move to the Top"><div class="mdi mdi-arrow-up small"></div></div>
+								<div class="nav btn-rename-song"><div class="mdi mdi-pencil small"></div></div>
+								<div class="nav btn-remove-song"><div class="mdi mdi-delete small"></div></div>
+								<div class="dur">{{makeTime(y.duration)}}</div>
+							</div>
+						</div>
+						<div class="lib-search-list" data-ng-show="!viewedPl">
+							<div class="yt-sng" data-ng-repeat="z in searchResults" data-cid="{{z.cid}}" title="{{z.title}}">
+								<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
+								<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+								<div class="text" data-ng-bind="z.title"></div>
+								<div class="dur">{{makeTime(z.duration)}}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div ng-show="prop.t == 4 || (prop.t == 3 && !isLoggedIn)" class="logo-tab history">
+					<div class="lib-history-search">
+						<input id="lib-search" type="text" placeholder="Filter History" autocomplete="off" data-ng-model="historyList.filter"></input>
+						<div class="nav btn-clear-filter" data-ng-click="historyList.filter = null"><div class="mdi mdi-close small"></div></div>
+					</div>
+					<div class="hist-songs">
+						<div class="hist-sng" data-ng-repeat="h in filteredHistory(historyList.filter)" data-cid="{{h.song.cid}}">
+							<div class="nav"><div class="mdi mdi-history"></div></div>
+							<div class="nail" style="background-image: url('https://i.ytimg.com/vi/{{h.song.cid}}/default.jpg')"></div>
+							<div class="texts">
+								<p class="text sng" title="History Song Title" data-ng-bind="h.song.title"></p>
+								<p class="text dj" title="History Song DJ" style="{{makeUsernameStyleByRole(h.user.role)}}" data-ng-bind="h.user.un"></p>
+							</div>
+							<div class="times">
+								<div class="dur">{{makeTime(h.song.duration)}}</div>
+								<div class="elap">{{makeTimeElapsed(h.start)}}</div>
+							</div>
+							<div class="voting">
+								<div class="dp downvote" data-ng-bind="h.votes.dislike || 0"></div>
+								<div class="dp grab" data-ng-bind="h.votes.grab || 0"></div>
+								<div class="dp upvote" data-ng-bind="h.votes.like || 0"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div ng-show="prop.t == 5" class="logo-tab description">
+					<section ng-bind-html="description | to_trusted">
+					</section>
+				</div>
+			</div>
+			<nav class="dash">
+				<div class="left">
+					<div class="nav btn-logo" title="Lounge"><div class="ico ico-logo"></div></div>
+					<div class="nav btn-youtube"><div class="mdi mdi-youtube-play"></div></div>
+					<div class="labels">
+						<p class="label now" ng-class="{'nobody yellow' : currentSong == 'Nobody is playing'}" title="{{currentSong}}" data-ng-bind="currentSong"></p>
+						<p class="label current-dj" title="Current DJ" data-ng-show="currentDJ"><span class="label">DJ: </span>{{currentDJ.un}}</p>
+					</div>
+				</div>
+				<div class="right">
+					<div class="nav"><div class="btn-login mdi mdi-account"></div></div>
+					<div class="labels">
+						<p class="label uname" ng-class="{'nobody' : !nextSong.title}" style="{{makeUsernameStyle(user.uid)}}" data-ng-bind="(user.un || 'SIGN UP!')"></p>
+						<p class="label yours" data-ng-class="{'lib-history' : inHistory(nextSong.cid)}" title="{{(user.un ? nextSong.title : '')}}" data-ng-bind="(user.un ? nextSong.title : '')"></p>
+					</div>
+				</div>
+				<div class="tray">
+					<div data-ng-click="changeTab('c', 0)" data-ng-class="{'active' : prop.c == 0}" class="tab btn-video" title="Video">
+						<i class="mdi mdi-youtube-play"></i>
+					</div>
+					<div data-ng-click="changeTab('c', 1)" data-ng-class="{'active' : prop.c == 1}" class="tab btn-chat" title="Channel Chat">
+						<i class="mdi mdi-forum"></i>
+					</div>
+					<div data-ng-click="changeTab('c', 2)" data-ng-class="{'active' : prop.c == 2}" class="tab btn-people" title="People">
+						<div class="mdi mdi-account-multiple"></div><span class="icon-info" data-ng-bind="numUsers"></span>
+					</div>
+					<div data-ng-click="changeTab('c', 3)" data-ng-class="{'active' : prop.c == 3, next: findPosInWaitlist() == '1'}" class="tab btn-waitlist" title="DJ Queue" >
+						<div class="mdi mdi-playlist-play"></div><span class="icon-info" data-ng-bind="queueLength"></span>
+					</div>
+					<!--<div data-ng-click="changeTab('c', 4)" data-ng-class="{'active' : prop.c == 4}" class="tab short btn-pm" title="Private Messages" >
+						<div class="mdi mdi-at"></div>
+					</div>-->
+				</div>
+			</nav>
+			<div id="app-left">
+				<div class="playback">
+					<!--<iframe class="video" src="https://www.youtube.com/embed/videoseries?list=PL-1JbEJbwVuXWpp8RWdQGOwJb7Y8BrGdS&autoplay=1&showinfo=1&iv_load_policy=3&modestbranding=1&controls=0&rel=1&hd=1" frameborder="0"></iframe>-->
+					<div class="video" id="player"></div>
+					<div class="navbar">
+						<!--<div class="tools left draggable"><div class="mdi mdi-drag"></div></div>-->
+						<div class="tools left btn-lock" data-ng-class="{'clickable' : canLock}" title="Lock Queue"><div class="mdi" data-ng-class="queue.lock ? 'mdi-lock' : 'mdi-lock-outline'"></div></div>
+						<div class="tools left btn-cycle" data-ng-class="{'clickable' : canCycle}" title="Toggle Cycle"><div class="mdi" data-ng-class="queue.cycle ? 'mdi-sync' : 'mdi-sync-off'"></div></div>
+						<div class="tools left btn-lastdj clickable" data-ng-class="{'active' : lastdj}" title="{{lastdj ? 'Keep Playing' : 'Leave After Play'}}" data-ng-show="queue.cycle"><div class="mdi mdi-repeat-once"></div></div>
+						<div class="tools left btn-skip clickable" data-ng-show="canSkip" title="Force Skip"><div class="mdi mdi-skip-next"></div></div>
+						<div class="tools left"><div data-ng-show="makeTime(secondsLeftInSong, songDuration) == 'LIVE' && currentDJ" class="mdi mdi-record red"></div><span class="song-time" data-ng-bind="currentDJ ? makeTime(secondsLeftInSong, songDuration) : ''"></span></div>
+						<div class="tools right btn-fullscreen clickable" title="Fullscreen"><div class="mdi mdi-fullscreen"></div></div>
+						<div class="tools right btn-refresh clickable" title="Refresh Video"><div class="mdi mdi-refresh"></div></div>
+						<div class="tools right btn-stream clickable" title="Toggle Stream"><div class="mdi mdi-video"></div></div>
+						<div class="tools right btn-hd clickable" title="Toggle HD"><div class="mdi mdi-quality-high"></div></div>
+						<div class="tools right btn-volume clickable" title="Volume"><div class="mdi mdi-volume-medium"></div></div>
+						<div class="right rng-volume clickable"><span class="volume-val"></span><input type="range" min="0" max="100" value="0" class="volume"></div>
+					</div>
+					<div class="bottom">
+						<div class="song-progress" style="width: {{songProgress * 100}}%; background-color: {{vote}};"></div>
+					</div>
+					<div class="controls">
+						<div class="ctrl btn-downvote" title="Dislike"><div class="mdi mdi-thumb-down"></div><span class="info dislikes" data-ng-bind="queue.votes.dislike || 0"></span></div>
+						<div class="ctrl btn-snooze" data-ng-class="{'active' : snooze}" title="Snooze"><div class="mdi mdi-block-helper"></div></div>
+						<!--<div class="ctrl btn-join" title="Join DJ Queue" ng-class="{hidden: findPosInWaitlist() != -1}"><div class="material-icons">play_circle_outline</div><span class="position">JOIN</span></div>
+						<div class="ctrl btn-join" title="Leave DJ Queue" ng-class="{hidden: findPosInWaitlist() == -1}"><div class="s">stop</div><span class="position" data-ng-bind="(findPosInWaitlist() > -1 ? '#' + findPosInWaitlist() : findPosInWaitlist())"></span></div>-->
+						<div class="ctrl btn-join" data-ng-class="{'active' : (isLoggedIn && findPosInWaitlist() == 0)}" title="{{(isLoggedIn ? (findPosInWaitlist() == -1 ? 'Join' : 'Leave') + ' DJ Queue' : 'SIGN UP TO DJ!')}}">
+							<div class="mdi" data-ng-class="{'mdi-play-circle-outline': (isLoggedIn && findPosInWaitlist() == -1), 'mdi-stop':(isLoggedIn && findPosInWaitlist() != -1)}"></div>
+							<span class="info position" data-ng-bind="(isLoggedIn ? ((findPosInWaitlist() > -1 && findPosInWaitlist() != 0) ? '#' + findPosInWaitlist() : (findPosInWaitlist() == 0 ? 'DJ' : 'JOIN')) : 'SIGN UP TO DJ!')"></span>
+						</div>
+						<div class="ctrl btn-grab" title="Grab Song">
+							<div class="mdi mdi-plus-circle-outline"></div>
+							<span class="info grabs" data-ng-bind="queue.votes.grab || 0"></span>
+							<div class="popup playlists-grab">
+								<div class="pl-grab-create">Create a playlist</div>
+								<div class="pl-grab" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}">
+									{{x.name}}
+								</div>
+							</div>
+						</div>
+						<div class="ctrl btn-upvote" title="Like"><div class="mdi mdi-thumb-up"></div><span class="info likes" data-ng-bind="queue.votes.like || 0"></span></div>
+					</div>
+				</div>
+			</div>
+			<div id="app-right">
+				<div data-ng-show="(prop.c == 1)" id="chat-back">
+					<div id="chat">
+						<div id="messages"></div>
+					</div>
+					<div id="msg-form">
+						<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+					</div>
+				</div>
+				<div data-ng-show="(prop.c == 2)" id="people-back">
+					<div class="tray">
+						<div data-ng-click="prop.p = 1" data-ng-class="{'active' : prop.p == 1}" class="tab btn-people" title="People Here"><div class="mdi mdi-account-multiple"></div></div>
+						<div data-ng-click="prop.p = 2" data-ng-class="{'active' : prop.p == 2}" class="tab btn-staff" title="Pad Staff"><div class="mdi mdi-account-key"></div></div>
+						<div data-ng-click="prop.p = 3" data-ng-class="{'active' : prop.p == 3}" class="tab btn-banned" title="Banned People"><div class="mdi mdi-account-remove"></div></div>
+					</div>
+					<div id="people" data-ng-show="(prop.p == 1)">
+						<div class="people-user" data-ng-repeat="x in userlist | orderByRole: 'un'">
+							<div ng-bind-html="makeBadgeStyle({user: x, type: 'p1' }) | to_trusted"></div><span data-uid="{{x.uid}}" class="uname" style="{{makeUsernameStyle(x.uid)}}" data-ng-bind="x.un"></span>
+							<span class="people-info" data-ng-bind="getRole(x.role).showtitle ? getRole(x.role).title : ''"></span>
+						</div>
+					</div>
+					<div id="staff" data-ng-show="(prop.p == 2)">
+						<div class="people-user" data-ng-repeat="x in stafflist | orderByRole: 'un'">
+							<div ng-bind-html="makeBadgeStyle({ user: x, type: 'p2' }) | to_trusted"></div><span data-uid="{{x.uid}}" class="uname" style="{{makeUsernameStyleByRole(x.role)}}" data-ng-bind="x.un"></span>
+							<span class="people-info" data-ng-bind="getRole(x.role).showtitle ? getRole(x.role).title : ''"></span>
+						</div>
+					</div>
+					<div id="bans" data-ng-show="(prop.p == 3)">
+						<div class="people-user" data-ng-repeat="x in bannedlist | orderByRole: 'un'">
+							<div ng-bind-html="makeBadgeStyle({ user: x, type: 'p3' }) | to_trusted"></div><span data-uid="{{x.uid}}" class="uname" style="{{makeUsernameStyleByRole(x.role)}}" data-ng-bind="x.un"></span>
+							<span class="people-info" data-ng-bind="getRole(x.role).showtitle ? getRole(x.role).title : ''"></span>
+						</div>
+					</div>
+				</div>
+				<div data-ng-show="(prop.c == 3)" id="waitlist-back">
+					<div id="waitlist">
+						<div class="waitlist-user" ng-class="{hidden: currentDJ == null}">
+							<!--<div class="bdg" style="{{makeBadgeStyle(currentDJ.badge.top, currentDJ.badge.bottom)}}"></div><span class="uname" style="{{makeUsernameStyle(currentDJ.uid)}}" data-ng-bind="currentDJ.un"></span>-->
+							<div ng-bind-html="makeBadgeStyle({ user: currentDJ, type: 'wl'}) | to_trusted"></div><span class="uname" style="{{makeUsernameStyle(currentDJ.uid)}}" data-uid="{{currentDJ.uid}}" data-ng-bind="currentDJ.un"></span>
+							<span class="waitlist-spot">DJ</span>
+						</div>
+						<div class="waitlist-user" data-ng-class="{'self' : user.uid == y.user.uid}" data-ng-repeat="y in queueList">
+							<div ng-bind-html="makeBadgeStyle({ user: y.user, type: 'wl2' }) | to_trusted"></div>
+							<span class="uname" style="{{makeUsernameStyle(y.user.uid)}}" data-uid="{{y.user.uid}}" data-ng-bind="y.user.un"></span>
+							<span class="waitlist-spot" data-ng-bind="y.num"></span>
+							<div class="nav waitlist-drag" title="Move DJ" data-ng-show="canMove"><div class="mdi mdi-sort"></div></div>
+						</div>
+					</div>
+				</div>
+				<div data-ng-show="(prop.c == 4)" id="pm-chat-back">
+					<div id="pm-chat">
+						<div id="pm-messages"></div>
+					</div>
+					<div id="pm-msg-form">
+						<input id="pm-msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!--<script src="../lib/js/emojify.min.js"></script>-->
+		<!--<script>emojify.setConfig({img_dir:'https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic'});</script>-->
+		<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+		<script src="https://cdn.musiqpad.com/js/minicolors.js"></script>
+		<script src="https://cdn.musiqpad.com/js/angular-minicolors.js"></script>
+		<script src="https://cdn.musiqpad.com/js/jquery.caret.js"></script>
+		<script src="https://cdn.musiqpad.com/js/jquery.mobile.js"></script>
+		<script src='https://www.google.com/recaptcha/api.js'></script>
+		<script src="https://cdn.musiqpad.com/js/tour.min.js"></script>
+		<script src="https://cdn.musiqpad.com/js/sha256.js"></script>
+		<script src="https://cdn.musiqpad.com/js/jquery.aautoscroll.2.4.js"></script>
+		<script src="https://www.youtube.com/iframe_api"></script>
+		<script src="config"></script>
+		<script src="/pads/lib/js/app.js"></script>
+	</body>
+</html>

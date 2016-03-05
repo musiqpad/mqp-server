@@ -1,0 +1,17 @@
+{
+	chat: {
+		
+	},
+	errors: {
+		NotLoggedIn: "Your need to be logged in to do that",
+		UserBanned: "You are banned",
+		NotInPad: "You are are not allowed to do that outside of a pad",
+		UserNotInpad: "The user is currently not in a pad",
+		InsufficientPermissions: "You don't have permission to do that",
+		CannotJoinQueueWithoutPlaylist: "You cannot join the dj queue without a playlist",
+		CannotJoinQueueWithEmptyPlaylist: "You cannot join the dj queue with an empty playlist",
+		CannotJoinInQueue: "You cannot join the dj queue right now",
+		CannotLeaveQueue: "You cannot leave the dj queue right now",
+		PropsMissing: "You are missing some arguments",
+	},
+}

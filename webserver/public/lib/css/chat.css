@@ -1,0 +1,296 @@
+#app-right {
+    position: absolute;
+    z-index: 10;
+    right: 0;
+    background: rgba(10, 10, 10, 0.9);
+    width: 400px;
+    height: calc(100% - 41px);
+    bottom:0;
+    border-left:1px solid #444A59;
+}
+#msg-form, #pm-msg-form {
+    z-index:10;
+    position: absolute;
+    bottom:0;
+    border-top:1px solid #444A59;
+    width: 100%;
+    height: 40px;
+}
+#msg-in, #pm-msg-in {
+    background: #1C1C1F;
+    z-index:10;
+    width: calc(100% - 20px);
+    word-break: break-word;
+    word-wrap: break-word;
+}
+#app-right .tray {
+    position:absolute;
+    top:0;
+    right:0;
+    z-index:10;
+    width: 100%;
+    display: -webkit-flex;
+    display: flex;
+}
+#chat {
+    position: absolute;
+    z-index: 9;
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: calc(100% - 41px);
+    width: 100%;
+    font-size: 14px;
+    -webkit-touch-callout: text;
+    -webkit-user-select: text;
+    -khtml-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+#messages {
+    margin: 0;
+    padding: 0;
+}
+.cm .text {
+    width: calc(100% - 75px);
+    margin-left: 25px;
+}
+.cm {
+    padding: 6px 10px;
+    animation: fadein 0.25s;
+    word-wrap: break-word;
+}
+.cm:nth-child(even):not(.mention):not(.broadcast) {
+    background: rgba(28, 28, 31, 0.4);
+}
+.room-greet {
+    border: none;
+    background: rgba(167,125,194,0.2);
+}
+.greet-uname {
+    font-weight: bold;
+    margin-right:5px;
+    color: #89BE6C;
+}
+.greet-umsg {
+    color: #A77DC2;
+}
+.uname {
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    vertical-align: top;
+}
+#chat .uname:first-child {
+    margin-right: 5px;
+}
+.log {
+    color: #bbb;
+    font-weight: bold;
+}
+.system {
+    color: #A77DC2;
+}
+.system .umsg {
+    font-style: italic;
+}
+.system .umsg > * {
+    font-style: normal;
+}
+.mention {
+    border-left: 2px solid #A77DC2;
+    background: rgba(167, 125, 194, 0.2);
+    padding-left: 8px;
+}
+.staffchat {
+    border-left: 2px solid #C51313;
+    background: rgba(154, 45, 45, 0.3) !important;
+    padding-left: 8px;
+}
+.broadcast {
+    color: #89BE6C;
+    font-weight: bold;
+    background: rgba(167, 202, 0, .2);
+}
+.msg-ico {
+    float: left;
+}
+.bdg {
+    float: left;
+    width: 16px;
+    height: 16px;
+    /*
+    border-radius: 10px;
+    */
+    /*
+    background-image: linear-gradient(45deg, green 45%, yellow 45%);
+    background-image: -moz-linear-gradient(45deg, green 45%, yellow 45%);
+    background-image: -webkit-linear-gradient(45deg, green 45%, yellow 45%);
+    */
+}
+.bdg-icon {
+    float: left;
+    font-size: 20px !important;
+}
+#chat .bdg-icon {
+    margin-left: -2px;
+    margin-right: 1px;
+    line-height: 17px !important;
+}
+#people-back .bdg-icon {
+    margin-left: 2.5px;
+    margin-right: 2.5px;
+    line-height: 39px !important;
+}
+.user-menu .bdg-icon {
+    margin-top: 3px;
+}
+.bdg-icon .bdg-icon-banned {
+    color: #C8303E;
+}
+.cm .time {
+    float:right;
+    font-size: 10px;
+    color: #999;
+    margin:3px 0;
+}
+.cm.message .msg-del-btn {
+    margin-left: 5px;
+    display: none;
+}
+.cm.message.msg-del:hover .msg-del-btn{
+    display: block;
+}
+.cm.message.msg-del:hover .time{
+    display: none;
+}
+.cm.message.deleted.msg-del .time{
+    display: block;
+}
+.cm.message.deleted:hover .msg-del-btn{
+    display: none;
+}
+.cm.message.self {
+    animation: flash-background 3s, move-background 3s;
+}
+.cm.emote .umsg {
+    font-style: italic;
+}
+.autocomplete {
+    position: absolute;
+    bottom: 40px;
+    background-color: #1C1C1F;
+    z-index: 11;
+    width: 399px;
+    border: 1px solid #444A59;
+    left: -1px;
+    max-height: 30%;
+    overflow-y: auto;
+    font-weight: bold;
+}
+.autocomplete > ul {
+    background: #2E313A;
+}
+.autocomplete > ul > li {
+    padding-bottom: 2px;
+    padding: 10px 10px;
+    cursor: pointer;
+}
+.autocomplete > ul > li.active {
+    background: #444A59;
+}
+.autocomplete > ul > li > svg {
+    margin-right: 10px;
+}
+.emoji {
+    max-width: 18px;
+    max-height: 18px;
+}
+#people-back, #waitlist-back {
+    height: 100%;
+    animation: fadein 0.25s;
+}
+#people, #staff, #bans {
+    height: calc(100% - 40px);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+#people-back .tray {
+    position: relative;
+    background: rgba(28, 28, 31, 0.4);
+}
+.waitlist-user, .people-user {
+    font-size: 14px;
+    vertical-align: middle;
+    line-height: 40px;
+    height: 40px;
+    padding: 0 6px;
+}
+.waitlist-user .uname, .people-user .uname, .user-menu .uname {
+    margin: 0 5px;
+    width: 300px;
+}
+.waitlist-user .bdg, .people-user .bdg {
+    margin: 12px 5px;
+}
+.waitlist-user:first-child {
+    background: rgba(167,125,194,0.2);
+}
+.waitlist-user:nth-child(even), .people-user:nth-child(even) {
+    background: rgba(28, 28, 31, 0.4);
+}
+.waitlist-user .nav {
+    float: right;
+}
+.waitlist-user.self {
+    background-color: #31160C;
+}
+.people-info {
+    float: right;
+    color: #88898C;
+    margin: 0 5px;
+    font-size: 12px;
+}
+.people-info.left {
+    float: left;
+}
+.waitlist-spot {
+    float: right;
+    color: #88898C;
+    margin: 0 5px;
+    font-size: 16px;
+    font-weight: bold;
+}
+.currentdjqueue {
+    font-weight: bold;
+    float: right;
+}
+
+
+@keyframes flash-background {  
+    from { background: rgba(244, 107, 64, .25); }
+    to { background: default; }
+}
+
+@media (max-width: 1100px) {
+#app-right {
+    z-index: 9;
+    width: 100%;
+    height: calc(100% - 41px);
+}
+}
+@media (max-width: 799px) {
+#app-right {
+    width: 100%;
+    height: calc(100% - 41px);
+}
+}
+:focus::-webkit-input-placeholder {
+   color: transparent;
+}
+:-moz-placeholder:focus {
+   color: transparent;
+}
+:-ms-input-placeholder:focus {
+   color: transparent;
+}
