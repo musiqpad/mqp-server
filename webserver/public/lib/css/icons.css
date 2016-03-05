@@ -1,0 +1,69 @@
+.ico {
+    background-position:center;
+    background-repeat:no-repeat;
+    background-size:100%;
+}
+.ico-logo {
+    background-image: url('../img/icon.png');
+    height:80%;
+    width:80%;
+    margin:10%;
+}
+.ico-gravatar {
+    background-image: url('https://secure.gravatar.com/avatar/b0c977c6cbd3c9dea5b6896ddb6eccbd.jpg?s=32');
+    height:80%;
+    width:80%;
+    margin:10%;
+}
+.bdg-small {
+    background-image: url('../img/icon.png');
+    height:80%;
+    width:80%;
+    margin:10%;
+}
+.mdi {
+    font-size: 24px;
+    line-height: 24px;
+    text-align: center;
+    vertical-align: middle;
+}
+.mdi.mdi-headphones {
+    font-size: 20px;
+}
+.material-icons {
+    text-align: center;
+    vertical-align: middle;
+    line-height: 24px;
+}
+.mdi.msg-del-btn {
+    float: right;
+    font-size: 18px;
+    line-height: 16px;
+    display: none;
+    cursor: pointer;
+}
+.mdi.msg-del-btn:hover {
+    float: right;
+    font-size: 18px;
+    line-height: 16px;
+    display: none;
+    color: #F46B40;
+}
+.mdi.msg {
+    float: left;
+    margin-right: 7px;
+    font-size: 18px;
+    line-height: 16px;
+}
+.mdi.small {
+    font-size: 18px;
+    line-height: 40px;
+}
+.mdi.large {
+    font-size: 32px;
+    line-height: 48px;
+}
+.mdi.xlarge {
+    font-size: 48px;
+    line-height: 48px;
+}
