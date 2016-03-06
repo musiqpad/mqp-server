@@ -21,15 +21,15 @@ var Room = function(socketServer, options){
 	var that = this;
     
 	this.roomInfo = extend(true, {
-		name: "",  				// Room name
-		slug: "",  				// Room name shorthand (no spaces, alphanumeric with dashes)
-		greet: "", 				// Room greetings
-		maxCon: 0,				// Max connections; 0 = unlimited
-		ownerEmail: '',         // Owner email for owner promotion
-		guestCanSeeChat: true, 	// Whether guests can see the chat or not
-		bannedCanSeeChat: true,	// Whether banned users can see the chat
-		chatID: 0,				// Default CID
-		roomOwnerUN: null,		// Username of the room owner to use with lobby API
+		name: "",  				             // Room name
+		slug: "",  				             // Room name shorthand (no spaces, alphanumeric with dashes)
+		greet: "", 				             // Room greetings
+		maxCon: 0,			               	 // Max connections; 0 = unlimited
+		ownerEmail: "",                      // Owner email for owner promotion
+		guestCanSeeChat: true, 	             // Whether guests can see the chat or not
+		bannedCanSeeChat: true,	             // Whether banned users can see the chat
+		chatID: 0,				             // Default CID
+		roomOwnerUN: null,		             // Username of the room owner to use with lobby API
 	}, options);
 	
 	this.socketServer = socketServer;
@@ -39,21 +39,9 @@ var Room = function(socketServer, options){
 	this.apiUpdateTimeout = null;
 	this.lastChat = [];
 	this.createApiTimeout();
-	
+
 	DB.getRoom(this.roomInfo.slug, function(err, data){
 		if (err) return;
-		
-		// Fix a legacy error when bans was an array
-		if (Array.isArray(data.bans)){
-			var temp = {};
-			for (var i in data.bans){
-				if (data.bans[i]){
-					temp[i] = data.bans[i];
-				}
-			}
-			
-			data.bans = temp;
-		}
 		
 		extend(true, that.data, data);
 		
@@ -73,7 +61,7 @@ Room.prototype.getRoomMeta = function(){
 };
 
 Room.prototype.makeOwner = function(){
-	if (!this.roomInfo.ownerEmail) return;
+	if (!config.room.ownerEmail) return;
 	
 	var that = this;
 	

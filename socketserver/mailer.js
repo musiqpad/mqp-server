@@ -5,12 +5,15 @@ var xoauth2 = require('xoauth2');
 var fs = require('fs');
 
 function Mailer(){
-	var opts = config.room.email.options;
-	this.trans = NM.createTransport(opts.auth.xoauth2 ? util._extend(opts, {
-		auth: {
-			xoauth2: xoauth2.createXOAuth2Generator(opts.auth.xoauth2),
-		},
-	}) : opts);
+	//Check if we need to authorize against email server
+	if(config.room.allowrecovery || config.room.email.confirmation){
+		var opts = config.room.email.options;
+		this.trans = NM.createTransport(((opts || {}).auth || {}).xoauth2 ? util._extend(opts, {
+			auth: {
+				xoauth2: xoauth2.createXOAuth2Generator(opts.auth.xoauth2),
+			},
+		}) : opts)
+	}
 }
 
 Mailer.prototype.sendEmail = function(type, opts, receiver, callback){
@@ -51,6 +54,6 @@ Mailer.prototype.getType = function(type){
 	}
 	
 	return returnObj;
-};
+}
 
 module.exports = new Mailer();
