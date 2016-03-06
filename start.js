@@ -18,7 +18,8 @@ var webConfig = '// THIS IS AN AUTOMATICALLY GENERATED FILE\n\nvar config=JSON.p
 	{
 		useSSL: config.useSSL,
 		serverPort: config.socketServer.port,
-		selfHosted: true
+		selfHosted: true,
+		serverHost: config.socketServer.host
 	}
 	) + '\')';
 
