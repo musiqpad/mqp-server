@@ -56,7 +56,8 @@ Room.prototype.getRoomMeta = function(){
 		greet: this.roomInfo.greet,
 		bg: this.roomInfo.bg,
 		guestCanSeeChat: this.roomInfo.guestCanSeeChat,
-		bannedCanSeeChat: this.roomInfo.bannedCanSeeChat
+		bannedCanSeeChat: this.roomInfo.bannedCanSeeChat,
+		roomOwnerUN: this.roomInfo.roomOwnerUN
 	};
 };
 
