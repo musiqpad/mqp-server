@@ -1391,6 +1391,14 @@ var SocketServer = function(server){
 						break;
 					}
 					
+					if (!data.data.message || data.data.message == '') {
+						returnObj.data = {
+							error: 'EmptyMessage'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					returnObj.data = {
 						success: true,
 						cid: that.room.sendMessage(socket, data.data.message)
