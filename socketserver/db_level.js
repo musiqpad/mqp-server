@@ -2,6 +2,7 @@
 var levelup = require('levelup');
 var path = require('path');
 var util = require('util');
+var fs = require('fs');
 var log = new(require('basic-logger'))({
     showTimestamp: true,
     prefix: "LevelDB"
@@ -19,9 +20,12 @@ var expires = 1000 * 60 * 60 * 24 * config.loginExpire;
 var usernames = [];
 
 function LevelDB(callback) {
-
     var dbdir = path.resolve(config.db.dbDir || './socketserver/db');
-
+    try {
+      fs.statSync(dbdir);
+    } catch(e) {
+      fs.mkdirSync(dbdir);
+    }
     //PlaylistDB
     if(!this.PlaylistDB)
         this.PlaylistDB = setupDB(dbdir + '/playlists',
