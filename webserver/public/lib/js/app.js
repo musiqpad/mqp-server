@@ -2287,14 +2287,25 @@
 			
 			if (message.charAt(0)=='/'){
 				var arr = message.trim().substring(1).replace(/\s{2,}/g, ' ').split(' ');
-					if (typeof (MP.chatCommands[arr[0].toLowerCase()] || {}).exec == 'function'){
-					return MP.chatCommands[arr[0].toLowerCase()].exec(arr);
+				
+				var cmdkey = '';
+				
+				for(var key in MP.chatCommands){
+					var cmd = MP.chatCommands[key];
+					
+					if(key == arr[0]) {
+						cmdkey = key;
+						break;
+					}
+					
+					for(var al in (cmd.aliases || [])){
+						if(cmd.aliases[al] == arr[0]) cmdkey = key;
+					}
+						
+					if(cmdkey) break;
 				}
 				
-				if (arr[0].match(/^(me|em)/i)==null){
-					MP.callListeners({type: API.DATA.EVENTS.CHAT_COMMAND, data:message});
-					return;
-				}
+				if(cmdkey) MP.chatCommands[cmdkey].exec(arr);
 			}
 			
 			socket.sendJSON({
