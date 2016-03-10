@@ -37,12 +37,12 @@ config.room = {
 	maxCon: 0,
 	ownerEmail: 'pad.owner@self-hosted.com', // This needs to be set, then the server restarted to take effect.
 	guestCanSeeChat: true,
-	bannedCanSeeChat: true,
+	bannedCanSeeChat: false,
 	lastmsglimit: 6, // How many messages a user can see after joining.
 	signupcd: 0, // How many miliseconds the user cannot do certain things after they sign up.
 	allowemojis: true,
-	allowrecovery: true,
-	recaptcha: true,
+	allowrecovery: false,
+	recaptcha: false,
 	queue: {
 		cycle: true,
 		lock: false,
@@ -50,7 +50,7 @@ config.room = {
 	},
 	history: {
 		limit_save: 0,
-		limit_send: 5,
+		limit_send: 50,
 	},
 	email: {
 		confirmation: false, // Whether to force user to confirm his email address before he is able to do anything
