@@ -2105,7 +2105,7 @@
 						return API.chat.log('<br>Try /ban @username', 'Ban user');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					
 					if (!user)	return;
@@ -2124,7 +2124,7 @@
 						return API.chat.log('<br>Try /role @username', 'Set user role');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					
 					if (!user)	return;
@@ -2143,7 +2143,7 @@
 						return API.chat.log('<br>Try /mute @username', 'Ignore user');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					
 					if (!user)	return;
@@ -2162,7 +2162,7 @@
 						return API.chat.log('<br>Try /add @username', 'Add user to queue');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					
 					if (!user)	return;
@@ -2183,7 +2183,7 @@
 						return API.chat.log('<br>Try /rem @username', 'Remove user from queue');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					
 					if (!user)	return;
@@ -2201,7 +2201,7 @@
 						return API.chat.log('<br>Try /move @username 1', 'Move user in queue');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					
 					if (!user)	return;
@@ -2220,7 +2220,7 @@
 						return API.chat.log('<br>Try /swap @username1 @username2', 'Swap users in queue');
 					}
 					
-					var users = MP.api.room.getUsers();
+					var users = MP.api.room.getUsers(true);
 					var user1 = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					var user2 = users.filter(function(a){return a.un == arr[1].substring(1);})[0];
 					
