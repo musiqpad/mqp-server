@@ -2299,13 +2299,16 @@
 					}
 					
 					for(var al in (cmd.aliases || [])){
-						if(cmd.aliases[al] == arr[0]) cmdkey = key;
+						if(cmd.aliases[al] == arr[0]) {
+							cmdkey = key;
+							break;
+						}
 					}
 						
 					if(cmdkey) break;
 				}
 				
-				if(cmdkey) MP.chatCommands[cmdkey].exec(arr);
+				if(cmdkey) return MP.chatCommands[cmdkey].exec(arr);
 			}
 			
 			socket.sendJSON({
