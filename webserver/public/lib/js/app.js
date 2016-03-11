@@ -2309,6 +2309,11 @@
 				}
 				
 				if(cmdkey) return MP.chatCommands[cmdkey].exec(arr);
+				
+				if (arr[0].match(/^(me|em)/i) == null){
+					MP.callListeners({type: API.DATA.EVENTS.CHAT_COMMAND, data:message});
+					return;
+				}
 			}
 			
 			socket.sendJSON({
