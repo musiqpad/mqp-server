@@ -317,7 +317,7 @@ config.roles = {
 		showtitle: true,
 		badge: 'android',
 		style: {
-			'color': 'red'
+			'color': '#964B74'
 		},
 		permissions: [
 			'djqueue.skip.other',
