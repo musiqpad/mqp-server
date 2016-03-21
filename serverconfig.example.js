@@ -55,6 +55,10 @@ config.room = {
 	email: {
 		confirmation: false, // Whether to force user to confirm his email address before he is able to do anything
 		sender: 'your@email.tld',
+		/*
+			description: Email server setup, please refer to https://github.com/nodemailer/nodemailer documention on what the options are, supports xOAuth 2.0
+			default: {}
+		*/
 		options: {},
 	},
 	description: '\
