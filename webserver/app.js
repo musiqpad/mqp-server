@@ -11,11 +11,16 @@ var cleancss = (new (require('clean-css')));
 
 
 var app = express();
+var app2 = express();
 var server = null;
+var server2 = null;
 var socketServer = null;
 
 if (config.certificate && config.certificate.key && config.certificate.cert){
-  server = https.createServer(config.certificate, app);	
+  server = https.createServer(config.certificate, app);
+  if(config.webServer.redirectHTTP && config.webServer.redirectPort != ''){
+    server2 = http.createServer(app2);
+  }
 }else{
 	server = http.createServer(app);
 }
@@ -58,16 +63,28 @@ app.get('/api/room', function(req,res){
 //       });
 // });
 
-
+app2.use(function(req, res, next) {
+  if(!req.secure) {
+    return res.redirect(['https://', req.get('Host'), req.url].join(''));
+  }
+  next();
+});
 
 server.listen(config.webServer.port || process.env.PORT, config.webServer.address || process.env.IP, function(){
   var addr = server.address();
   console.log("Webserver listening at", addr.address + ":" + addr.port);
 });
 
+if(server2 != null){
+  server2.listen(config.webServer.redirectPort, config.webServer.address || process.env.IP, function(){
+    var addr2 = server2.address();
+    console.log("HTTP Webserver listening at", addr2.address + ":" + addr2.port);
+  });
+}
+
 var setSocketServer = function(ss){
   socketServer = ss;
 };
 
 
-module.exports = {app: app, server: server, setSocketServer: setSocketServer};
+module.exports = {app: app, server: server, server2: server2, setSocketServer: setSocketServer};
