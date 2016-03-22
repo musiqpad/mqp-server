@@ -21,8 +21,8 @@ config.webServer = {
 	address: '',			// Leave blank to bind to process IP address
 	port: '8080',			// Leave blank to bind to process PORT
 
-	redirectHTTP: false,	// Set to true if you want a HTTP port redirect to HTTPS.
-	redirectPort: '80'		// Set to the port you want to redirect HTTP to HTTPS from. 
+	redirectHTTP: false,	// Set to true if you want HTTP redirect to HTTPS.
+	redirectPort: '80'		// Required if setting above is true. Set to the port you want to redirect HTTP to HTTPS from (Default: 80). 
 };
 
 config.useSSL = true;

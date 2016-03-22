@@ -11,7 +11,6 @@ var cleancss = (new (require('clean-css')));
 
 
 var app = express();
-var app2 = express();
 var server = null;
 var server2 = null;
 var socketServer = null;
@@ -19,7 +18,7 @@ var socketServer = null;
 if (config.certificate && config.certificate.key && config.certificate.cert){
   server = https.createServer(config.certificate, app);
   if(config.webServer.redirectHTTP && config.webServer.redirectPort != ''){
-    server2 = http.createServer(app2);
+    server2 = http.createServer(app);
   }
 }else{
 	server = http.createServer(app);
@@ -38,6 +37,13 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 //     res.send(cleancss.minify(data).styles);
 //   })
 // });
+
+app.use(function(req, res, next) {
+  if(!req.secure && config.webServer.redirectHTTP) {
+    return res.redirect(['https://', req.get('Host'), req.url].join(''));
+  }
+  next();
+});
 
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use('/pads', express.static(path.resolve(__dirname, 'public')));
@@ -62,13 +68,6 @@ app.get('/api/room', function(req,res){
 //         res.send(cleancss.minify(output.css).styles);
 //       });
 // });
-
-app2.use(function(req, res, next) {
-  if(!req.secure) {
-    return res.redirect(['https://', req.get('Host'), req.url].join(''));
-  }
-  next();
-});
 
 server.listen(config.webServer.port || process.env.PORT, config.webServer.address || process.env.IP, function(){
   var addr = server.address();
