@@ -1787,8 +1787,13 @@
 				msg = MP.url.parse(msg,true);
 				
 				// parse bold tags
+				msg = msg.replace(/\*\*(.*?)\*\*/g, function(a){
+					return '<b>'+a.slice(2,-2)+'</b>';
+				});
+				
+				// parse italic tags
 				msg = msg.replace(/\*(.*?)\*/g, function(a){
-					return '<b>'+a.slice(1,-1)+'</b>';
+					return '<i>'+a.slice(1,-1)+'</i>';
 				});
 				
 				//parse strike tags
