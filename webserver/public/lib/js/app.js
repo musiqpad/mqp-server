@@ -1898,7 +1898,7 @@
 			
 			return (pos+1);
 		},
-		chatCommands : {
+		chatCommands: {
 			cmds: {
 				description: 'Show available chat commands',
 				aliases: ['commands', 'cmd', 'help'],
@@ -1910,6 +1910,8 @@
 					for(var key in MP.chatCommands){
 						var cmd = MP.chatCommands[key];
 						
+                        if(cmd.permission && !MP.checkPerm(cmd.permission)) continue;
+                        
 						var cmdstr = '/' + key + ' - ' + cmd.description + (cmd.aliases ? ' [ ' + cmd.aliases.join(', ') + ' ]' : '') + '<br>';
 						
 						if(cmd.staff)
@@ -1932,6 +1934,7 @@
 			join: {
 				description: 'Join the DJ queue',
 				aliases: ['j'],
+                permission: 'djqueue.join',
 				exec: function(arr){
 					MP.djQueueJoin();
 				},
@@ -1940,6 +1943,7 @@
 			leave: {
 				description: 'Leave the DJ queue',
 				aliases: ['l'],
+                permission: 'djqueue.leave',
 				exec: function(arr){
 					MP.djQueueLeave();
 				},
@@ -1947,6 +1951,8 @@
 			
 			cycle: {
 				description: 'Toggle DJ queue cycling',
+                staff: true,
+                permission: 'djqueue.cycle',
 				exec: function(){
 					MP.djQueueCycle();
 				},
@@ -1954,6 +1960,8 @@
 
 			lock: {
 				description: 'Toggle DJ queue lock',
+                staff: true,
+                permission: 'djqueue.lock',
 				exec: function(){ 
 					MP.djQueueLock();
 				},
@@ -1961,6 +1969,8 @@
 			
 			skip: {
 				description: 'Skip the current DJ',
+                staff: true,
+                permission: 'djqueue.skip.other',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2003,6 +2013,7 @@
 			
 			shrug: {
 				description: 'Appends ¯\\_(ツ)_/¯ to your message',
+                permission: 'chat.send',
 				exec: function(arr){
 					arr.shift();
 					MP.sendMessage((arr.join(" ")+" ¯\\_(ツ)_/¯").trim());
@@ -2011,6 +2022,7 @@
 			
 			flip: {
 				description: 'Appends (ノಠ益ಠ)ノ彡┻━┻ to your message',
+                permission: 'chat.send',
 				exec: function(arr){
 					arr.shift();
 					MP.sendMessage((arr.join(" ")+" (ノಠ益ಠ)ノ彡┻━┻").trim());
@@ -2019,6 +2031,7 @@
 			
 			unflip: {
 				description: 'Appends ┬──┬ ノ( ゜-゜ノ) to your message',
+                permission: 'chat.send',
 				exec: function(arr){
 					arr.shift();
 					MP.sendMessage((arr.join(" ")+" ┬──┬ ノ( ゜-゜ノ)").trim());
@@ -2027,6 +2040,7 @@
 			
 			lenny: {
 				description: 'Appends ( ͡° ͜ʖ ͡°) to your message',
+                permission: 'chat.send',
 				exec: function(arr){
 					arr.shift();
 					MP.sendMessage((arr.join(" ")+" ( ͡° ͜ʖ ͡°)").trim());
@@ -2056,6 +2070,8 @@
 			
 			s: {
 				description: 'Sends a message to all staff members',
+                staff: true,
+                permission: 'chat.staff',
 				exec: function(arr){
 					arr.shift();
 					MP.sendMessage(arr.join(" "), true);
@@ -2064,6 +2080,7 @@
 			
 			gib: {
 				description: 'Prepends ༼ つ ◕_◕ ༽つ to your message',
+                permission: 'chat.send',
 				exec: function(arr){
 					arr.shift();
 					MP.sendMessage(("༼ つ ◕_◕ ༽つ " + arr.join(" ")).trim());
@@ -2073,6 +2090,7 @@
 			whisper: {
 				description: 'Sends a private message',
 				aliases: ['w', 'pm'],
+                permission: 'chat.private',
 				exec: function(arr){
 					if (!MP.checkPerm('chat.private')) {
 						return API.chat.log('<br>You do not have permission to perform this command', 'Insufficient Permissions');
@@ -2101,6 +2119,7 @@
 			ban: {
 				description: 'Ban a user',
 				staff: true,
+                permission: 'room.banUser',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2120,6 +2139,7 @@
 			role: {
 				description: 'Sets user role',
 				staff: true,
+                permission: 'room.grantroles',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2138,7 +2158,6 @@
 			
 			mute: {
 				description: 'Mute a user',
-				staff: true,
 				exec: function(arr){
 					arr.shift();
 					
@@ -2158,6 +2177,7 @@
 			add: {
 				description: 'Add a user to the DJ queue',
 				staff: true,
+                permission: 'djqueue.add',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2179,6 +2199,7 @@
 				description: 'Remove a user from the DJ queue',
 				aliases: ['remove'],
 				staff: true,
+                permission: 'djqueue.move',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2197,6 +2218,7 @@
 			move: {
 				description: 'Move a user in the DJ queue',
 				staff: true,
+                permission: 'djqueue.move',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2216,6 +2238,7 @@
 			swap: {
 				description: 'Swaps two users in the DJ queue',
 				staff: true,
+                permission: 'djqueue.move',
 				exec: function(arr){
 					arr.shift();
 					
@@ -2235,6 +2258,7 @@
 			broadcast: {
 				description: 'Broadcasts a message to all users',
 				staff: true,
+                permission: 'chat.broadcast',
 				exec: function(arr){
 					arr.shift();
 					if (!MP.checkPerm('chat.broadcast')) {
