@@ -1729,6 +1729,7 @@
 			var time = new Date(data.time);
 			var scrolledFromTop = MP.api.chat.getPos();
 			var settings = JSON.parse(localStorage.getItem("settings"));
+            var emote = '';
 			
 			type = type || 'chat';
 			
@@ -1749,26 +1750,28 @@
 					arr_mention.push('@' + MP.user.un);
 					if(MP.getRole(MP.user.role).mention && MP.getRole(user.role).permissions.indexOf('chat.specialMention')) arr_mention.push('@' + MP.getRole(MP.user.role).mention);
 				}
+				
 				if (MP.isStaffMember(data.uid) && MP.isStaffMember()) {
 					arr_mention.push('@staff');
 				}
-				if (MP.checkPerm('chat.specialMention',user)){
-					arr_mention.push('@everyone');
 				
-					if (queue_pos >= 0){
+				if (MP.checkPerm('chat.specialMention',user)){
+					
+					if(settings.roomSettings.globalMention)
+						arr_mention.push('@everyone');
+				
+					if (queue_pos >= 0)
 						arr_mention.push('@djs');
-					}
-					if (!MP.user){
-						arr_mention.push('@guest');
-					}
+						
+					if (!MP.user)
+						arr_mention.push('@guests');
 				}
 				
 				if (arr_mention.length != 0){
 					var regmention = new RegExp('('+arr_mention.join('|') + ')( |$)','g');
 					var emreg = /^\/(me|em)(\s|$)/i;
 					mention = (msg.match(regmention) != null ? 'mention' : '');
-					var emote = '';
-					
+
 					if (mention){
 						msg = msg.replace(regmention,function(a){
 							return '<span style="'+ MP.makeUsernameStyle(MP.user ? MP.user.role : null) +' font-weight: bold;">'+a+'</span>';
@@ -1800,7 +1803,7 @@
 					document.title = '* ' + document.title;
 				}
 				
-				if (mention && settings && settings.roomSettings && settings.roomSettings.soundMention){
+				if (mention && settings.roomSettings.soundMention){
 					mentionSound.play();
 				}
 
@@ -1854,7 +1857,7 @@
 //					MP.emojiReplace($('<span class="umsg"></span>').text(msg).prop('outerHTML')) + '</div></div></div>'  
 					MP.emojiReplace(MP.escape(msg)) + '</div></div></div>' 
 				);
-				if (settings && settings.roomSettings && settings.roomSettings.soundMention){
+				if (settings.roomSettings.soundMention && settings.roomSettings.globalMention){
 					mentionSound.play();
 				}
 			}
@@ -2096,7 +2099,7 @@
 			},
 			
 			ban: {
-				descriptions: 'Ban a user',
+				description: 'Ban a user',
 				staff: true,
 				exec: function(arr){
 					arr.shift();
