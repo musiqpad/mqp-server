@@ -2740,7 +2740,10 @@
 			socket.sendJSON(obj);
 		},
 		playlistCreate: function(name, callback){
-			if (!MP.checkPerm('playlist.create')) return;
+            if (!MP.checkPerm('playlist.create')) {
+                callback("InsufficientPermissions");
+                return;
+            }
 			
 			var obj = {
 				type: 'playlistCreate',
@@ -5397,17 +5400,18 @@
 		});
 	
 	var addPlaylistButton = function(e){
-		if (window.PLAYLISTCREATEINPROGRESS) return;
-		window.PLAYLISTCREATEINPROGRESS = true;
-		
 		e.preventDefault();
 		var $input = $('#lib-add');
 		
-		if (!$input.val()){delete window.PLAYLISTCREATEINPROGRESS; return;}
+		if (!$input.val()) return;
 		
 		MP.playlistCreate($input.val(), function(err, data){
-			delete window.PLAYLISTCREATEINPROGRESS;
-			if (err){MP.makeAlertModal({content: 'There was a problem adding the playlist: ' + err}); return;}
+			if (err){
+                MP.makeAlertModal({
+                    content: 'There was a problem adding the playlist: ' + err,
+                });
+                return;
+            }
 			
 			$input.val('');
 		});
@@ -5998,6 +6002,7 @@
 				email: $('#r-email').val(),
 				un: $('#r-username').val(),
 				pw: $('#r-password').val(),
+                con: $('#r-confirm').val(),
 				captcha: grecaptcha.getResponse(),
 			};
 			
@@ -6007,6 +6012,11 @@
 					return;
 				}
 			}
+            
+            if(fields.pw !== fields.con) {
+                alert('Passwords don\'t match');
+                return;
+            }
 			
 			MP.signup(fields.email, fields.un, fields.pw, fields.captcha, function(err, data){
 				if (err) return;
