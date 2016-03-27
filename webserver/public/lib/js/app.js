@@ -5252,16 +5252,23 @@
 		// ESC key logo menu shortcut
 		.on('keydown', function(e){
 			var scope = angular.element($('body')).scope();
+			
+			if(!scope.roomSettings.shortcuts) return;
+			
+			var keyMenuBinding = {
+				76: 1,	// L -> Lobby
+				83: 2,	// S -> Settings
+				80: 3,	// P -> Playlists
+				72: 4	// H -> History
+			};
 
 			// Anything after this will be cancelled if keydown is input
 			if ($(e.target).closest("input")[0]) {
     			return;
-			}
-			if (e.which == 8) { // Backspace -> Cancels
+			} else if (e.which == 8) { // Backspace -> Cancels
 				e.preventDefault();
 				return;
-			}
-			if (e.which == 107 || e.which == 187){ // + -> Increase Volume
+			} else if (e.which == 107 || e.which == 187){ // + -> Increase Volume
 				var currentVol = API.player.getPlayer().getVolume();
 				var vol_val = 0;
 				if (currentVol >= 98){
@@ -5272,8 +5279,7 @@
 				}
 				
 				API.player.setVolume(vol_val);
-			}
-			if (e.which == 109 || e.which == 189){ // - -> Decrease Volume
+			} else if (e.which == 109 || e.which == 189){ // - -> Decrease Volume
 				var currentVol = API.player.getPlayer().getVolume();
 				var vol_val = 0;
 				if (currentVol <= 2){
@@ -5284,19 +5290,11 @@
 				}
 				
 				API.player.setVolume(vol_val);
-			}
-			if (e.which == 77) { // M -> Mute/Unmute
+			} else if (e.which == 77) { // M -> Mute/Unmute
 				var settings = JSON.parse(localStorage.getItem("settings"));
 		
 				API.player.setMute(!settings.player.mute);
-			}
-			var keyMenuBinding = {
-				76: 1,	// L -> Lobby
-				83: 2,	// S -> Settings
-				80: 3,	// P -> Playlists
-				72: 4	// H -> History
-			};
-			if (keyMenuBinding[e.which]) {
+			} else if (keyMenuBinding[e.which]) {
 				if ($('.logo-menu').css('display') == 'none') {
 					$('div.ico-logo').click();
 				}
@@ -6364,6 +6362,7 @@
 				library: {
 					thumbnails: false,
 				},
+                shortcuts: true,
 			};
 			
 			$scope.changeTab = function(inProp, val){
