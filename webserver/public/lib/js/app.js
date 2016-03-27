@@ -4920,32 +4920,29 @@
 		
 		//Check if completing emoji or username
 		if($('#chat-back > .autocomplete.ac-user').length != 0){
-			var atPos = val.lastIndexOf('@', pos-1);
-			var nextSpacePos = val.indexOf(' ', atPos);
-			var stringVal = val.substr(atPos, (nextSpacePos > -1 ? nextSpacePos - atPos : undefined));
 			
-			$target.val( $target.val().replace(stringVal, '@' + mentionVal + (nextSpacePos == -1 ? ' ' : '')) );
+			var parts = [ val.slice(0, val.slice(0, pos).lastIndexOf('@')), val.slice(val.slice(0, pos).lastIndexOf('@'), pos), val.slice(pos) ];
+			parts[1] = "@" + mentionVal + (parts[2][0] == ' ' ? '' : ' ');
+			$target.val(parts.join(''));
 			$target.trigger('input');
 			
-			return atPos + mentionVal.length + 1;
+			return parts[0].length + parts[1].length;
+			
 		} else if($('#chat-back > .autocomplete.ac-emote').length != 0){
-			var atPos = val.lastIndexOf(':', pos-1);
-			var nextSpacePos = val.indexOf(' ', atPos);
-			var stringVal = val.substr(atPos, (nextSpacePos > -1 ? nextSpacePos - atPos : undefined));
 			
-			$target.val( $target.val().replace(stringVal, ':' + mentionVal.replace(' ', '') + ': ') );
+			var parts = [ val.slice(0, val.slice(0, pos).lastIndexOf(':')), val.slice(val.slice(0, pos).lastIndexOf(':'), pos), val.slice(pos) ];
+			parts[1] = ':' + mentionVal + ':' + (parts[2][0] == ' ' ? '' : ' ');
+			$target.val(parts.join(''));
 			$target.trigger('input');
 			
-			return atPos + mentionVal.length + 1;
+			return parts[0].length + parts[1].length;
+			
 		} else if($('#chat-back > .autocomplete.ac-cmd').length != 0){
-			var atPos = 0;
-			var nextSpacePos = val.indexOf(' ', atPos);
-			var stringVal = val.substr(atPos, (nextSpacePos > -1 ? nextSpacePos - atPos : undefined));
 			
-			$target.val( $target.val().replace(stringVal, mentionVal.replace(' ', '') + ' ') );
+			$target.val(mentionVal + ' ');
 			$target.trigger('input');
 			
-			return atPos + mentionVal.length + 1;
+			return mentionVal.length + 1;
 		}
 	};
 	
@@ -5024,19 +5021,13 @@
 			$('#chat-back > .autocomplete').remove();
 
 			if (pos != 0){
-				/*var atPos = val.lastIndexOf('@', pos-1);
-				var nextSpacePos = val.indexOf(' ', atPos);
-				nextSpacePos = (nextSpacePos == -1 ? val.length : nextSpacePos);
-				var stringVal = val.substr(atPos + 1, nextSpacePos - atPos - 1);
-				
-				var doWeAutocompleteUsername = ( (atPos > -1 && pos <= nextSpacePos && pos > atPos) ? 
-					stringVal : '');*/
 				var settings = JSON.parse(window.localStorage.getItem("settings"));
-				var un = (val.substr(0, pos).match(/.*@([a-z0-9_-]*)$/i) || [0]).slice(1);
-				var doWeAutocompleteUsername = un.length == 1 && un[0] != '';
+                
+				var un = (val.substr(0, pos).match(/(^|.*\s)@([a-z0-9_-]*)$/i) || []).slice(2);
+				var doWeAutocompleteUsername = un.length == 1 && un[0];
 				
-				var em = (val.substr(0, pos).match(/.*\s?:([+a-z0-9_-]*)$/i) || [0]).slice(1);
-				var doWeAutocompleteEmotes = em.length == 1 && em[0] != '' && settings.roomSettings.enableEmojis;
+				var em = (val.substr(0, pos).match(/(^|.*\s):([+a-z0-9_-]*)$/i) || []).slice(2);
+				var doWeAutocompleteEmotes = em.length == 1 && em[0] && settings.roomSettings.enableEmojis;
 				
 				var cm = val.match(/^\/[a-z]*$/i);
 				var doWeAutocompleteCommand = Boolean(cm);
@@ -5052,20 +5043,7 @@
 							(function(){
 								var first = true;
 								var out = '';
-								/*
-								{
-									user: {
-										badge: {
-											top,
-											bottom,
-										},
-										role,
-									},
-									mdi,
-									class,
-									style,
-								}
-								*/
+
 								for (var i in list){
 									out += '<li ' + (first ? 'class="active"' : '') + ' style="' + MP.makeUsernameStyle(list[i].role) + '">' + MP.makeBadgeStyle({ user: list[i] }) + list[i].un + '</li>';
 									first = false;
@@ -5093,7 +5071,7 @@
 								var out = '';
 								
 								for (var i in list){
-									out += '<li ' + (first ? 'class="active"' : '') + '><img align="absmiddle" alt=":' + i + ':" class="emoji" src="' + list[i] + '" title=":' + i + ':" /> ' + i + '</li>';
+									out += '<li ' + (first ? 'class="active"' : '') + '><img align="absmiddle" alt=":' + i + ':" class="emoji" src="' + list[i] + '" title=":' + i + ':" />' + i + '</li>';
 									first = false;
 								}
 								
