@@ -209,8 +209,8 @@
 .autocomplete > ul > li.active {
     background: #444A59;
 }
-.autocomplete > ul > li > svg {
-    margin-right: 10px;
+.ac-emote img, .ac-user svg {
+    margin-right: 5px;
 }
 .emoji {
     max-width: 18px;
