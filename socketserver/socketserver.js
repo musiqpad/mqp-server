@@ -5,6 +5,7 @@ var https = require('https');
 var Duration = require('durationjs');
 var request = require('request');
 var util = require('util');
+var extend = require('extend');
 
 //Files
 var config = require('../serverconfig');
@@ -2595,6 +2596,71 @@ var SocketServer = function(server){
 						};
 						socket.sendJSON(returnObj);
 					});
+					break;
+                case 'whois':
+					/*
+					 Expects {
+					 	type: 'whois',
+					 	data: {
+					 		uid: uid,
+					 		un: un
+					 	}
+					 }
+					*/
+					//Check for props
+					if (!data.data.uid == !data.data.un){
+						returnObj.data = {
+							error: 'WrongProps'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Check for permission
+					if (!Roles.checkPermission(socket.user.role, 'room.whois')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Callback function
+					var cb = function(err, user){
+							
+							//Handle error
+							if (err){
+								returnObj.data = {
+									error: err
+								};
+								socket.sendJSON(returnObj);
+								return;
+							}
+							
+							//Execute and return data
+							returnObj.data = {
+								user: extend(user.getClientObj(), {
+									uptime: user.uptime,
+									created: user.created,
+									playlists: user.playlists.length,
+									ip: (function(){
+											var users = that.room.getAttendees();
+											
+											for(var i in users)
+												if(users[i].user && (data.data.un ? users[i].user.un : users[i].user.uid) == (data.data.un || data.data.uid)) return socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress;
+												
+											return null;
+										})(),
+								}),
+							};
+            				returnObj.data.user.online = !!returnObj.data.user.ip;
+							socket.sendJSON(returnObj);
+						};
+					
+					if(data.data.un)
+						DB.getUserByName(data.data.un, { getPlaylists: false }, cb);
+					else
+						DB.getUserByUid(data.data.uid, { getPlaylists: false }, cb);
 					break;
 			}
 		});

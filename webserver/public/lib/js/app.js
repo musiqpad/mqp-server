@@ -2296,6 +2296,33 @@
 					MP.updateBadge({top: hextop.toUpperCase(), bottom: hexbottom.toUpperCase()});
 				},
 			},
+            
+            whois: {
+				description: 'Shows additional information about a user',
+				staff: true,
+				permission: 'room.whois',
+				exec: function(arr){
+					API.room.whois(arr[1], function(err, data){
+						if(err){
+							MP.api.chat.log("User not found");
+						} else {
+							var t = data.uptime;
+							MP.api.chat.log(
+										   "Whois for user " + data.un + "<br><br>\
+											Username: " + data.un + "<br>\
+											User ID: " + data.id + "<br>\
+											Role: " + data.role + "<br>\
+											Badge: " + data.badge.top + " | " + data.badge.bottom + "<br>\
+											# of playlists: " + data.playlists + "<br>\
+											Banned: " + (data.banned ? "true" : "false") + "<br>\
+											Online: " + (data.online ? "true (" + data.ip + ")" : "false") + "<br\
+											Uptime: " + (t - (t %= 86400000)) / 86400000 + "d " +  (t - (t %= 3600000)) / 3600000 + "h " + (t - (t %= 60000)) / 60000 + "m " +  (t - (t %= 1000)) / 1000 + "s<br>\
+											Created: " + (new Date(data.created).toUTCString())
+											)
+						}
+					});
+				},
+			}
 		},
 		sendMessage: function(message, staff){
 			staff = staff || false;
@@ -3998,7 +4025,7 @@
 							uid: uid,
 						},
 					};
-					obj.id = MP.addCallback(obj.type, function(err, data){ callback(err || data.data.user); });
+					obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
 					socket.sendJSON(obj);
 				} else {
 					return MP.api.room.getUser(uid);
@@ -4015,6 +4042,23 @@
 			getBannedUsers: MP.api.room.getBannedUsers,
 			banUser: MP.api.room.banUser,
 			unbanUser: MP.api.room.unbanUser,
+			whois: function(data, callback){
+                if(!MP.checkPerm('room.whois')) return false;
+                
+				var obj = {
+					type: 'whois',
+					data: (Number.isNaN(data) || !Number.isInteger(Number(data))) ?
+						{ un: (((data || "")[0] == '@' ? data.slice(1) : data) || MP.user.un) }
+							:
+						{ uid: data }
+				}
+				
+				obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
+				
+				socket.sendJSON(obj);
+				
+				return true;
+			}
 		},
 		chat: {
 			log: MP.api.chat.log,

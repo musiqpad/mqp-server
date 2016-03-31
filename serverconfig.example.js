@@ -124,6 +124,7 @@ config.db = {
 	'room.grantroles': Ability to change user roles (requires canGrantPerms property)
 	'room.banUser': Ability to ban and unban users
 	'room.ratelimit.bypass': Will bypass ratelimit
+    'room.whois': Possibility to request additional information about a user
 	
 	NOTE: Changing the PROPERTY NAME will break role assignments.  Title can be changed
 	without breaking things, but property name must stay the same.
@@ -190,6 +191,7 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'dev',
@@ -231,6 +233,7 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'dev',
@@ -273,6 +276,7 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'supervisor',
@@ -310,6 +314,7 @@ config.roles = {
 			'room.grantroles',
 			'room.banUser',
 			'room.ratelimit.bypass',
+            'room.whois',
 		],
 		canGrantRoles: [
 			'regular',
@@ -351,7 +356,7 @@ config.roles = {
 			'playlist.create',
 			'playlist.delete',
 			'playlist.rename',
-			'playlist.import'
+			'playlist.import',
 		],
 		canGrantRoles: [],
 	},
