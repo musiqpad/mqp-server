@@ -2647,13 +2647,15 @@ var SocketServer = function(server){
 											var users = that.room.getAttendees();
 											
 											for(var i in users)
-												if(users[i].user && (data.data.un ? users[i].user.un : users[i].user.uid) == (data.data.un || data.data.uid)) return socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress;
+												if(users[i].user && (data.data.un ? users[i].user.un : users[i].user.uid) == (data.data.un || data.data.uid)) 
+													return users[i].upgradeReq.headers['x-forwarded-for'] || users[i].upgradeReq.connection.remoteAddress;
 												
 											return null;
 										})(),
 								}),
 							};
             				returnObj.data.user.online = !!returnObj.data.user.ip;
+            				returnObj.data.user.role = that.room.findRole(returnObj.data.user.uid);
 							socket.sendJSON(returnObj);
 						};
 					

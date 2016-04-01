@@ -2310,7 +2310,7 @@
 							MP.api.chat.log(
 										   "Whois for user " + data.un + "<br><br>\
 											Username: " + data.un + "<br>\
-											User ID: " + data.id + "<br>\
+											User ID: " + data.uid + "<br>\
 											Role: " + data.role + "<br>\
 											Badge: " + data.badge.top + " | " + data.badge.bottom + "<br>\
 											# of playlists: " + data.playlists + "<br>\
