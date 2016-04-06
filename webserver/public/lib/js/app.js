@@ -2265,7 +2265,7 @@
 						return API.chat.log('<br>You do not have permission to perform this command', 'Insufficient Permissions');
 					}
 					if (arr.length < 1){
-						return API.chat.log('<br>Try /broadcst message', 'Broadcasts a message to the room');
+						return API.chat.log('<br>Try /broadcast message', 'Broadcasts a message to the room');
 					}
 					MP.sendBroadcast(arr.join(' '));
 				},
