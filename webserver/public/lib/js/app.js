@@ -821,7 +821,7 @@
 						return false;
 					}
 					
-					if (MP.checkPerm('djqueue.lock')){
+					if (!MP.checkPerm('djqueue.lock')){
 						callback('InsufficientPermissions');
 						return false;
 					}
