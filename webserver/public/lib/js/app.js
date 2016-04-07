@@ -4119,7 +4119,17 @@
 			colourNameToHex: MP.api.util.colourNameToHex,
 			makeStyleString: MP.api.util.makeStyleString,
 			toggle_images: MP.api.util.toggle_images,
-			showImageModal: MP.chatImage.showModal
+			showImageModal: MP.chatImage.showModal,
+			hasPermission: function(user, permission){
+				if("string" == typeof user){
+					permission = user;
+					user = null;
+				}
+				
+				user = MP.api.room.getUser(user);
+				
+				return Boolean(user && MP.getRole(user.role).permissions.indexOf(permission) + 1);
+			},
 		},
 		emotes: {
 			load: MP.loadEmoji,
