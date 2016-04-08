@@ -1,5 +1,7 @@
 # mqp-server
+[![Version npm](https://img.shields.io/npm/v/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server)[![npm Downloads](https://img.shields.io/npm/dm/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server)
 
+[![NPM](https://nodei.co/npm/mqp-server.png)](https://npmjs.org/package/mqp-server)
 ## About
 
 
@@ -21,7 +23,9 @@ The base for creating a self-hosted pad.
    ```javascript
    var mqpServer = require('mqp-server');
    
-   var server = mqpServer.start();
+   var server = new mqpServer();
+   
+   server.start();
    ```
 5. Start the server by running `node start.js`.
 6. If everything went well, there should be no error messages.
