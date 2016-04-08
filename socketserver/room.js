@@ -80,6 +80,7 @@ Room.prototype.makeOwner = function(){
 		// Only one owner, set entire array to one UID and set owner username for API
 		that.data.roles.owner = [ data.uid ];
 		that.data.roomOwnerUN = data.un;
+		that.roomInfo.roomOwnerUN = data.un;
 		that.save();
 	});
 };
