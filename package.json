@@ -5,6 +5,15 @@
   "main": "server-package.js",
   "author": "musiqpad Team <support@musiqpad.com>",
   "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/musiqpad/mqp-server.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/musiqpad/mqp-server/issues"
+  },
+  "homepage": "https://github.com/musiqpad/mqp-server#readme",
   "scripts": {
     "start": "node ./start.js"
   },
