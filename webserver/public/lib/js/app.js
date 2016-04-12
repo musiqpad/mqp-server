@@ -1792,9 +1792,9 @@
 				});
 				
 				// parse italic tags
-				msg = msg.replace(/(^|[^@])\b_([^_]*)_/g, function(a){
-					return '<i>'+a.slice(1,-1)+'</i>';
-				});
+				msg = ' ' + msg, msg = msg.replace(/(^|[^@])\b_([^_]*)_/g, function (g) {
+				  return ' <i>' + g.slice(2, -1) + '</i>';
+				}), msg = msg.replace(/^ ?/, '');
 				
 				//parse strike tags
 				msg = msg.replace(/~(.*?)~/g, function(a){
