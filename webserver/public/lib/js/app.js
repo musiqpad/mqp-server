@@ -248,6 +248,7 @@
 			lastPMUid: null,
 			imgc: 0,
 			allowemojis: true,
+			isCaptcha: false,
 			captchakey: '',
 			historylimit: 50,
 			lastdj: false,
@@ -2411,7 +2412,8 @@
 				}
 			};
 			
-			grecaptcha.reset();
+			if (MP.session.isCaptcha)
+				grecaptcha.reset();
 			
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				//if (err) alert('There was a problem signing up: ' + err);
@@ -2505,6 +2507,7 @@
 					MP.session.staffRoles = data.staffRoles;
 					MP.session.queue.currentdj = (data.queue.currentdj ? MP.findUser(data.queue.currentdj) : null);
 					MP.session.allowemojis = data.allowemojis;
+					MP.session.isCaptcha = data.recaptcha;
 					MP.session.captchakey = data.captchakey;
 					MP.session.historylimit = data.historylimit;
 					MP.media.start = data.queue.songStart;
@@ -6033,7 +6036,7 @@
 				un: $('#r-username').val(),
 				pw: $('#r-password').val(),
                 con: $('#r-confirm').val(),
-				captcha: grecaptcha.getResponse(),
+				captcha: (MP.session.isCaptcha ? grecaptcha.getResponse() : null),
 			};
 			
 			for (var i in fields){
