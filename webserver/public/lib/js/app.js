@@ -1793,7 +1793,7 @@
 				
 				// parse italic tags
 				msg = msg.replace(/(^|[^@])\b_([^_]*)_/g, function(a){
-					return ' <i>'+a.slice(2,-1)+'</i>';
+					return '<i>'+a.slice(1,-1)+'</i>';
 				});
 				
 				//parse strike tags
