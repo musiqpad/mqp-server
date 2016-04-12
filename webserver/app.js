@@ -40,7 +40,7 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 
 app.use(function(req, res, next) {
   if(!req.secure && config.webServer.redirectHTTP) {
-    return res.redirect(['https://', req.get('Host'), req.url].join(''));
+	  return res.redirect(['https://', req.hostname, ":", config.webServer.port || process.env.PORT, req.url].join(''));
   }
   next();
 });
@@ -75,7 +75,7 @@ server.listen(config.webServer.port || process.env.PORT, config.webServer.addres
 });
 
 if(server2 != null){
-  server2.listen(config.webServer.redirectPort, config.webServer.address || process.env.IP, function(){
+  server2.listen(config.webServer.redirectPort || 80, config.webServer.address || process.env.IP, function(){
     var addr2 = server2.address();
     console.log("HTTP Webserver listening at", addr2.address + ":" + addr2.port);
   });
