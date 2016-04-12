@@ -41,7 +41,11 @@ var Room = function(socketServer, options){
 	this.createApiTimeout();
 
 	DB.getRoom(this.roomInfo.slug, function(err, data){
-		if (err) return;
+		// Just in case the slug doesn't exist yet
+		data = data || {};
+		
+		// If the slug doesn't exist, make owner will make the slug
+		if (err && !err.notFound){console.log(err); return;}
 		
 		extend(true, that.data, data);
 		
@@ -70,6 +74,8 @@ Room.prototype.makeOwner = function(){
 		if (err) { console.log('Cannot make room owner: ' + err); return; }
 
 		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; }
+		
+		log.info('Granting ' + data.un + ' (' + data.uid + ') Owner permissions');
 		
 		// Remove user from other roles to avoid interesting bugs
 		for (var i in that.data.roles){
