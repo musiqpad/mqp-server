@@ -16,10 +16,13 @@ config.socketServer = {
 	host: '',     // Host name or IP that the socket server is located at. Leave blank to bind to process IP address
 	port: '8082', // Leave blank to bind to process PORT
 };
-	
+
 config.webServer = {
-	address: '', // Leave blank to bind to process IP address
-	port: '8080' // Leave blank to bind to process PORT
+	address: '',			// Leave blank to bind to process IP address
+	port: '8080',			// Leave blank to bind to process PORT
+
+	redirectHTTP: false,	// Set to true if you want HTTP redirect to HTTPS.
+	redirectPort: '80'		// Required if setting above is true. Set to the port you want to redirect HTTP to HTTPS from (Default: 80). 
 };
 
 config.useSSL = true;
