@@ -2341,33 +2341,38 @@
 			}
 			
 			if (message.charAt(0)=='/'){
-				var arr = message.trim().substring(1).replace(/\s{2,}/g, ' ').split(' ');
-				
-				var cmdkey = '';
-				
-				for(var key in MP.chatCommands){
-					var cmd = MP.chatCommands[key];
+				if (message.length >= 2 && message.charAt(1) == '/') {
+					message = message.substring(1);
+				}
+				else {
+					var arr = message.trim().substring(1).replace(/\s{2,}/g, ' ').split(' ');
 					
-					if(key == arr[0]) {
-						cmdkey = key;
-						break;
-					}
+					var cmdkey = '';
 					
-					for(var al in (cmd.aliases || [])){
-						if(cmd.aliases[al] == arr[0]) {
+					for(var key in MP.chatCommands){
+						var cmd = MP.chatCommands[key];
+						
+						if(key == arr[0]) {
 							cmdkey = key;
 							break;
 						}
-					}
 						
-					if(cmdkey) break;
-				}
-				
-				if(cmdkey) return MP.chatCommands[cmdkey].exec(arr);
-				
-				if (arr[0].match(/^(me|em)/i) == null){
-					MP.callListeners({type: API.DATA.EVENTS.CHAT_COMMAND, data:message});
-					return;
+						for(var al in (cmd.aliases || [])){
+							if(cmd.aliases[al] == arr[0]) {
+								cmdkey = key;
+								break;
+							}
+						}
+							
+						if(cmdkey) break;
+					}
+					
+					if(cmdkey) return MP.chatCommands[cmdkey].exec(arr);
+					
+					if (arr[0].match(/^(me|em)/i) == null){
+						MP.callListeners({type: API.DATA.EVENTS.CHAT_COMMAND, data:message});
+						return;
+					}
 				}
 			}
 			
