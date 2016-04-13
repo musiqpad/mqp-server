@@ -346,7 +346,7 @@ djqueue.prototype.vote = function(voteType, sock, leaving){
 		type: 'voteUpdate',
 		data: {
 			votes: this.makeVoteObj(),
-//			uid: sock.user.uid,
+			uid: sock.user.uid,
 			action: voteType,
 			voted: (ind > -1 ? -1 : 1) // -1 for removed vote, 1 for added vote
 		},
