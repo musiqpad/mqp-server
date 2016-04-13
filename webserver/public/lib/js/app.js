@@ -1,16 +1,16 @@
 /*global API config angular YT CryptoJS Tour lightbox grecaptcha*/
 (function(){
-	
+
 	if (!config){
 		throw new Error('Config not loaded!');
 	}
-	
+
 	// Initialization
 	var MP = {
-		
+
 		applyModels: function(specific){
 			if (!window.angular) return;
-			
+
 			var updates = {
 				roomInfo: MP.session.roomInfo,
 				playlists: (MP.user ? MP.user.playlists : {}),
@@ -23,7 +23,7 @@
 				songSearch: MP.session.songSearch,
 				searchResults: MP.session.searchResults,
 				playlistResults: MP.session.playlistResults,
-				nextSong: ( (MP.user && MP.user.activepl && MP.user.playlists[ MP.user.activepl ] && MP.user.playlists[ MP.user.activepl ].content.length) ? 
+				nextSong: ( (MP.user && MP.user.activepl && MP.user.playlists[ MP.user.activepl ] && MP.user.playlists[ MP.user.activepl ].content.length) ?
 					MP.user.playlists[ MP.user.activepl ].content[0] : 'No song selected'),
 				userlist: (function(){ var out = []; for (var i in MP.userList.users){out.push(MP.seenUsers[MP.userList.users[i]]);} return out; })(),
 				historyList: MP.historyList,
@@ -50,29 +50,29 @@
 			};
 
 			var $scope = angular.element( $("body") ).scope();
-			
+
 			if (MP.models.viewedPl != MP.session.viewedPl) try{ $('.lib-sng').draggable('destroy'); } catch (e){}
 
 			for (var i in updates){
 				if (updates[i] != MP.models[i])
 					MP.models[i] = updates[i];
 			}
-		
+
 			$scope.$apply(function(){
 				for (var i in MP.models){
 					$scope[i] = MP.models[i];
 				}
-				if ($scope.user && $scope.user.badge && 
-						$scope.userSettings && $scope.userSettings.newBadgeTop == '' && 
+				if ($scope.user && $scope.user.badge &&
+						$scope.userSettings && $scope.userSettings.newBadgeTop == '' &&
 						$scope.userSettings.newBadgeBottom == '') {
 					$scope.userSettings.newBadgeTop = $scope.user.badge.top;
 					$scope.userSettings.newBadgeBottom = $scope.user.badge.bottom;
 				}
 			});
-			
+
 			if (MP.session.viewedPl && MP.models.viewedPlContents.length){
 				var $song = $('.lib-sng');
-			
+
 				$song.draggable({
 					appendTo: 'div.library',
 					helper: function(){
@@ -105,25 +105,25 @@
 								});
 							}
 						});
-						
+
 						$('div.lib-song-list').append('<div class="lib-sng-drop"></div>');
 					},
 					drag: function(e, ui){
 						var $firstSong = $('.lib-sng:eq(0)');
 						var $songDrop = $('.lib-sng-drop');
 						var $songList = $('.lib-song-list');
-						
+
 						var offset = $firstSong.offset();
 						var height = $firstSong.height() + 1;
 						var innerPos = ui.offset.top - offset.top + 5;
-						
-						
+
+
 						if (ui.offset.left < offset.left || ui.offset.left > (offset.left + $firstSong.width())){
 							$songDrop.css('display', 'none');
 							return;
 						}else{
 							$songDrop.css('display', 'block');
-							
+
 							if ( (ui.offset.top - offset.top - $songList.scrollTop()) < 30 ){
 								$songList.autoscroll({
 				                    direction: 'up',
@@ -141,39 +141,39 @@
 									$songList.autoscroll('destroy');
 							}
 						}
-						
+
 						var snapMult = Math.floor( innerPos / height );
 						var snapFinal = null;
-						
+
 						if ( (innerPos % height) <= (height/2)){
 							snapFinal = 0;
 						}else{
 							snapFinal = 1;
 						}
-						
+
 						var newPos = Math.max( 0, Math.min((snapFinal + snapMult), MP.models.viewedPlContents.length) );
-						
+
 						$songDrop
 							.css('top', newPos * height + offset.top - $('.lib-songs').offset().top + $('.lib-songs').scrollTop() - 1 + 'px')
 							.attr('data-pos', newPos);
 					},
 					stop: function(e, ui){
 						$('.ui-draggable-dragging').remove();
-						
+
 						var $songList = $('.lib-song-list');
-						
+
 						if ($songList.autoscroll('get'))
 									$songList.autoscroll('destroy');
-									
+
 						var $songDrop = $('.lib-sng-drop');
-						
+
 						if (!$songDrop.is(':hidden')){
 							MP.playlistMove(MP.session.viewedPl, ui.helper.attr('data-cid'), $('.lib-sng-drop').attr('data-pos'));
 						}
 						$('.lib-fdr:not([data-pid=' + MP.session.viewedPl + '])').droppable('destroy');
 						$('.lib-sng-drop').remove();
 					}
-				
+
 				});
 
 			}
@@ -256,16 +256,16 @@
 		},
 		isOnWaitlist: function(uid){
 			if (MP.session.queue.currentdj && MP.session.queue.currentdj.uid == uid) return true;
-			
+
 			for (var i = 0; i < MP.session.queue.users.length; i++){
 				if (MP.session.queue.users[i] == uid) return true;
 			}
-			
+
 			return false;
 		},
 		isStaffMember: function(uid){
 			var user = uid ? MP.findUser(uid) : MP.user;
-			
+
 			if ( user && MP.session.staffRoles && MP.session.staffRoles.indexOf(user.role) > -1) {
 				return true;
 			}
@@ -298,10 +298,10 @@
 			var that = MP;
 			if (!func) return;
 			if ( typeof MP.callbacks[event] === 'undefined') MP.callbacks[event] = {};
-			
+
 			var id = MP.cbId++;
 			MP.callbacks[event][id] = {
-				cb: func, 
+				cb: func,
 				timeoutId: setTimeout(function(){
 					console.log(event + ' REQUEST TIMED OUT');
 					MP.callbacks[event][id].cb('RequestTimedOut');
@@ -313,16 +313,16 @@
 		removeCallback: function(event, id){
 			if ( typeof MP.callbacks[event] === 'undefined' ) return;
 			if ( typeof MP.callbacks[event][id] === 'undefined' ){ console.log('Invalid callback id'); return; }
-			
+
 			clearTimeout(MP.callbacks[event][id].timeoutId);
 			delete MP.callbacks[event][id];
 		},
 		callCallback: function(data){
 			if ( !data.requestType || typeof MP.callbacks[data.requestType] === 'undefined' ){ return; }
-			
+
 			var callback = MP.callbacks[data.requestType][data.id];
 			if (typeof callback === 'undefined') return;
-			
+
 			MP.removeCallback(data.requestType, data.id);
 			callback.cb.call(window, (data.data ? data.data.error : null), data.data, data);
 		},
@@ -331,10 +331,10 @@
 		extListeners: {},
 		on: function(event, func, ext){
 			var lists = (ext ? MP.extListeners : MP.listeners);
-			
+
 			if ( typeof func !== 'function') return;
 			if ( typeof lists[event] === 'undefined') lists[event] = {};
-			
+
 			var id = MP.listenerId++;
 			lists[event][id] = {
 				cb: func
@@ -344,9 +344,9 @@
 		off: function(event, id, ext){
 			var lists = (ext ? MP.extListeners : MP.listeners);
 			id = typeof id === "string" ? parseInt(id) : id;
-			
+
 			if (typeof lists[event] === 'undefined') return;
-			
+
 			if (typeof id === 'number'){
 				if ( typeof lists[event][id] === 'undefined' ){ console.log('Invalid callback id'); return false; }
 				delete lists[event][id];
@@ -359,15 +359,15 @@
 					}
 				}
 			}
-			
+
 			return false;
 		},
 		once: function(event, func, ext){
 			var lists = (ext ? MP.extListeners : MP.listeners);
-			
+
 			if ( typeof func !== 'function') return;
 			if ( typeof lists[event] === 'undefined') lists[event] = {};
-			
+
 			var id = MP.listenerId++;
 			lists[event][id] = {
 				cb: func,
@@ -377,7 +377,7 @@
 		},
 		callListeners: function(data){
 			if ( typeof MP.listeners[data.type] === 'undefined' && typeof MP.extListeners[data.type] === 'undefined'){ return; }
-			
+
 			var callbacks = $.extend({}, (MP.listeners[data.type] || {}), (MP.extListeners[data.type] || {}));
 
 			for (var i in callbacks){
@@ -429,42 +429,42 @@
 				sec: 1e3
 			};
 			var diff = d1 - (d2||0);
-			
+
 			if (diff >= times.year){
 				parsed.years = Math.floor(diff/times.year);
 				diff -= parsed.years*times.year;
 			}
-			
+
 			if (diff >= times.month){
 				parsed.months = Math.floor(diff/times.month);
 				diff -= parsed.months*times.month;
 			}
-			
+
 			if (diff >= times.day){
 				parsed.days = Math.floor(diff/times.day);
 				diff -= parsed.days*times.day;
 			}
-			
+
 			if (diff >= times.hour){
 				parsed.hours = Math.floor(diff/times.hour);
 				diff -= parsed.hours*times.hour;
 			}
-			
+
 			if (diff >= times.min){
 				parsed.minutes = Math.floor(diff/times.min);
 				diff -= parsed.minutes*times.min;
 			}
-			
+
 			if (diff >= times.sec){
 				parsed.seconds = Math.floor(diff/times.sec);
 				diff -= parsed.seconds*times.sec;
 			}
-			
+
 			parsed.milisseconds = diff;
-			
+
 			return parsed;
 		},
-		
+
 		url: {
 			//useful regex from http://stackoverflow.com/a/3809435, this works much better than the old regex
 			regex: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}(\.[a-z]{2,6})?\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g,
@@ -476,18 +476,18 @@
 				//ps: CORS, CORS!!!
 				//can solve using this tool: https://cors-anywhere.herokuapp.com/[full_request_url_here]
 				//example: https://robwu.nl/cors-anywhere.html
-				
+
 				if (typeof data != 'string' && !Array.isArray(data)) return console.log('Invalid headers field');
 				if (typeof callback != 'function') return console.log('Callback must be required');
-				
+
 				if (typeof data == 'string') data = [data];
 				var xhttp = new XMLHttpRequest();
-				 
+
 				xhttp.onreadystatechange = function() {
 					if (xhttp.readyState == 4) {
 						if (xhttp.status == 200){
 							var fields = {};
-							
+
 							for (var i in data){
 								fields[data[i]] = xhttp.getResponseHeader(data[i]);
 							}
@@ -505,12 +505,12 @@
 					return '<a target="_blank" href="'+a+'">'+(keep_protocol_js_url && /.js$/i.test(a) ? a : a.replace(/^https?:\/\//i, ''))+'</a>';
 				});
 			},
-			
+
 			match: function(txt){
 				return txt.match(this.regex) || [];
 			}
 		},
-		
+
 		chatImage: {
 			knownSites: [
 				'prntscr.com/',
@@ -523,23 +523,23 @@
 				imgClickUrl = imgClickUrl ? imgClickUrl : url;
 				var settings = JSON.parse(localStorage.getItem("settings"));
 				element.append('<span class="image-content" style="color: #79BE6C; cursor: pointer;"><span class="image-toggle" onclick="API.util.toggle_images(\''+escape(url)+'\',\''+escape(imgClickUrl)+'\',this);" style="cursor: pointer;">[Show Image]</span></span> ');
-									
+
 				if (settings && settings.roomSettings && settings.roomSettings.showImages)
 					element.find('.image-toggle').last().click();
 			},
 			parse: function(msg, cid){
 				if (!msg || !cid) return;
-				
+
 				var urls = MP.url.match(msg);
-				
+
 				if (urls.length > 0){
 					var msgdom = $('#cm-' + cid + ' .umsg');
 					if (!msgdom.length) return;
-					
+
 					msgdom.append('<br>');
-					
+
 					var settings = JSON.parse(localStorage.getItem("settings"));
-					
+
 					for (var i in urls){
 						if (urls[i].match(/\.(png|jpe?g|gif)/i) != null){
 							MP.chatImage.append(msgdom, urls[i]);
@@ -555,9 +555,9 @@
 							if (urls[i].match(/facebook.com\/(.*?)\/?photo(s\/)?/) != null){
 								MP.url.getURLData(urls[i], [], true, function(fields, pageurl, body){
 									if (!body) return;
-									
+
 									var imgurl = (body.match(/<img(.*?)class="fbPhotoImage img"(.*?)src="(.*?)"(.*?)alt="/)||[])[3];
-									
+
 									if (!imgurl) return;
 									imgurl = imgurl.replace(/&amp;/g,'&');
 									MP.chatImage.append(msgdom, imgurl);
@@ -572,17 +572,17 @@
 					}
 				}
 			},
-			
+
 			getImageFromMeta: function(url, imgLength, callback){
 				MP.url.getURLData(url, ['x-final-url'], true, function(fields, _url, body){
 					if (!body) return callback(null);
-					
+
 					var imgurl = (body.match(/<meta.*property=['"]og:image['"].*>/)||[])[0];
-					
+
 					if (!imgurl) return callback(null);
-					
+
 					imgurl = imgurl.match(MP.url.regex)[0];
-					
+
 					if (imgLength){
 						MP.url.getURLData(imgurl, ['Content-length'], false, function(_fields, _imgurl, _body){
 							callback(imgurl, _fields['Content-length']);
@@ -634,18 +634,18 @@
 						var img = new Image();
 						img.src = url;
 						img.style = 'width: 100%; height: 100%;';
-						
+
 						$('#image-preview').append(img);
 					}
 				});
 			}
 		},
-		
+
 		api: {
 			queue: {
 				join: function(callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					var user = MP.user;
 					if (!user){
 						callback('notLoggedIn');
@@ -668,7 +668,7 @@
 				},
 				leave: function(callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					var user = MP.user;
 					if (!user){
 						callback('notLoggedIn');
@@ -691,16 +691,16 @@
 						position = undefined;
 					}
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (typeof position == 'number'){
 						position--;
 					}
-					
+
 					var user = MP.findUser(uid);
 					if (!user){
 						callback('userNotFound');
@@ -719,12 +719,12 @@
 				},
 				modRemoveDJ: function(uid, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					var user = MP.findUser(uid);
 					if (!user){
 						callback('userNotFound');
@@ -743,17 +743,17 @@
 				},
 				modSwapDJ: function(uid1, uid2, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (MP.session.queue.lock && !MP.checkPerm('djqueue.move')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					var user1 = MP.findUser(uid1);
 					var user2 = MP.findUser(uid2);
 					if (!user1 || !user2){
@@ -773,17 +773,17 @@
 				},
 				modMoveDJ: function(uid, position, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (MP.session.queue.lock && !MP.checkPerm('djqueue.move')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					var user = MP.findUser(uid);
 					if (!user){
 						callback('userNotFound');
@@ -802,7 +802,7 @@
 						lockSkipPosition = undefined;
 					}
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.checkPerm('djqueue.skip.self') && !MP.checkPerm('djqueue.skip.other')){
 						callback('InsufficientPermissions');
 						return false;
@@ -816,22 +816,22 @@
 					}
 					if (typeof status == 'undefined') status = !MP.session.queue.lock;
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.checkPerm('djqueue.lock')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					if (status == MP.session.queue.lock){
 						callback('noChange');
 						return false;
 					}
-					
+
 					MP.djQueueLock(callback);
 					return true;
 				},
@@ -842,38 +842,38 @@
 					}
 					if (typeof status == 'undefined') status = !MP.session.queue.cycle;
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (MP.checkPerm('djqueue.cycle')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					if (status == MP.session.queue.cycle){
 						callback('noChange');
 						return false;
 					}
-					
+
 					MP.djQueueCycle(callback);
 					return true;
 				},
 				setLimit: function(limit, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (MP.checkPerm('djqueue.limit')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					if (typeof limit != 'number' || limit < 1){
 						callback('invalidValue');
 						return false;
@@ -886,17 +886,17 @@
 				},
 				getDJs: function(arr){
 					if (typeof arr == 'undefined')	arr = true;
-					
+
 					if (arr){
 						var queue = [];
-						
+
 						for (var i in MP.session.queue.users){
 							queue.push(MP.seenUsers[MP.session.queue.users[i]]);
 						}
 						return queue;
 					}else{
 						var queue = {};
-						
+
 						for (var i in MP.session.queue.users){
 							var user = MP.seenUsers[MP.session.queue.users[i]];
 							queue[user.uid] = user;
@@ -930,7 +930,7 @@
 				},
 				getUsers: function(arr){
 					if (typeof arr == 'undefined')	arr = false;
-					
+
 					var users = MP.getUsersInRoom();
 					if (arr){
 						return MP.api.util.objectToArray(users);
@@ -939,7 +939,7 @@
 				},
 				getRoles: function(arr){
 					if (typeof arr == 'undefined')	arr = false;
-					
+
 					var roles = MP.session.roles;
 					if (arr){
 						return MP.api.util.objectToArray(roles);
@@ -963,35 +963,35 @@
 				},
 				setRole: function(uid, role, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.checkPerm('room.grantroles')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					if (!role){
 						callback('invalidRole');
 						return false;
 					}
 					role = role.toLowerCase();
-					
+
 					var roles = this.getRoles(false);
 					if (!roles || roles[role].canGrantRoles.indexOf(role) == -1){
 						callback('invalidRole');
 						return false;
 					}
-					
+
 					var user = MP.findUser(uid);
 					if (!user){
 						callback('userNotFound');
 						return false;
 					}
-					
+
 					MP.setRole(uid, role, callback);
 					return true;
 				},
@@ -1009,24 +1009,24 @@
 						reason = '';
 					}
 					if (!reason) reason = '';
-					
+
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.checkPerm('room.banUser')){
 						callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					if (!duration){
 						callback('missingDuration');
 						return false;
 					}
-					
+
 					var user = MP.findUser(uid);
 					if (!user){
 						callback('userNotFound');
@@ -1037,12 +1037,12 @@
 				},
 				unbanUser: function(uid, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.checkPerm('room.banUser')){
 						callback('InsufficientPermissions');
 						return false;
@@ -1051,7 +1051,7 @@
 						callback('invalidUid');
 						return false;
 					}
-					
+
 					MP.unbanUser(uid, callback);
 					return true;
 				}
@@ -1065,13 +1065,13 @@
 				},
 				broadcast: function(msg){
 					if (!MP.user || !MP.checkPerm('chat.broadcast')) return false;
-					
+
 					MP.sendBroadcast(msg);
 					return true;
 				},
 				send: function(msg){
 					if (!MP.user || !msg || !MP.checkPerm('chat.send')) return false;
-					
+
 					MP.sendMessage(msg);
 					return true;
 				},
@@ -1080,7 +1080,7 @@
 				},
 				delete: function(cid, callback){
 					if (!MP.user || !cid || !MP.checkPerm('chat.delete')) return false;
-					
+
 					MP.deleteChat(cid, callback);
 					return true;
 				},
@@ -1104,11 +1104,11 @@
 						pid = null;
 					}
 					if (typeof arr == 'undefined') arr = true;
-					
+
 					if (pid) return MP.user.playlists[pid];
-					
+
 					var playlists = MP.user.playlists;
-					
+
 					if (arr) playlists = MP.api.util.objectToArray(playlists);
 					return playlists;
 				},
@@ -1118,7 +1118,7 @@
 				},
 				active: function(pid, callback){
 					if (!MP.user || !MP.user.activepl || !MP.user.playlists || !MP.user.playlists[MP.user.activepl]) return null;
-					
+
 					return MP.user.playlists[MP.user.activepl];
 				},
 				getNextSong: function(){
@@ -1127,12 +1127,12 @@
 				},
 				create: function(name, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.checkPerm('playlist.create')){
 						callback('InsufficientPermissions');
 						return false;
@@ -1141,18 +1141,18 @@
 						callback('emptyName');
 						return false;
 					}
-					
+
 					MP.playlistCreate(name, callback);
 					return true;
 				},
 				delete: function(pid, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!MP.user){
 						callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.checkPerm('playlist.delete')){
 						callback('InsufficientPermissions');
 						return false;
@@ -1171,22 +1171,22 @@
 					}
 					if (typeof pos != 'number') pos = 0;
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!pid || !cid){
 						callback('invalidPidOrCid');
 						return false;
 					}
-/*					
+/*
 					if (typeof pid == 'string'){
 						var pl = this.get().filter(function(a){return a.name == pid;})[0];
-						
+
 						if (pl == undefined){
 							callback('playlistNotFound');
 							return false;
 						}
 						pid = pl.id;
 					}
-*/					
+*/
 					if (!MP.user.playlists[pid]){
 						callback('playlistNotFound');
 						return false;
@@ -1195,13 +1195,13 @@
 						callback('SongAlreadyInPlaylist');
 						return false;
 					}
-					
+
 					MP.playlistAdd(pid, cid, pos, callback);
 					return true;
 				},
 				removeSong: function(pid, cid, callback){
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!pid || !cid){
 						callback('invalidPidOrCid');
 						return false;
@@ -1210,7 +1210,7 @@
 						callback('playlistNotFound');
 						return false;
 					}
-					
+
 					MP.playlistRemove(pid, cid, callback);
 					return true;
 				},
@@ -1221,7 +1221,7 @@
 					}
 					if (typeof pos != 'number') pos = 0;
 					if (typeof callback != 'function') callback = function(){};
-					
+
 					if (!pid || !cid){
 						callback('invalidPidOrCid');
 						return false;
@@ -1242,7 +1242,7 @@
 						callback('playlistNotFound');
 						return false;
 					}
-					
+
 					if (typeof callback == 'undefined') return MP.user.playlists[pid].content;
 					MP.getPlaylistContents(pid, callback);
 					return true;
@@ -1252,7 +1252,7 @@
 						if (callback) callback('InsufficientPermissions');
 						return false;
 					}
-					
+
 					if(!(pid = pid || MP.session.viewedPl)){
 						if (callback) callback('NoPlaylistSelected');
 						return false;
@@ -1288,7 +1288,7 @@
 				objectToArray: function(obj){
 					if (typeof obj != 'object' || obj == null)	return [];
 					var arr = [];
-					
+
 					for (var i in obj) arr.push(obj[i]);
 					return arr;
 				},
@@ -1325,19 +1325,19 @@
 				    "slategray":"#708090","snow":"#fffafa","springgreen":"#00ff7f","steelblue":"#4682b4","tan":"#d2b48c","teal":"#008080",
 				    "thistle":"#d8bfd8","tomato":"#ff6347","turquoise":"#40e0d0","violet":"#ee82ee","wheat":"#f5deb3","white":"#ffffff",
 				    "whitesmoke":"#f5f5f5","yellow":"#ffff00","yellowgreen":"#9acd32"};
-				
+
 				    if (typeof colours[colour.toLowerCase()] != 'undefined')
 				        return colours[colour.toLowerCase()];
-				
+
 				    return false;
 				},
 				makeStyleString: function(obj){
 					var style = '';
-					
+
 					for (var i in obj){
 						style += (i + ': ' + obj[i] + '; ');
 					}
-					
+
 					return style;
 				},
 				toggle_images: function(url,clickUrl,ctx){
@@ -1345,13 +1345,13 @@
 						return;
 					ctx = $(ctx).parent();
 					var img_cont = ctx.find('.image-content');
-					
+
 					if (!img_cont.length){
 						ctx.find('.image-toggle').text('[Hide Image]');
 						var el = $('<span class="image-content"></span>'),
 							img_link = document.createElement('a'),
 							img_el = document.createElement('img');
-						
+
 						el.append('<br>');
 						img_link.setAttribute('class','chat-image');
 						img_link.setAttribute('href', unescape(clickUrl ? clickUrl : url));
@@ -1363,12 +1363,12 @@
 							var $chat = $("#chat");
 							$chat.scrollTop($chat[0].scrollHeight);
 						};
-						
+
 						img_link = $(img_link);
 						img_link.append(img_el);
 						el.append(img_link);
 						el.append('<br>');
-						ctx.append(el);	
+						ctx.append(el);
 					}else{
 						img_cont.remove();
 						ctx.find('.image-toggle').text('[Show Image]');
@@ -1401,7 +1401,7 @@
 			isOpened: function(){return MP.session.mediaPreview.player != null;},
 			open: function(cid){
 				var settings = JSON.parse(localStorage.getItem("settings"));
-				
+
 				MP.makeCustomModal({
 					content: '<div class="modal-preview"><div id="player-preview" style="width:100%;"></div></div>',
 					buttons: [
@@ -1423,7 +1423,7 @@
 						clearInterval(MP.session.mediaPreview.fadeInterval);
 						MP.session.mediaPreview.mainVolume = (settings.player.mute ? 0 : settings.player.volume);
 						MP.session.mediaPreview.previewVolume = MP.session.mediaPreview.mainVolume;
-						
+
 						MP.session.mediaPreview.player = new YT.Player('player-preview', {
 							height: '390',
 							width: '640',
@@ -1449,9 +1449,9 @@
 				}
 				MP.session.mediaPreview.player.destroy();
 				MP.session.mediaPreview.player=null;
-				
+
 				clearInterval(MP.session.mediaPreview.fadeInterval);
-				
+
 				var settings = JSON.parse(localStorage.getItem("settings"));
 				MP.session.mediaPreview.mainVolume = (settings.player.mute ? 0 : settings.player.volume);
 				MP.session.mediaPreview.fadeInterval = setInterval(MP.mediaPreview.fadeIn,100);
@@ -1462,7 +1462,7 @@
 					MP.session.mediaPreview.previewVolume = MP.session.mediaPreview.mainVolume;
 				}
 				API.player.getPlayer().setVolume(MP.session.mediaPreview.previewVolume);
-				
+
 				if (MP.session.mediaPreview.previewVolume == MP.session.mediaPreview.mainVolume){
 					clearInterval(MP.session.mediaPreview.fadeInterval);
 				}
@@ -1473,7 +1473,7 @@
 					MP.session.mediaPreview.previewVolume=0;
 				}
 				API.player.getPlayer().setVolume(MP.session.mediaPreview.previewVolume);
-				
+
 				if (MP.session.mediaPreview.previewVolume == 0){
 					clearInterval(MP.session.mediaPreview.fadeInterval);
 				}
@@ -1491,7 +1491,7 @@
 				return MP.clearTimeRemaining();
 			}
 			MP.media.timeRemaining--;
-			
+
 			MP.applyModels();
 		},
 		getMedia: function(){
@@ -1517,48 +1517,48 @@
 		},
 		getUsersInRoom: function(){
 			var out = {};
-			
+
 			for (var i in MP.userList.users){
 				out[ MP.userList.users[i] ] = MP.seenUsers[MP.userList.users[i]];
 			}
-			
+
 			return out;
 		},
 		getRoomStaff: function(callback) {
 			var obj = {
 				type: 'getStaff'
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.session.roomStaff = data;
-				
+
 				for (var i in data){
 					MP.seenUsers[data[i].uid] = data[i];
 				}
-				
+
 				MP.applyModels();
 				if (typeof callback == 'function') callback(err, data);
 			});
-			
-			socket.sendJSON(obj); 
+
+			socket.sendJSON(obj);
 		},
 		getBannedUsers: function(callback) {
 			var obj = {
 				type: 'getBannedUsers'
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.session.bannedUsers = data;
-				
+
 				for (var i in data){
 					MP.seenUsers[data[i].uid] = data[i];
 				}
-				
+
 				MP.applyModels();
 				if (typeof callback == 'function') callback(err, data);
 			});
-			
-			socket.sendJSON(obj); 
+
+			socket.sendJSON(obj);
 		},
 		makeBadgeStyle: function(opts){
 			/*
@@ -1576,10 +1576,10 @@
 				style,
 			}
 			*/
-			
+
 			opts.user = opts.user || {};
 			var badge = $.extend(MP.copyObject(opts.user.badge || {}), { outline: ((MP.getRole(opts.user.role) || {}).style || {}).color || 'white'});
-			
+
 			if(!opts.mdi && badge.top && badge.bottom && badge.outline){
 				if(opts.user.banned){
 					var icon = 'account-remove';
@@ -1625,7 +1625,7 @@
 						</g>\
 					</svg>';
 			*/
-			
+
 			//Original
 			/*
 			return 'background-image: linear-gradient(45deg, ' + hexBot + ' 45%, ' + hexTop + ' 45%); background-image: -moz-linear-gradient(45deg, ' + hexBot + ' 45%, ' + hexTop + ' 45%); background-image: -webkit-linear-gradient(45deg, ' + hexBot + ' 45%, ' + hexTop + ' 45%);';
@@ -1635,11 +1635,11 @@
 			if (MP.getRole(role)){
 				var style = MP.getRole(role).style;
 				var out = '';
-				
+
 				for (var i in style){
 					out += (i + ': ' + style[i] + '; ');
 				}
-				
+
 				return out;
 			}else{
 				return '';
@@ -1647,7 +1647,7 @@
 		},
 		emojiReplace: function(text){
 			var settings = JSON.parse(localStorage.settings).roomSettings;
-			
+
 			//Check if emojis are disabled
 			if(!settings.enableEmojis) return text;
 
@@ -1656,10 +1656,10 @@
 				for(var key in MP.emotes_ascii){
 					text = text.replace(new RegExp("(^|\\s)(" + key.replace("<", "&lt;").replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&") + ")(?=\\s|$)", "g"), "$1:" + MP.emotes_ascii[key] + ":");
 				}
-				
+
 			//Check for all emojis to replace
 		    var toReplace = text.match(/:[\+a-zA-Z0-9_-]+:/g);
-		    
+
 		    if(toReplace){
 		        toReplace = toReplace.map(function(x){ return x.slice(1, -1).toLowerCase(); }).filter(function(e, i, a){ return a.indexOf(e) === i; });
 		        for(var i in toReplace){
@@ -1675,13 +1675,13 @@
 		loadEmoji: function(reload, callback){
 			if(reload) MP.emotes = { Basic: {}, TastyCat: {}, Twitch: {}, BetterTTV: {} };
 			if(!MP.session.allowemojis) return;
-			
+
 			//Basic
 			$.getJSON("https://raw.githubusercontent.com/Ranks/emojione/master/emoji.json", function(data) {
 				for(var e in data){
 					//MP.emotes[e] = MP.emotes[e] || "https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic/" + e + ".png";
 					MP.emotes["Basic"][e] = MP.emotes["Basic"][e] || { url: "https://raw.githubusercontent.com/Ranks/emojione/master/assets/png/" + data[e].unicode + ".png" };
-					
+
 					//Regular aliases
 					if(data[e].aliases)
 						for(var ee in data[e].aliases){
@@ -1689,7 +1689,7 @@
 							//MP.emotes[ee] = MP.emotes[ee] || "https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic/" + e + ".png";
 							MP.emotes["Basic"][ee] = MP.emotes["Basic"][ee] || { url: "https://raw.githubusercontent.com/Ranks/emojione/master/assets/png/" + data[e].unicode + ".png", style: 'max-width: 24px; max-height: 24px;', };
 						}
-					
+
 					//ASCII aliases
 					if(data[e].aliases_ascii)
 						for(var ee in data[e].aliases_ascii)
@@ -1731,9 +1731,9 @@
 			var scrolledFromTop = MP.api.chat.getPos();
 			var settings = JSON.parse(localStorage.getItem("settings"));
             var emote = '';
-			
+
 			type = type || 'chat';
-			
+
 			if (type == 'chat'){
 				var msg = data.message;
 
@@ -1741,33 +1741,33 @@
 					return;
 				}
 				var user = data.user || MP.findUser(data.uid);
-				
+
 				var queue_pos = MP.findPosInWaitlist();
 				var mention = '';
-				
+
 				var arr_mention = [];
-				
+
 				if (MP.user){
 					arr_mention.push('@' + MP.user.un);
 					if(MP.getRole(MP.user.role).mention && MP.getRole(user.role).permissions.indexOf('chat.specialMention')) arr_mention.push('@' + MP.getRole(MP.user.role).mention);
 				}
-				
+
 				if (MP.isStaffMember(data.uid) && MP.isStaffMember()) {
 					arr_mention.push('@staff');
 				}
-				
+
 				if (MP.checkPerm('chat.specialMention',user)){
-					
+
 					if(settings.roomSettings.globalMention)
 						arr_mention.push('@everyone');
-				
+
 					if (queue_pos >= 0)
 						arr_mention.push('@djs');
-						
+
 					if (!MP.user)
 						arr_mention.push('@guests');
 				}
-				
+
 				if (arr_mention.length != 0){
 					var regmention = new RegExp('('+arr_mention.join('|') + ')( |$)','g');
 					var emreg = /^\/(me|em)(\s|$)/i;
@@ -1787,34 +1787,34 @@
 						return;
 					}
 				}
-				
+
 				msg = MP.url.parse(msg,true);
-				
+
 				// parse bold tags
 				msg = msg.replace(/\*(.*?)\*/g, function(a){
 					return '<b>'+a.slice(1,-1)+'</b>';
 				});
-				
+
 				//parse strike tags
 				msg = msg.replace(/~(.*?)~/g, function(a){
 					return '<s>'+a.slice(1,-1)+'</s>';
 				});
-				
+
 				if (mention && !MP.session.hasfocus) {
 					document.title = '* ' + document.title;
 				}
-				
+
 				if (mention && settings.roomSettings.soundMention){
 					mentionSound.play();
 				}
 
 				var badge = $(MP.makeBadgeStyle({ user: user }));
 				var isTheDj = (MP.session.queue.currentdj || {}).uid == user.uid;
-				
+
 				$messages.append(
 					'<div ' + (data.cid ? 'id="cm-' + data.cid + '"' : '') + ' class="cm message ' + [mention, emote, data.special, (MP.checkPerm('chat.delete') ? 'msg-del' : ''), (MP.user && user.uid == MP.user.uid ? 'self' : '')].join(' ') + '">' + (MP.checkPerm('chat.delete') ? '<div class="mdi mdi-close msg-del-btn"></div>' : '') + '<span class="time">' + MP.makeTime(time) + '</span>' +
 					// TODO: Make user object to lookup UID
-					badge.attr('class', (badge.prop('tagName').toLowerCase() == 'svg' ? 'bdg ' : badge.attr('class')) + (isTheDj ? ' hidden' : '')).prop('outerHTML') + 
+					badge.attr('class', (badge.prop('tagName').toLowerCase() == 'svg' ? 'bdg ' : badge.attr('class')) + (isTheDj ? ' hidden' : '')).prop('outerHTML') +
 					/*(
 						MP.getRole(user.role).badge
 							?
@@ -1832,71 +1832,71 @@
 				var un = user.un || '';
 				var unclass = (user.un == undefined) ? '' : 'uname';
 				var msg = data.msg;
-				
+
 				$messages.append(
 					'<div class="cm log"><span class="time">' + MP.makeTime(new Date()) + '</span>' +
 					'<div class="text">' +
 					'<span data-uid="'+ user.uid +'" style="'+ MP.makeUsernameStyle(user.role) +'" class="'+ unclass +'">' + un + '</span>' +
-					'<span class="umsg">' + msg + '</span></div></div>'  
+					'<span class="umsg">' + msg + '</span></div></div>'
 				);
 			} else if (type == 'system'){
 				var msg = data;
-				
+
 				$messages.append(
 					'<div class="cm system"><span class="time">' + MP.makeTime(new Date()) + '</span>' +
 					'<div class="mdi mdi-map-marker msg"></div>' +
 					'<div class="text">' +
-					'<span class="umsg">' + msg + '</span></div></div></div>' 
+					'<span class="umsg">' + msg + '</span></div></div></div>'
 				);
 			} else if (type == 'broadcast'){
 				var msg = data;
-				
+
 				$messages.append(
 					'<div class="cm broadcast"><span class="time">' + MP.makeTime(new Date()) + '</span>' +
 					'<div class="mdi mdi-alert msg"></div>' +
 					'<div class="text">' +
-//					MP.emojiReplace($('<span class="umsg"></span>').text(msg).prop('outerHTML')) + '</div></div></div>'  
-					MP.emojiReplace(MP.escape(msg)) + '</div></div></div>' 
+//					MP.emojiReplace($('<span class="umsg"></span>').text(msg).prop('outerHTML')) + '</div></div></div>'
+					MP.emojiReplace(MP.escape(msg)) + '</div></div></div>'
 				);
 				if (settings.roomSettings.soundMention && settings.roomSettings.globalMention){
 					mentionSound.play();
 				}
 			}
-			
+
 			while($messages.children().length > (Number(JSON.parse(localStorage.settings).roomSettings.chatlimit) || $messages.children().length)){
 				$messages.children().first().remove();
 			}
-			
+
 			if ( scrolledFromTop >= 0)
 				MP.api.chat.scrollBottom();
 		},
 		sendBroadcast: function(msg) {
 			if (!MP.checkPerm('chat.broadcast')) return;
-			
+
 			var obj = {
 				type: 'broadcastMessage',
 				data: {
 					message: msg
 				}
 			};
-			
-			socket.sendJSON(obj); 
+
+			socket.sendJSON(obj);
 		},
 		findUser: function(uid){
 			if (typeof MP.seenUsers[uid] == undefined) return null;
-			
+
 			return MP.seenUsers[uid];
 		},
 		findPosInWaitlist: function(uid){
 			var user = uid ? MP.findUser(uid) : MP.user;
-			
+
 			if (!user || !MP.session.queue.users) return -1;
-			
+
 			var pos = MP.session.queue.users.indexOf(user.uid);
-			
+
 			if (MP.session.queue.currentdj && MP.session.queue.currentdj.uid == user.uid) return 0;
 			if (pos == -1) return pos;
-			
+
 			return (pos+1);
 		},
 		chatCommands: {
@@ -1906,32 +1906,32 @@
 				exec: function(arr){
 					var cmds = '<span style="color: #ffffff; font-weight: bold;">User commands</span><br>';
 					var staffcmds = '<span style="color: #ffffff; font-weight: bold;">Staff commands</span><br>';
-					
+
 					//Loop through all commands
 					for(var key in MP.chatCommands){
 						var cmd = MP.chatCommands[key];
-						
+
                         if(cmd.permission && !MP.checkPerm(cmd.permission)) continue;
-                        
+
 						var cmdstr = '/' + key + ' - ' + cmd.description + (cmd.aliases ? ' [ ' + cmd.aliases.join(', ') + ' ]' : '') + '<br>';
-						
+
 						if(cmd.staff)
 							staffcmds += cmdstr;
 						else
 							cmds += cmdstr;
 					}
-					
+
 					API.chat.log(cmds + (MP.isStaffMember(MP.user.uid) ? '<br>' + staffcmds : ''));
 				},
 			},
-			
+
 			log: {
 				description: 'Shows a message in chat client-side',
 				exec: function(arr){
 					MP.api.chat.log(arr.shift());
 				},
 			},
-			
+
 			join: {
 				description: 'Join the DJ queue',
 				aliases: ['j'],
@@ -1940,7 +1940,7 @@
 					MP.djQueueJoin();
 				},
 			},
-			
+
 			leave: {
 				description: 'Leave the DJ queue',
 				aliases: ['l'],
@@ -1949,7 +1949,7 @@
 					MP.djQueueLeave();
 				},
 			},
-			
+
 			cycle: {
 				description: 'Toggle DJ queue cycling',
                 staff: true,
@@ -1957,29 +1957,29 @@
 				exec: function(){
 					MP.djQueueCycle();
 				},
-			}, 
+			},
 
 			lock: {
 				description: 'Toggle DJ queue lock',
                 staff: true,
                 permission: 'djqueue.lock',
-				exec: function(){ 
+				exec: function(){
 					MP.djQueueLock();
 				},
 			},
-			
+
 			skip: {
 				description: 'Skip the current DJ',
                 staff: true,
                 permission: 'djqueue.skip.other',
 				exec: function(arr){
 					arr.shift();
-					
+
 					var lockSkipPosition = parseInt(arr[0]);
 					MP.djQueueSkip(!isNaN(lockSkipPosition) ? lockSkipPosition : undefined);
 				},
 			},
-			
+
 			vol: {
 				description: 'Change or show the current volume',
 				aliases: ['volume'],
@@ -1988,7 +1988,7 @@
 						return API.chat.log('<br>Current volume: '+API.player.getPlayer().getVolume(),'Volume');
 					}
 					var vol_val = Math.round(Math.max(0, Math.min(arr[1], 100)));
-					
+
 					if (isNaN(vol_val)){
 						return API.chat.log('<br>Volume should be an integer (0 ~ 100)','Volume');
 					}
@@ -1996,7 +1996,7 @@
 					API.chat.log('<br>Current volume: '+vol_val,'Volume');
 				},
 			},
-			
+
 			clear: {
 				description: 'Clear the chat (client-side only)',
 				aliases: ['c'],
@@ -2011,7 +2011,7 @@
 					API.chat.log('<br>Video stream '+(MP.toggleVideoStream()?'enabled':'disabled'),'Video stream');
 				},
 			},
-			
+
 			shrug: {
 				description: 'Appends ¯\\_(ツ)_/¯ to your message',
                 permission: 'chat.send',
@@ -2020,7 +2020,7 @@
 					MP.sendMessage((arr.join(" ")+" ¯\\_(ツ)_/¯").trim());
 				},
 			},
-			
+
 			flip: {
 				description: 'Appends (ノಠ益ಠ)ノ彡┻━┻ to your message',
                 permission: 'chat.send',
@@ -2029,7 +2029,7 @@
 					MP.sendMessage((arr.join(" ")+" (ノಠ益ಠ)ノ彡┻━┻").trim());
 				},
 			},
-			
+
 			unflip: {
 				description: 'Appends ┬──┬ ノ( ゜-゜ノ) to your message',
                 permission: 'chat.send',
@@ -2038,7 +2038,7 @@
 					MP.sendMessage((arr.join(" ")+" ┬──┬ ノ( ゜-゜ノ)").trim());
 				},
 			},
-			
+
 			lenny: {
 				description: 'Appends ( ͡° ͜ʖ ͡°) to your message',
                 permission: 'chat.send',
@@ -2047,7 +2047,7 @@
 					MP.sendMessage((arr.join(" ")+" ( ͡° ͜ʖ ͡°)").trim());
 				},
 			},
-			
+
 			confirm: {
 				description: 'Confirms your email address',
 				exec: function(arr){
@@ -2068,7 +2068,7 @@
 					socket.sendJSON(obj);
 				},
 			},
-			
+
 			s: {
 				description: 'Sends a message to all staff members',
                 staff: true,
@@ -2078,7 +2078,7 @@
 					MP.sendMessage(arr.join(" "), true);
 				},
 			},
-			
+
 			gib: {
 				description: 'Prepends ༼ つ ◕_◕ ༽つ to your message',
                 permission: 'chat.send',
@@ -2087,7 +2087,7 @@
 					MP.sendMessage(("༼ つ ◕_◕ ༽つ " + arr.join(" ")).trim());
 				},
 			},
-			
+
 			whisper: {
 				description: 'Sends a private message',
 				aliases: ['w', 'pm'],
@@ -2096,106 +2096,106 @@
 					if (!MP.checkPerm('chat.private')) {
 						return API.chat.log('<br>You do not have permission to perform this command', 'Insufficient Permissions');
 					}
-					
+
 					if (arr.length<=2){
 						return API.chat.log('<br>Try /pm username message','Private Message');
 					}
-					
+
 					arr.shift();
 					var usernick = arr.shift().replace(/[@:]/g,'');
-					
+
 					var users = MP.api.util.objectToArray(MP.getUsersInRoom());
 					var user = users.filter(function(a){ return a.un == usernick; })[0];
-					
+
 					if (!user) return;
-					
+
 					MP.privateMessage(user.uid, arr.join(" "), function(err, data){
 						if (err) return API.chat.log('<br>Failed to send private message to @' + user.un, 'Private Chat');
-						
+
 						API.chat.log('<br>' + MP.escape(data.message), '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message sent to </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
 					});
 				},
 			},
-			
+
 			ban: {
 				description: 'Ban a user',
 				staff: true,
                 permission: 'room.banUser',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length == 0 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@'){
 						return API.chat.log('<br>Try /ban @username', 'Ban user');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					
+
 					if (!user)	return;
-					
+
 					MP.showBanModal(user.uid);
 				},
 			},
-			
+
 			role: {
 				description: 'Sets user role',
 				staff: true,
                 permission: 'room.grantroles',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length == 0 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@'){
 						return API.chat.log('<br>Try /role @username', 'Set user role');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					
+
 					if (!user)	return;
-					
+
 					MP.showRoleModal(user.uid);
 				},
 			},
-			
+
 			mute: {
 				description: 'Mute a user',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length == 0 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@'){
 						return API.chat.log('<br>Try /mute @username', 'Ignore user');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					
+
 					if (!user)	return;
-					
+
 					MP.showMuteModal(user.uid);
 				},
 			},
-			
+
 			add: {
 				description: 'Add a user to the DJ queue',
 				staff: true,
                 permission: 'djqueue.add',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length == 0 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@'){
 						return API.chat.log('<br>Try /add @username', 'Add user to queue');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					
+
 					if (!user)	return;
 					var position = parseInt(arr[1]);
 					if (typeof position == 'number') position--;
 					MP.djQueueModAdd(user.uid, position);
 				},
 			},
-			
+
 			rem: {
 				description: 'Remove a user from the DJ queue',
 				aliases: ['remove'],
@@ -2203,59 +2203,59 @@
                 permission: 'djqueue.move',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length == 0 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@'){
 						return API.chat.log('<br>Try /rem @username', 'Remove user from queue');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					
+
 					if (!user)	return;
 					MP.djQueueModRemove(user.uid);
 				},
 			},
-			
+
 			move: {
 				description: 'Move a user in the DJ queue',
 				staff: true,
                 permission: 'djqueue.move',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length < 2 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@' || isNaN(parseInt(arr[1]))){
 						return API.chat.log('<br>Try /move @username 1', 'Move user in queue');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					
+
 					if (!user)	return;
 					var pos = parseInt(arr[1]);
 					MP.djQueueModMove(user.uid,pos);
 				},
 			},
-			
+
 			swap: {
 				description: 'Swaps two users in the DJ queue',
 				staff: true,
                 permission: 'djqueue.move',
 				exec: function(arr){
 					arr.shift();
-					
+
 					if (arr.length < 2 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@' || typeof arr[1] != 'string' || arr[1].charAt(0)!='@'){
 						return API.chat.log('<br>Try /swap @username1 @username2', 'Swap users in queue');
 					}
-					
+
 					var users = MP.api.room.getUsers(true);
 					var user1 = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
 					var user2 = users.filter(function(a){return a.un == arr[1].substring(1);})[0];
-					
+
 					if (!user1 || !user2 || user1.uid == user2.uid)	return;
 					MP.djQueueModSwap(user1.uid,user2.uid);
 				},
 			},
-			
+
 			broadcast: {
 				description: 'Broadcasts a message to all users',
 				staff: true,
@@ -2271,7 +2271,7 @@
 					MP.sendBroadcast(arr.join(' '));
 				},
 			},
-			
+
 			badge: {
 				description: 'Changes your badge',
 				exec: function(arr){
@@ -2280,24 +2280,24 @@
 					}
 					var hextop = arr[1];
 					var hexbottom = arr[2] || hextop;
-					
+
 					var colorValidator = /^#([0-9a-f]{6}|[0-9a-f]{3})$/gi;
-					
+
 					if ((hextop.search(colorValidator)) == -1 && !MP.api.util.colourNameToHex(hextop)){
 						return API.chat.log('<br>Invalid color: '+hextop, 'Badge');
 					}
-					
+
 					if ((hexbottom.search(colorValidator)) == -1  && !MP.api.util.colourNameToHex(hexbottom)){
 						return API.chat.log('<br>Invalid color: '+hexbottom, 'Badge');
 					}
-					
+
 					hextop = MP.api.util.colourNameToHex(hextop) || hextop;
 					hexbottom = MP.api.util.colourNameToHex(hexbottom) || hexbottom;
-					
+
 					MP.updateBadge({top: hextop.toUpperCase(), bottom: hexbottom.toUpperCase()});
 				},
 			},
-            
+
             whois: {
 				description: 'Shows additional information about a user',
 				staff: true,
@@ -2339,38 +2339,38 @@
 				console.log('Message can\'t be empty');
 				return;
 			}
-			
+
 			if (message.charAt(0)=='/'){
 				var arr = message.trim().substring(1).replace(/\s{2,}/g, ' ').split(' ');
-				
+
 				var cmdkey = '';
-				
+
 				for(var key in MP.chatCommands){
 					var cmd = MP.chatCommands[key];
-					
+
 					if(key == arr[0]) {
 						cmdkey = key;
 						break;
 					}
-					
+
 					for(var al in (cmd.aliases || [])){
 						if(cmd.aliases[al] == arr[0]) {
 							cmdkey = key;
 							break;
 						}
 					}
-						
+
 					if(cmdkey) break;
 				}
-				
+
 				if(cmdkey) return MP.chatCommands[cmdkey].exec(arr);
-				
+
 				if (arr[0].match(/^(me|em)/i) == null){
 					MP.callListeners({type: API.DATA.EVENTS.CHAT_COMMAND, data:message});
 					return;
 				}
 			}
-			
+
 			socket.sendJSON({
 				type: (staff ? 'staff' : '') + 'chat',
 				data: {
@@ -2380,9 +2380,9 @@
 		},
 		deleteChat: function(cid, callback){
 			if (!MP.checkPerm('chat.delete')) return;
-			
+
 			cid = parseInt(cid);
-			
+
 			if (isNaN(cid) || cid < 1){
 				return;
 			}
@@ -2392,7 +2392,7 @@
 					cid: cid
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, callback);
 			socket.sendJSON(obj);
 		},
@@ -2401,7 +2401,7 @@
 				console.log('Can\'t signup, already logged in');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'signup',
 				data: {
@@ -2411,18 +2411,18 @@
 					captcha: inCaptcha,
 				}
 			};
-			
+
 			if (MP.session.isCaptcha)
 				grecaptcha.reset();
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				//if (err) alert('There was a problem signing up: ' + err);
-				
+
 				onLogin(err, data, callback);
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		rawLogin: function(inEmail, inPass, token, callback){
@@ -2431,7 +2431,7 @@
 				if (callback) callback('AlreadyLoggedIn');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'login',
 				data: {
@@ -2440,17 +2440,17 @@
 					token: token
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				//if (err){ alert('There was a problem logging in: ' + err); }
 				if (onLogin){
 					onLogin(err, data, callback);
 				}
-				
+
 				if (callback) callback(err, data);
 			});
-			
-				
+
+
 			socket.sendJSON(obj);
 		},
 		login: function(inEmail, inPass, callback){
@@ -2458,7 +2458,7 @@
 		},
 		loginWithTok: function(token, callback){
 			if (!token){ callback('Token argument not set'); return; }
-			
+
 			MP.rawLogin(null, null, token, callback);
 		},
 		logout: function(callback){
@@ -2466,24 +2466,24 @@
 				console.log('Can\'t logout, not logged in');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'logout',
 				data: {}
 			};
-			
+
 			if (callback) obj.id = MP.addCallback(obj.type, callback);
-			
+
 			var ind = MP.userList.users.indexOf(MP.user.uid);
 			if (ind != -1){
 				MP.userList.users.splice( ind, 1);
 				MP.userList.guests++;
 			}
-			
+
 			delete MP.user;
 			MP.session.viewedPl;
 			MP.applyModels();
-			
+
 			MP.cookie.setCookie(MP.getTokenName());
 			socket.sendJSON(obj);
 		},
@@ -2492,7 +2492,7 @@
 				type: 'joinRoom',
 				data: {}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){
 					console.log('Could not join room: ' + err);
@@ -2515,33 +2515,33 @@
 
 					var client = new Date().getTime();
 					var server = data.time || client;
-					
+
 					MP.session.serverDateDiff = (server < client ? server - client : client - server);
 					try{
 						grecaptcha.render('recaptcha', { sitekey: MP.session.captchakey, 'theme': 'dark',});
 					}catch(e){}
 					MP.addCurrentToHistory();
-					
+
 					$('.btn-grab.active, .btn-upvote.active, .btn-downvote.active').removeClass('active');
-					
+
 					var buttonClasses = {
 						like: 'btn-upvote',
 						dislike: 'btn-downvote',
 						grab: 'btn-grab'
 					};
-					
+
 					for(var i in data.queue.vote){
 						var $button = $('.' + buttonClasses[data.queue.vote[i]]);
 						$button.addClass('active');
 					}
 
 					MP.applyModels();
-					
+
 					if (callback) callback(err, data);
 				});
-				
+
 				MP.media.media = data.queue.currentsong;
-				
+
 				if (data.queue.currentsong){
 					MP.media.timeRemaining = Math.round(data.queue.currentsong.duration - data.queue.time);
 					MP.startTimeRemaining();
@@ -2551,35 +2551,35 @@
 				}
 			});
 
-			
+
 			socket.sendJSON(obj);
-			
-			
+
+
 		},
 		leaveRoom: function(callback){
 			var obj = {
 				type: 'leaveRoom',
 				data: {}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.user.role = null;
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		getRole: function(role){
 			if (role && MP.session.roles[role]){
 				return MP.session.roles[role];
 			}
-			
+
 			return MP.session.roles.default;
 		},
 		getRoleIndex: function(role){
 			if (typeof role != 'string')	return -1;
-			
+
 			var roles = [];
 			for (var i in MP.session.roles){
 				roles.push(i);
@@ -2589,19 +2589,19 @@
 		},
 		checkPerm: function(perm, user){
 			user = user || MP.user;
-			
+
 			if (!user) return false;
-			
+
 			return (user.role && MP.getRole(user.role) && MP.getRole(user.role).permissions.indexOf(perm) == -1 ? false : true);
 		},
 		canGrantRole: function(role, user){
 			user = user || MP.user;
-			
+
 			if (!user || !user.role) return false;
-			
+
 			if ( !MP.checkPerm('room.grantroles') || MP.getRole(user.role).canGrantRoles.indexOf(role) == -1)
 				return false;
-				
+
 			return true;
 		},
 		getRoomInfo: function(callback){
@@ -2616,9 +2616,9 @@
 					return;
 				}
 				MP.session.roomInfo = data;
-				
+
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
 			socket.sendJSON(obj);
@@ -2628,29 +2628,29 @@
 				type: 'getUsers',
 				data: {}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err,data){
 				if (err){
 					console.log('Getting users failed! : ' + err);
 					if (callback) callback(err);
 				}
-				
+
 				for (var i in data.users){
 					var uid = parseInt(i);
-					
+
 					MP.seenUsers[uid] = data.users[i];
-					
+
 					if (MP.user && data.users[i].uid == MP.user.uid) MP.user.role = data.users[i].role;
-					
+
 					MP.userList.guests = data.guests;
-					
+
 					if (MP.userList.users.indexOf(uid) == -1){
 						MP.userList.users.push(uid);
 					}
 				}
 
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
 			socket.sendJSON(obj);
@@ -2660,14 +2660,14 @@
 				type: 'getHistory',
 				data: {}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err,data){
 				if (err){
 					console.log('Getting history failed!');
 					if (callback) callback(err);
 					return;
 				}
-				
+
 				/*
 				data: {
 					type: 'getHistory',
@@ -2688,15 +2688,15 @@
 					]
 				}
 				*/
-				
+
 				MP.historyList.history = data;
 				MP.historyList.historyInitialized = true;
 				MP.historyList.filter = "";
-				
+
 				MP.addCurrentToHistory();
 
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
 			socket.sendJSON(obj);
@@ -2708,7 +2708,7 @@
 					badge: badge
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){
 					console.log('Updating badge failed!', err);
@@ -2716,10 +2716,10 @@
 					return;
 				}else{
 					console.log('Badge Updated Successfully.');
-					
+
 					$('#badge-top-color-input').minicolors('value',badge.top);
 					$('#badge-bottom-color-input').minicolors('value',badge.bottom);
-					
+
 					// Save success notif
 				}
 				if (typeof callback == 'function') callback(err, data);
@@ -2742,7 +2742,7 @@
 		},
 		isLoggedIn: function(){
 			if (MP.user) return true;
-			
+
 			return false;
 		},
 		getPlaylistContents: function(pid, callback){
@@ -2752,21 +2752,21 @@
 					pid: pid
 				}
 			};
-			
+
 			MP.togglePlaylistLoading(true);
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err){ if (callback) callback(err); return;}
-				
+
 				MP.user.playlists[pid].num = data.content.length;
 				MP.user.playlists[pid].content = data.content;
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			}, 10000);
-			
+
 			socket.sendJSON(obj);
 		},
 		playlistCreate: function(name, callback){
@@ -2774,35 +2774,35 @@
                 callback("InsufficientPermissions");
                 return;
             }
-			
+
 			var obj = {
 				type: 'playlistCreate',
 				data: {name: name}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err){console.log('Could not add playlist: ' + err); if (callback) callback(err, data); return;}
 				MP.user.playlists[data.id] = data.playlist;
 				var onlyPlaylist = true;
-				
+
 				for (var i in MP.user.playlists)
 					if (i != data.id) onlyPlaylist = false;
-					
+
 				if (onlyPlaylist) MP.user.activepl = data.id;
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 			MP.togglePlaylistLoading(true);
 		},
-		
+
 		playlistRename: function(pid, name, callback){
 			//if (!MP.checkPerm('playlist.delete')) return;
-			
+
 			var obj = {
 				type: 'playlistRename',
 				data: {
@@ -2810,59 +2810,59 @@
 					name: name
 				}
 			};
-			
+
 			if (!pid || !name){
 				if (callback) callback('MissingProps');
 				return;
 			}
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
 				if (err){
 					if (callback) callback(err);
 					return;
 				}
-				
+
 				MP.user.playlists[pid].name = data.name;
 				MP.applyModels();
 				callback(null, data);
 			});
-			
+
 			socket.sendJSON(obj);
 			MP.togglePlaylistLoading(true);
 		},
-				
+
 		playlistDelete: function(pid, callback){
 			if (!MP.checkPerm('playlist.delete')) return;
-			
+
 			var obj = {
 				type: 'playlistDelete',
 				data: {
 					pid: pid
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err) {console.log('Could not delete playlist: ' + err); if (callback) callback(err); return;}
-				
+
 				delete MP.user.playlists[pid];
-				
+
 				if (MP.session.viewedPl == pid){
 					MP.session.viewedPl = null;
 				}
-				
+
 				if (data.active){
 					MP.user.activepl = data.active;
 					MP.session.viewedPl = data.active;
 				}
-					
+
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 			MP.togglePlaylistLoading(true);
 		},
@@ -2874,18 +2874,18 @@
 					pid: pid
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err) {console.log('Could not activate playlist: ' + err); if (callback) callback(err); return;}
-				
+
 				MP.user.activepl = pid;
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 			MP.togglePlaylistLoading(true);
 		},
@@ -2898,12 +2898,12 @@
 					pos: pos
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err){ if (callback) callback(err); console.log('Could not add to playlist: ' + err); return;}
-				
+
 				if (data.pos == 'top'){
 					if (Array.isArray(data.video)) {
 						for (var i = 0, len = data.video.length; i < len; i++) {
@@ -2923,7 +2923,7 @@
 						MP.user.playlists[data.plid].content.push(data.video);
 					}
 				}
-				
+
 				if (Array.isArray(data.video)) {
 					MP.user.playlists[data.plid].num += data.video.length;
 				}
@@ -2931,10 +2931,10 @@
 					MP.user.playlists[data.plid].num++;
 				}
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			}, 20000);
-			
+
 			socket.sendJSON(obj);
 			MP.togglePlaylistLoading(true);
 		},
@@ -2946,37 +2946,37 @@
 					cid: cid
 				}
 			};
-			
+
 			var content = MP.user.playlists[pid].content;
 			var ind = null;
-			
+
 			for (var i = 0; i < content.length; i++){
 				if (content[i].cid == cid){
 					ind = i;
 					break;
 				}
 			}
-			
+
 			if (ind == null){
 				console.log('Cannot find CID in playlist specified');
 				if (callback) callback('SongNotInPlaylist');
 				return;
 			}
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err){ if (callback) callback(err); console.log('Could not remove from playlist: ' + err); return;}
-				
+
 				MP.user.playlists[pid].content.splice( ind, 1 );
 				MP.user.playlists[pid].num--;
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
-			
+
 			MP.togglePlaylistLoading(true);
 		},
 		playlistMove: function(pid, cid, index, callback){
@@ -2988,39 +2988,39 @@
 					index: index
 				}
 			};
-			
+
 			var content = MP.user.playlists[pid].content;
 			var ind = null;
-			
+
 			for (var i = 0; i < content.length; i++){
 				if (content[i].cid == cid){
 					ind = i;
 					break;
 				}
 			}
-			
+
 			if (ind === null){
 				console.log('Cannot find CID in playlist specified');
 				if (callback) callback('SongNotInPlaylist');
 				return;
 			}
-			
+
 			if (ind == index || (ind+1) == index) return;
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
-				
+
 				if (err){ if (callback) callback(err); console.log('Could not move song: ' + err); return;}
-				
+
 				var content = MP.user.playlists[pid].content.splice(ind, 1);
 				MP.user.playlists[pid].content.splice(( ind > index ? index : index-1), 0, content[0]);
 				MP.applyModels();
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
-			
+
 			MP.togglePlaylistLoading(true);
 		},
 		playlistImport: function(pid, expand, callback){
@@ -3033,10 +3033,10 @@
 					expanded: expand || false,
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if(err) { callback(err); return; }
-				
+
 				for(var e in data.content){
 					MP.user.playlists[data.content[e].id] = {
 						id: data.content[e].id,
@@ -3045,11 +3045,11 @@
 						num: expand ? data.content[e].content.length : data.content[e].num,
 					};
 				}
-				
+
 				MP.applyModels();
 				callback(null, data);
 			}, 25000);
-			
+
 			socket.sendJSON(obj);
 			return true;
 		},
@@ -3060,14 +3060,14 @@
 					query: query
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				MP.togglePlaylistLoading(false);
 				if (err){ if (callback) callback(err); console.log('Youtube search error: ' + err); return;}
-				
+
 				if (callback) callback(err, data.results);
 			});
-			
+
 			socket.sendJSON(obj);
 			MP.togglePlaylistLoading(true);
 		},
@@ -3075,7 +3075,7 @@
 			for (var i = 0; i < playlist.length; i++){
 				if (playlist[i].cid == cid) return i;
 			}
-			
+
 			return null;
 		},
 		makeTime: function(dateObj){
@@ -3087,36 +3087,36 @@
 		},
 		djQueueJoin: function(callback){
 			if (!MP.checkPerm('djqueue.join')) return;
-			
+
 			if (MP.session.queue.lock && !MP.checkPerm('djqueue.joinlocked')){
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueJoin'
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not join waitlist: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueLeave: function(callback){
 			if (!MP.checkPerm('djqueue.leave')) return;
-			
+
 			var obj = {
 				type: 'djQueueLeave'
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not leave waitlist: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueSkip: function(lockSkipPosition, callback){
@@ -3128,31 +3128,31 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			if (!MP.session.queue.currentdj || !MP.user){
 				if (callback) callback('InvalidDJ');
 				return;
 			}
-			
+
 			var mod = typeof lockSkipPosition === 'number' || MP.session.queue.currentdj.uid != MP.user.uid;
-			
+
 			if ( (mod && !MP.checkPerm('djqueue.skip.other')) || (!mod && !MP.checkPerm('djqueue.skip.self')) ){
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: (mod ? 'djQueueModSkip' : 'djQueueSkip')
 			};
-			
+
 			if (typeof lockSkipPosition === 'number'){
 				obj.data = {
 					lockSkipPosition: lockSkipPosition
 				};
 			}
-			
+
 			if (callback) obj.id = MP.addCallback(obj.type, callback);
-			
+
 			socket.sendJSON(obj);
 		},
 		toggleLastDj: function(callback){
@@ -3161,11 +3161,11 @@
 				callback("DjQueueCycleNotEnabled");
 				return false;
 			}
-			
+
 			var obj = {
 				type: 'toggleLastDj',
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if(!err){
 					MP.session.lastdj = data.newval;
@@ -3173,7 +3173,7 @@
 				}
 				callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueCycle: function(callback){
@@ -3184,9 +3184,9 @@
 			var obj = {
 				type: 'djQueueCycle'
 			};
-			
+
 			if (callback) obj.id = MP.addCallback(obj.type, callback);
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueLock: function(callback){
@@ -3194,13 +3194,13 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueLock'
 			};
-			
+
 			if (callback) obj.id = MP.addCallback(obj.type, callback);
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueModAdd: function(uid, position, callback) {
@@ -3212,7 +3212,7 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueModAdd',
 				data: {
@@ -3220,13 +3220,13 @@
 					position: position
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not add user to dj queue: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueModRemove: function(uid, callback) {
@@ -3234,20 +3234,20 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueModRemove',
 				data: {
 					uid: uid
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not remove user to dj queue: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueModMove: function(uid, position, callback) {
@@ -3255,7 +3255,7 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueModMove',
 				data: {
@@ -3263,13 +3263,13 @@
 					position: position - 1
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not move user in dj queue: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueModSwap: function(uid1, uid2, callback) {
@@ -3277,7 +3277,7 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueModSwap',
 				data: {
@@ -3285,13 +3285,13 @@
 					uid2: uid2
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not swap users in dj queue: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		djQueueLimit: function(limit, callback){
@@ -3299,20 +3299,20 @@
 				if (callback) callback('InsufficientPermissions');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'djQueueLimit',
 				data: {
 					limit: limmit
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not change the queue limit: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		privateMessage: function(uid, message, callback){
@@ -3324,12 +3324,12 @@
 				if (callback) callback('emptyMessage');
 				return;
 			}
-			
+
 			if (!MP.findUser(uid)){
 				if (callback) callback('userNotFound');
 				return;
 			}
-			
+
 			var obj = {
 				type: 'privateMessage',
 				data: {
@@ -3337,27 +3337,27 @@
 					message: message
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not send private message: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		getCurrentVideoTime: function(callback){
 			var obj = {
 				type: 'getCurrentSongTime'
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (data.success && MP.media.media){
 					MP.media.timeRemaining = Math.round(MP.media.media.duration - data.time);
 				}
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		togglePlaylistLoading: function(bool){
@@ -3366,34 +3366,34 @@
 		},
 		toggleVideoStream: function(bool){
 			var settings = JSON.parse(localStorage.settings);
-			
+
 			if (bool === null || bool === undefined || typeof bool != 'boolean'){
 				bool = !settings.player.stream;
 			}
-			
+
 			if (bool == settings.player.stream){
 				return bool;
 			}
-			
+
 	 		settings.player.stream = bool;
 	 		localStorage.setItem("settings", JSON.stringify(settings));
-			
+
 			var player = API.player.getPlayer();
-			
+
 			if (settings.player.stream){
 				var media = MP.media.media;
-				
+
 				if (media){
 					player.loadVideoById(media.cid);
 					if (settings.player.hd){
 						player.setPlaybackQuality('hd720');
 					}
-					
+
 					var curTime = Date.now();
 					MP.getCurrentVideoTime(function(err, data){
 						player.seekTo(((Date.now() - curTime) / 1000) + data.time);
 					});
-	
+
 				}
 			}else{
 				API.player.getPlayer().loadVideoById(null);
@@ -3403,21 +3403,21 @@
 		},
 		toggleHighDefinitionQuality: function(bool){
 			var settings = JSON.parse(localStorage.settings);
-			
+
 			if (bool === null || bool === undefined || typeof bool != 'boolean'){
 				bool = !settings.player.hd;
 			}
-			
+
 			if (bool == settings.player.hd){
 				return bool;
 			}
-			
+
 			settings.player.hd = bool;
 			localStorage.setItem("settings", JSON.stringify(settings));
-			
+
 			if (settings.player.stream) {
 				var player = API.player.getPlayer();
-				
+
 				if (settings.player.hd){
 					player.setPlaybackQuality('hd720');
 					$('.btn-hd').addClass('active');
@@ -3432,30 +3432,30 @@
 			var obj = {
 				type: 'vote'
 			};
-			
+
 			voteType = voteType.toLowerCase();
 			if (['like', 'dislike', 'grab'].indexOf(voteType) == -1) return false;
 			if (!MP.session.queue.currentdj || !MP.user || MP.session.queue.currentdj && MP.session.queue.currentdj.uid == MP.user.uid) return false;
-			
+
 			obj.data = {
 				voteType: voteType
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Cannot vote: ' + err); return;}
-				
+
 				var buttonClasses = {
 					like: 'btn-upvote',
 					dislike: 'btn-downvote',
 					grab: 'btn-grab'
 				};
-				
+
 				if (!data.success) return;
-				
+
 				var $button = $('.' + buttonClasses[voteType]);
-				
+
 				MP.models
-				
+
 				if (voteType == 'like'){
 					var $dislikeButton = $('.' + buttonClasses.dislike);
 					if ($dislikeButton.hasClass('active')) $dislikeButton.removeClass('active');
@@ -3463,23 +3463,23 @@
 					var $likeButton = $('.' + buttonClasses.like);
 					if ($likeButton.hasClass('active')) $likeButton.removeClass('active');
 				}
-				
+
 				if ($button.hasClass('active'))
 					$button.removeClass('active');
 				else
 					$button.addClass('active');
-				
+
 				if (callback) callback(err, data);
 				MP.applyModels();
 			});
-			
+
 			socket.sendJSON(obj);
-			
+
 			return true;
 		},
 		banUser: function(uid, duration, reason, callback){
 			if (!MP.checkPerm('room.banUser')) return;
-			
+
 			var obj = {
 				type: 'banUser',
 				data: {
@@ -3488,31 +3488,31 @@
 					reason: reason.substr(0,50)
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not ban user: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		unbanUser: function(uid, callback){
 			if (!MP.checkPerm('room.banUser')) return;
-			
+
 			var obj = {
 				type: 'unbanUser',
 				data: {
 					uid: uid
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Could not unban user: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		showBanModal: function(uid){
@@ -3544,9 +3544,9 @@
 						handler: function(e){
 							var duration = $('#BanUserModalDuration .ban-opt.active');
 							var uid = $('#BanUserModalUser').attr('data-uid');
-							
+
 							if (!duration.length) return;
-							
+
 							if (duration.is('input')){
 								duration = parseFloat(duration.val());
 								var remaining = null;
@@ -3555,20 +3555,20 @@
 									M: 60,
 									S: 1
 								};
-								
+
 								if (isNaN(duration)) return;
-								
+
 								var out = 'P' + Math.floor(duration) + 'DT';
 								remaining = (duration % 1) * 24 * 60 * 60;
-								
+
 								for (var i in durs){
 									var result = Math.floor(remaining / durs[i]);
-									
+
 									out += (result + i);
-									
+
 									remaining = remaining - (durs[i]*result);
 								}
-								
+
 								duration = out;
 							} else if (duration.is('div')){
 								duration = duration.attr('data-val');
@@ -3578,7 +3578,7 @@
 									alert(err);
 									return;
 								}
-								
+
 								$('.modal-bg').remove();
 							});
 						}
@@ -3586,12 +3586,12 @@
 				],
 				callback: function(){
 					var $banOpts = $('#BanUserModalDuration .ban-opt');
-					
+
 					$banOpts.on('click', function(){
 						if ($(this).hasClass('active')) return;
-						
+
 						$banOpts.removeClass('active');
-						
+
 						$(this).addClass('active');
 					});
 				}
@@ -3606,20 +3606,20 @@
 					<select id="RoleModalSelect">' +
 							(function(){
 								var out = '';
-								
+
 								for(var key in MP.session.roleOrder) {
 									var prop = MP.session.roleOrder[key];
-									
+
 									if (!MP.session.roles[prop]) continue;
 									if (MP.getRole(MP.user.role).canGrantRoles.indexOf(prop) == -1) continue;
-									
+
 									out += '<option ' + (MP.seenUsers[uid].role == prop ? 'selected' : '') +' value="' + prop + '">' + (MP.session.roles[prop].title || (prop.substr(0,1).toUpperCase() + prop.substr(1)) ) + '</option>';
 								}
-								
+
 								return out;
 							})()
-						
-						
+
+
 					+ '</select>\
 				</h3></div>',
 				dismissable: false,
@@ -3637,22 +3637,22 @@
 						handler: function(e){
 							var select = $('#RoleModalSelect').val();
 							var uid = $('#RoleModalUser').attr('data-uid');
-							
+
 							if (select == MP.seenUsers[uid].role){
 								$('.modal-bg').remove();
 								return;
 							}
-							
+
 							MP.setRole(uid, select,  function(err, data){
 								if (err){
 									alert(err);
 									return;
 								}
-								
+
 								$('.modal-bg').remove();
 							});
-							
-							
+
+
 						}
 					}
 				],
@@ -3666,17 +3666,17 @@
 		},
 		showEditPlaylistModal: function(pid,cid){
 			if (!MP.models.playlists[pid]) return;
-			
+
 			var playlist = MP.models.playlists[pid];
 			var title = playlist.name;
-			
+
 			if (cid){
 				var media = playlist.content.filter(function(a){return a.cid==cid;})[0];
-				
+
 				if (!media) return;
 				title = media.title;
 			}
-			
+
 			MP.makeCustomModal({
 				content: '<div>\
 					<h3>Edit '+(cid ? 'song' : 'playlist')+' name</h3> \
@@ -3696,9 +3696,9 @@
 						classes: 'modal-yes',
 						handler: function(e){
 							var newtitle = $('#edit-playlist').val();
-							
+
 							if (newtitle == title || newtitle.match(/^.{1,100}$/) == null) return;
-							
+
 							if (cid){
 								var obj = {
 									type: 'playlistEditMedia',
@@ -3708,7 +3708,7 @@
 										name: newtitle
 									}
 								};
-								
+
 								socket.sendJSON(obj);
 							}else{
 								MP.playlistRename(pid, newtitle, function(err, data){
@@ -3716,7 +3716,7 @@
 										alert('Could not rename playlist: ' + err);
 										return;
 									}
-									
+
 									$('.modal-bg').remove();
 								});
 							}
@@ -3733,37 +3733,37 @@
 					role: role
 				}
 			};
-			
+
 			if (!uid || !role) return;
-			
+
 			obj.id = MP.addCallback(obj.type, function(err, data){
 				if (err){ if (callback) callback(err); console.log('Cannot set role: ' + err); return;}
-				
+
 				if (callback) callback(err, data);
 			});
-			
+
 			socket.sendJSON(obj);
 		},
 		userAutocomplete: function(input){
 			var inputReg = new RegExp('^' + input, "i");
 			var out = [];
-			
+
 			for (var i in MP.userList.users){
 				var user = MP.seenUsers[ MP.userList.users[i] ];
 				if (inputReg.test(user.un)) out.push(user);
 			}
-			
+
 			out.sort(function (a, b) {
 		    	return (a['un'].localeCompare(b['un']));
 		    });
-			
+
 			return out;
 		},
 		emojiAutocomplete: function(input){
 			var inputReg = new RegExp('^' + input.replace('+', '\\+'), 'i');
 			var out = {};
 			var num = 0;
-			
+
 			for (var emoset in MP.emotes)
 				if(JSON.parse(localStorage.settings).roomSettings.emojis[emoset.toLowerCase()])
 					for (var i in MP.emotes[emoset]){
@@ -3780,23 +3780,23 @@
 		commandAutocomplete: function(input){
 			var inputReg = new RegExp('^' + input, 'i');
 			var out = [];
-			
+
 			//Check for commands
 			for (var cmd in MP.chatCommands){
 				if(inputReg.test(cmd)) out.push(cmd);
-				
+
 				//Check for aliases
 				for(var alias in MP.chatCommands[cmd].aliases){
 					alias = MP.chatCommands[cmd].aliases[alias];
 					if(inputReg.test(alias)) out.push(alias);
 				}
 			}
-			
+
 			return out;
 		},
 		showUserMenu: function(user, $this){
 			$('.user-menu').remove();
-			
+
 			if (!user) return;
 			var $appendElem = $('\
 				<div class="user-menu" style="visibility: hidden;">\
@@ -3823,16 +3823,16 @@
 				</div>\
 			');
 			$('body').append($appendElem);
-			
+
 			var Y = $this.offset().top - ($this.height()/2) - 44;
-			
+
 			if (Y < 0) Y = 0;
 			if ( (Y + $appendElem.height()) > $(window).height()) Y = $(window).height() - $appendElem.height();
-			
+
 			var X = $this.offset().left - $appendElem.width() - 53;
-			
+
 			if (X < 0) X = 0;
-			
+
 			var aY = 50;
 			$appendElem.css({
 				top: Y + 'px',
@@ -3846,9 +3846,9 @@
 				content: content in the modal,
 				callback: function(result (bool)),
 			*/
-			
+
 			var opts = inOpts || {};
-			
+
 			MP.makeCustomModal({
 				content: opts.content || '',
 				buttons: [
@@ -3878,9 +3878,9 @@
 				dismissable: bool,
 				onDismiss: function() (run on dismiss)
 			*/
-			
+
 			var opts = inOpts || {};
-			
+
 			MP.makeCustomModal({
 				content: opts.content || '',
 				buttons: [
@@ -3914,19 +3914,19 @@
 				onDismiss: function() (run on dismiss)
 				callback: function() (run after modal is made)
 			*/
-			
+
 			var opts = inOpts || {};
 			$('.modal').remove();
 			$(opts.appendTo || 'body').append('\
-				<div class="modal-bg"><div class="modal-container"><div class="modal" style="' + 
+				<div class="modal-bg"><div class="modal-container"><div class="modal" style="' +
 					(function(){
 						var out = '';
-						
+
 						out += API.util.makeStyleString(opts.style);
-						
+
 						return out;
 					})()
-				
+
 				+ '">\
 					<div class="modal-box">\
 						<div class="modal-text">' + (opts.content || '') + '</div>\
@@ -3937,24 +3937,24 @@
 						for (var j in opts.buttons){
 							out += ('<div class="modal-ctrl ' + opts.buttons[j].classes + '" style="width: ' + (100 / opts.buttons.length) + '%; ' + API.util.makeStyleString(opts.buttons[j].style) + '" id="CustomModalButton-'+j+'"><div class="mdi ' + opts.buttons[j].icon + '"></div></div>');
 						}
-						
+
 						return out;
-						
+
 					})()
 					+ '</div>\
 				</div></div></div>\
 			');
-			
+
 			for (var j in opts.buttons){
-				
+
 				$('#CustomModalButton-'+j).on('click', {bid: j}, function(e){
 					var len = $('.modal-bg').length;
-					
+
 					if (opts.buttons[ e.data.bid ].handler) opts.buttons[ e.data.bid ].handler(e);
-					
+
 					if ($('.modal-bg').length < len && opts.onDismiss) opts.onDismiss();
 				});
-				
+
 				if (opts.buttons[j].hoverStyle){
 					$('#CustomModalButton-'+j)
 						.on('mouseenter', {bid: j}, function(e){
@@ -3968,16 +3968,16 @@
 								else
 									obj[i] = '';
 							}
-							
+
 							$(this).css(obj);
 						});
 				}
 			}
-						
+
 			if ( typeof opts.dismissable === 'undefined' || opts.dismissable){
 				$('.modal-bg').on('click', function(e){
 					e.originalEvent.dismissable = true;
-					
+
 					if (!$(e.target).closest('.modal').length){
 						if (opts.onDismiss) opts.onDismiss();
 					}
@@ -3987,7 +3987,7 @@
 					e.originalEvent.dismissable = false;
 				});
 			}
-			
+
 			if ( opts.callback ) opts.callback();
 		},
 		copyObject: function(obj){
@@ -3995,7 +3995,7 @@
 			return $.extend(true, Array.isArray(obj) ? [] : {}, obj);
 		},
 	};
-	
+
 	// Exposing internal functions to the global scope
 	// TODO: Extend any data output so you can't change internal objects
 	window.API = {
@@ -4047,7 +4047,7 @@
 			unbanUser: MP.api.room.unbanUser,
 			whois: function(data, callback){
                 if(!MP.checkPerm('room.whois')) return false;
-                
+
 				var obj = {
 					type: 'whois',
 					data: (Number.isNaN(data) || !Number.isInteger(Number(data))) ?
@@ -4055,11 +4055,11 @@
 							:
 						{ uid: data }
 				}
-				
+
 				obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
-				
+
 				socket.sendJSON(obj);
-				
+
 				return true;
 			}
 		},
@@ -4083,7 +4083,7 @@
 			removeSong: MP.api.playlist.removeSong,
 			moveSong: MP.api.playlist.moveSong,
 			getContents: MP.api.playlist.getContents,
-			import: MP.api.playlist.playlistImport,        
+			import: MP.api.playlist.playlistImport,
 			shuffle: MP.api.playlist.shuffle,
 			export: function(pid, format, callback){
 				if(!(pid = pid || MP.session.viewedPl)) return false;
@@ -4128,9 +4128,9 @@
 					permission = user;
 					user = null;
 				}
-				
+
 				user = MP.api.room.getUser(user);
-				
+
 				return Boolean(user && MP.getRole(user.role).permissions.indexOf(permission) + 1);
 			},
 		},
@@ -4166,7 +4166,7 @@
 				vol = ~~(Math.max(0, Math.min(vol, 100)));
 				$('.volume-val').text(vol + "%");
 				$('.volume').val(vol+'');
-				
+
 				if (!MP.mediaPreview.isOpened()){
 					API.player.getPlayer().setVolume(vol);
 				}
@@ -4180,28 +4180,28 @@
 				} else {
 					voldiv.addClass('mdi-volume-medium');
 				}
-				
+
 				var settings = JSON.parse(localStorage.getItem("settings"));
 				var oldVol = settings.player.volume;
-				
+
 				if (oldVol != vol && vol > 0){
 					settings.player.mute = false;
 				}
-	
+
 				if(!settings.player.mute) settings.player.volume = vol;
 				localStorage.setItem("settings", JSON.stringify(settings));
 			},
 			setMute: function(mute){
 				mute = mute || false;
-				
+
 				var settings = JSON.parse(localStorage.getItem("settings"));
-				
+
 	/*			if (mute == settings.player.mute){
 					return;
 				}
 	*/			settings.player.mute = mute;
 				localStorage.setItem("settings", JSON.stringify(settings));
-				
+
 				if (mute){
 					$('.volume').val("0");
 					$('.btn-volume div').removeClass('mdi-volume-low').removeClass('mdi-volume-medium').removeClass('mdi-volume-high').addClass("mdi-volume-off");
@@ -4524,9 +4524,9 @@
 		},
 		test: function(){ console.log(MP.user.playlists); },
 	};
-	
+
 	var mentionSound = new Audio('../pads/lib/sound/mention.wav');
-	
+
 	var onLogin = function(err, data, callback){ // There's probably a better place for this...
 		if (data.error){
 			alert('There was an error signing up or logging in: ' + data.error);
@@ -4534,35 +4534,35 @@
 			if (callback) callback(err);
 			return;
 		}
-		
+
 		MP.user = data.user;
 		if (MP.userList.guests > 0 ) MP.userList.guests--;
-		
+
 		MP.seenUsers[MP.user.uid] = MP.user;
-					
+
 //		if (MP.user && data.users[i].uid == MP.user.uid) MP.user.role = data.users[i].role;
-		
+
 		if (MP.userList.users.indexOf(MP.user.uid) == -1){
 			MP.userList.users.push(MP.user.uid);
 		}
-		
+
 		MP.session.viewedPl = MP.user.activepl;
 		MP.session.lastdj = data.user.lastdj;
 
 		MP.applyModels();
-		
+
 		if (data.token){
 			MP.cookie.setCookie(MP.getTokenName(), data.token, 7);
-		} 
+		}
 	};
-	
+
 	var socketPort = config.serverPort;
-	
+
 	var socketDomain = config.serverHost || document.location.hostname;
 
 	var socket = null;
-	
-	
+
+
 	function initSocket(){
 		socket = new WebSocket((config.useSSL ? 'wss' : 'ws') + '://' + socketDomain + ':' + socketPort);
 
@@ -4570,11 +4570,11 @@
 		/*DEBUG*/
 		API.sendSocket = socket.sendJSON;
 		/*END DEBUG*/
-		
+
 		socket.onopen = function(e){
 			if (typeof MP.onConnect === 'function') MP.onConnect.call(window);
 		};
-		
+
 		socket.onerror = function(){
 			socket.close();
 		};
@@ -4584,11 +4584,11 @@
 			var data = null;
 			try{
 				data = JSON.parse( e.reason );
-				
+
 				if (!data.type){
 					throw new Error('No Type');
 				}
-				
+
 				switch (data.type){
 					case 'ConnectedElsewhere':
 						MP.makeAlertModal({
@@ -4627,22 +4627,22 @@
 				});*/
 			}
 		};
-		
+
 		socket.onmessage = function(e){
 			if ( e.data == 'h') return;
-			
+
 			//DEBUG
 			//console.log(e.data);
 			//END DEBUG
-			
+
 			var data = null;
-			
+
 			try {
 				data = JSON.parse(e.data);
 			} catch (e) {
 				return;
 			}
-			
+
 			// This should ONLY be incoming events.  No callbacks.
 			var settings = JSON.parse(window.localStorage.getItem("settings"));
 			switch(data.type){
@@ -4670,7 +4670,7 @@
 					}else{
 						console.log('Guest joined room');
 					}
-					
+
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.USER_LEFT:
@@ -4683,7 +4683,7 @@
 								MP.addMessage({user:data.data.user, msg:'left'}, 'log');
 							}
 						}
-						
+
 						console.log( 'User left: ' + data.data.user.uid + ': ' + data.data.user.un);
 					} else {
 						console.log('Guest left room');
@@ -4702,9 +4702,9 @@
 					MP.session.snooze = false;
 					var playerSettings = settings.player;
 					var player = API.player.getPlayer();
-					
+
 					player.unMute();
-					
+
 					if (data.data.next.song && playerSettings.stream){
 						player.loadVideoById(data.data.next.song.cid);
 						if (settings.player.hd){
@@ -4714,7 +4714,7 @@
 					}else{
 						player.loadVideoById(null);
 					}
-					
+
 					//Changing the DJ's badge
 					if((MP.session.queue.currentdj || {}).uid != data.data.next.uid){
 						if(MP.session.queue.currentdj) {
@@ -4729,7 +4729,7 @@
 							$('.bdg-icon.bdg-icon-dj').css('color', (MP.getRole(MP.api.room.getUser(data.data.next.uid).role).style || { color: 'white', }).color);
 						}
 					}
-					
+
 					//Just played chat message
 					if(settings.roomSettings.justplayed && data.data.last.song) MP.addMessage('<span data-uid="'+ MP.session.queue.currentdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(MP.session.queue.currentdj.role) + '">' + MP.session.queue.currentdj.un + '</span>just played <b>' + data.data.last.song.title + '</b>', 'system');
 
@@ -4739,30 +4739,30 @@
 					MP.media.media = data.data.next.song;
 					MP.media.start = data.data.next.start;
 					if(data.data.last.uid == MP.api.room.getUser().uid) MP.session.lastdj = false;
-					
+
 					if(data.data.next.song){
 						MP.media.timeRemaining = data.data.next.song.duration;
 						MP.startTimeRemaining();
 					}else{
 						MP.media.timeRemaining = 0;
 					}
-					
+
 					MP.addCurrentToHistory();
-					
+
 					MP.session.queue.users.shift();
 					if (data.data.next.uid && MP.user && data.data.next.uid == MP.user.uid){
 						var song = MP.user.playlists[ MP.user.activepl ].content.splice(0, 1)[0];
 						MP.user.playlists[ MP.user.activepl ].content.push(song);
 						//MP.api.util.changefavicon('/pads/lib/img/icon_dj.png');
 					}// else MP.api.util.changefavicon('/pads/lib/img/icon.png');
-					
+
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.DJ_QUEUE_LOCK:
 					if(!data.data.error){
 						MP.session.queue.lock = data.data.state;
 						MP.applyModels();
-						
+
 						var user = MP.findUser(data.data.mid);
 						MP.addMessage('The DJ queue has been ' + (data.data.state ? 'locked' : 'unlocked') + ' by '+(user ? '<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>' : 'Unknown'), 'system');
 					}
@@ -4772,7 +4772,7 @@
 						$('.btn-cycle div').removeClass('mdi-sync').removeClass('mdi-sync-disabled').addClass(data.data.state ? 'mdi-sync' : 'mdi-sync-disabled');
 						MP.session.queue.cycle = data.data.state;
 						MP.applyModels();
-						
+
 						var user = MP.findUser(data.data.mid);
 						MP.addMessage('DJ cycling has been ' + (data.data.state ? 'enabled' : 'disabled') + ' by '+(user ? '<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>' : 'Unknown'), 'system');
 					}
@@ -4788,7 +4788,7 @@
 					break;
 				case API.DATA.EVENTS.VOTE_UPDATE:
 					var vote = data.data;
-					
+
 					MP.session.queue.votes = vote.votes;
 					if (MP.historyList.historyInitialized) {
 						if (MP.historyList.history[0] && MP.session.queue.currentsong == MP.historyList.history[0].song) {
@@ -4799,10 +4799,10 @@
 					break;
 				case API.DATA.EVENTS.USER_UPDATE:
 					if (MP.user && data.data.user.uid == MP.user.uid) $.extend(MP.user, data.data.user);
-					
+
 					//Update seen users list
 					if(MP.seenUsers[data.data.user.uid]) $.extend(MP.seenUsers[data.data.user.uid], data.data.user);
-					
+
 					//Update staff list
 					if (MP.session.roomStaff.length){
 						for (var i = 0; i < MP.session.roomStaff.length; i++){
@@ -4816,13 +4816,13 @@
 							MP.session.roomStaff.push(data.data.user);
 						}
 					}
-					
+
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.DELETE_CHAT:
 					// TODO delete messages by a specific user: $('span[data-uid="data.data.uid"]').closest('.cm').remove();
 					// TODO clear chat: $('.cm.message').remove();
-					
+
 					if (MP.checkPerm('chat.delete')) {
 						$('#cm-' + data.data.cid).fadeTo(250, 0.3).addClass('deleted');
 					}
@@ -4833,29 +4833,29 @@
 				case API.DATA.EVENTS.USER_BANNED:
 					var user = MP.findUser(data.data.uid) || {un: 'Unknown'};
 					var banner = MP.findUser(data.data.bannedBy);
-					
+
 					user.banned = true;
-					
+
 					if (MP.session.bannedUsers.length && MP.findUser(data.data.uid)){
-						MP.session.bannedUsers.push(user);	
+						MP.session.bannedUsers.push(user);
 					} else  {
 						// Reset object since it's either already empty, or now missing a user
 						MP.session.bannedUsers = [];
 					}
-					
+
 					MP.applyModels();
-					
+
 					if (banner){
-						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was banned by ' + 
+						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was banned by ' +
 							'<span data-uid="'+ banner.uid +'" class="uname" style="' + MP.makeUsernameStyle(banner.role) + '">' + banner.un + '</span>', 'system');
 					}
 					break;
 				case API.DATA.EVENTS.USER_UNBANNED:
 					var user = MP.findUser(data.data.uid) || {un: 'Unknown'};
 					var banner = MP.findUser(data.data.unbannedBy);
-					
+
 					user.banned = false;
-					
+
 					if (MP.session.bannedUsers.length && MP.findUser(data.data.uid)){
 						for (var i = 0; i < MP.session.bannedUsers.length; i++){
 							if (MP.session.bannedUsers[i].uid == user.uid){
@@ -4867,9 +4867,9 @@
 						// Reset object since it's either already empty, or now missing a user
 						MP.session.bannedUsers = [];
 					}
-					
+
 					MP.applyModels();
-					
+
 					if (banner){
 						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was unbanned by <span data-uid="'+ banner.uid +'" class="uname" style="' + MP.makeUsernameStyle(banner.role) + '">' + banner.un + '</span>', 'system');
 					}
@@ -4878,140 +4878,140 @@
 					var setter = MP.findUser(data.data.mid);
 					var settee = MP.findUser(data.data.uid);
 					var role = MP.getRole(data.data.role);
-					
+
 					MP.addMessage('<span data-uid="'+ setter.uid +'" class="uname" style="' + MP.makeUsernameStyle(setter.role) + '">' + setter.un + '</span>changed <span data-uid="'+ settee.uid +'" class="uname" style="' + MP.makeUsernameStyle(settee.role) + '">' + settee.un + '</span>\'s role', 'system');
 					break;
 				case API.DATA.EVENTS.DJ_QUEUE_REMOVE:
 					if(!data.data.mid || !data.data.uid) return;
 					var remover = MP.findUser(data.data.mid);
 					var removee = MP.findUser(data.data.uid);
-					
+
 					MP.addMessage('<span data-uid="' + remover.uid + '" class="uname" style="' + MP.makeUsernameStyle(remover.role) + '">' + remover.un + '</span>removed <span data-uid="' + removee.uid + '" class="uname" style="' + MP.makeUsernameStyle(removee.role) + '">' + removee.un + '</span> from the DJ queue', 'system');
 					break;
 				case API.DATA.EVENTS.DJ_QUEUE_MOD_SWAP:
 					//STAHP EDITING MY CODE
 					MP.session.queue.users = data.data.queueList;
-					
+
 					var mod = MP.findUser(data.data.mid);
 					var u1 = MP.findUser(data.data.uid1);
 					var u2 = MP.findUser(data.data.uid2);
-					
+
 					MP.addMessage('<span data-uid="' + mod.uid + '" class="uname" style="' + MP.makeUsernameStyle(mod.role) + '">' + mod.un + '</span>swapped <span data-uid="' + u1.uid + '" class="uname" style="' + MP.makeUsernameStyle(u1.role) + '">' + u1.un + '</span> (position ' + (data.data.pos1 + 1) + ') with <span data-uid="' + u2.uid + '" class="uname" style="' + MP.makeUsernameStyle(u2.role) + '">' + u2.un + '</span> (position ' + (data.data.pos2 + 1) + ')', 'system');
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.DJ_QUEUE_MOD_MOVE:
 					MP.session.queue.users = data.data.queueList;
-					
+
 					var mod = MP.findUser(data.data.mid);
 					var user = MP.findUser(data.data.uid);
-					
+
 					MP.addMessage('<span data-uid="' + mod.uid + '" class="uname" style="' + MP.makeUsernameStyle(mod.role) + '">' + mod.un + '</span>moved <span data-uid="' + user.uid + '" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span> from ' + (data.data.from + 1) + ' to ' + (data.data.to + 1), 'system');
-					
+
 					MP.applyModels();
 					break;
-				
+
 				case API.DATA.EVENTS.DJ_QUEUE_ADD:
 					var mod = MP.findUser(data.data.mid);
 					var user = MP.findUser(data.data.uid);
 					var position = (typeof data.data.position == 'number' ? data.data.position + 1 : null);
-					
+
 					MP.addMessage('<span data-uid="' + mod.uid + '" class="uname" style="' + MP.makeUsernameStyle(mod.role) + '">' + mod.un + '</span>added <span data-uid="' + user.uid + '" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span> to the DJ queue' + (position ? ' at position ' + position : ''), 'system');
 					break;
-				
+
 				case API.DATA.EVENTS.DJ_QUEUE_LIMIT:
 					//TODO save new limit in session attributes
 					var mod = MP.findUser(data.data.mid);
-					
+
 					MP.addMessage('<span data-uid="' + mod.uid + '" class="uname" style="' + MP.makeUsernameStyle(mod.role) + '">' + mod.un + '</span>has changed the queue limit to ' + data.data.limit, 'system');
 					break;
-				
+
 				case API.DATA.EVENTS.PRIVATE_MESSAGE:
 					MP.session.lastPMUid = data.data.uid;
 					var user = MP.findUser(data.data.uid);
 					API.chat.log('<br>' + MP.escape(data.data.message), '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message received from </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
-					
+
 					if (!MP.session.hasfocus){
 						document.title = '! ' + document.title;
 					}
-					
+
 					if (settings && settings.roomSettings && settings.roomSettings.soundMention){
 						mentionSound.play();
 					}
 					break;
-				
+
 				case API.DATA.EVENTS.SERVER_RESPONSE:
 					if (data.id) MP.callCallback(data);
 					break;
 			}
-			
+
 			MP.callListeners(data);
 		};
 	}
 	initSocket();
-	
+
 	var getAutocompleteIndex = function(ind){
 		var $elem = $('#chat-back > .autocomplete li.active');
-		
+
 		if (!$elem.length) return -1;
-		
+
 		return $elem.index();
 	};
-	
+
 	var changeAutocompleteIndex = function(ind){
 		var len = $('#chat-back > .autocomplete li').length;
-		
+
 		if (!len) return;
-		
+
 		if (ind < 0) ind = 0;
 		if (ind > len-1) ind = len-1;
-		
+
 		$('#chat-back > .autocomplete li.active').removeClass('active');
 		$('#chat-back > .autocomplete li:eq(' + ind + ')').addClass('active');
 	};
-	
+
 	var acceptAutocomplete = function(){
 		var mentionVal = $('#chat-back > .autocomplete li.active').text().replace(/\t/g, '');
 		var $target = $('#msg-in');
 		var pos = $target.caret();
 		var val = $target.val();
-		
+
 		//Check if completing emoji or username
 		if($('#chat-back > .autocomplete.ac-user').length != 0){
-			
+
 			var parts = [ val.slice(0, val.slice(0, pos).lastIndexOf('@')), val.slice(val.slice(0, pos).lastIndexOf('@'), pos), val.slice(pos) ];
 			parts[1] = "@" + mentionVal + (parts[2][0] == ' ' ? '' : ' ');
 			$target.val(parts.join(''));
 			$target.trigger('input');
-			
+
 			return parts[0].length + parts[1].length;
-			
+
 		} else if($('#chat-back > .autocomplete.ac-emote').length != 0){
-			
+
 			var parts = [ val.slice(0, val.slice(0, pos).lastIndexOf(':')), val.slice(val.slice(0, pos).lastIndexOf(':'), pos), val.slice(pos) ];
 			parts[1] = ':' + mentionVal + ':' + (parts[2][0] == ' ' ? '' : ' ');
 			$target.val(parts.join(''));
 			$target.trigger('input');
-			
+
 			return parts[0].length + parts[1].length;
-			
+
 		} else if($('#chat-back > .autocomplete.ac-cmd').length != 0){
-			
+
 			$target.val(mentionVal + ' ');
 			$target.trigger('input');
-			
+
 			return mentionVal.length + 1;
 		}
 	};
-	
+
 	// Chat text box
 	$('#msg-in')
 		/*.on('submit', function(e){
 			e.preventDefault();
 			var $input = $(this).find('input');
 			var $chat = $('#chat');
-			
+
 			if (!$input.val()) return;
-			
+
 			MP.session.lastMessage = $input.val();
 			MP.sendMessage($input.val());
 			$chat.scrollTop( $chat[0].scrollHeight );
@@ -5022,16 +5022,16 @@
 			var $input = $(this).find('input');
 			var autocomplete = $('#chat-back > .autocomplete');
 			var isAutocompleteUp = autocomplete.length;
-			
+
 			if (e.which == 9) e.preventDefault();
-			
+
 			if (e.which == 38) { // Up key
 				if (isAutocompleteUp){
 					e.preventDefault();
 					changeAutocompleteIndex( getAutocompleteIndex() - 1 );
 				}else{
 					$input.val(MP.session.lastMessage);
-					
+
 					// .val is apparently not immediate...?
 					setTimeout(function(){$input.caret(-1);}, 1);
 				}
@@ -5043,18 +5043,18 @@
 			}else if (e.which == 9 || e.which == 13){ // Tab key / Enter key
 				if (isAutocompleteUp){
 					e.preventDefault();
-					
+
 					var newPos = acceptAutocomplete();
-					
+
 					$('#msg-in').caret(newPos + 1);
 				}else{
 					if (e.which == 13){
 						e.preventDefault();
 						var $input = $(this);
 						var $chat = $('#chat');
-						
+
 						if (!$input.val()) return;
-						
+
 						MP.session.lastMessage = $input.val();
 						MP.sendMessage($input.val());
 						$chat.scrollTop( $chat[0].scrollHeight );
@@ -5067,33 +5067,33 @@
 			var $target = $(e.target);
 			var pos = $target.caret();
 			var val = $target.val();
-			
+
 			if (pos == 3 && MP.session.lastPMUid && /^\/r\s/i.test(val)){
 				var user = MP.findUser(MP.session.lastPMUid);
 				if (user){
 					$('#msg-in').val('/pm ' + user.un + ' ');
 				}
 			}
-			
+
 			$('#chat-back > .autocomplete').remove();
 
 			if (pos != 0){
 				var settings = JSON.parse(window.localStorage.getItem("settings"));
-                
+
 				var un = (val.substr(0, pos).match(/(^|.*\s)@([a-z0-9_-]*)$/i) || []).slice(2);
 				var doWeAutocompleteUsername = un.length == 1 && un[0];
-				
+
 				var em = (val.substr(0, pos).match(/(^|.*\s):([+a-z0-9_-]*)$/i) || []).slice(2);
 				var doWeAutocompleteEmotes = em.length == 1 && em[0] && settings.roomSettings.enableEmojis;
-				
+
 				var cm = val.match(/^\/[a-z]*$/i);
 				var doWeAutocompleteCommand = Boolean(cm);
-				
+
 				var list = [];
-				
+
 				if(doWeAutocompleteUsername){
 					list = MP.userAutocomplete(un);
-					
+
 					if(list.length == 0) return;
 					$('#chat-back').append('<div class="autocomplete ac-user">\
 						<ul>'+
@@ -5105,19 +5105,19 @@
 									out += '<li ' + (first ? 'class="active"' : '') + ' style="' + MP.makeUsernameStyle(list[i].role) + '">' + MP.makeBadgeStyle({ user: list[i] }) + list[i].un + '</li>';
 									first = false;
 								}
-								
+
 								return out;
 							})()
 						+'</ul>\
 					</div>');
 				} else if (doWeAutocompleteEmotes && MP.session.allowemojis){
 					em = em[0];
-					
+
 					//Check for ASCII emotes
 					for(var e in MP.emotes_ascii){
 						if(e.slice(1) == em) return;
 					}
-					
+
 					//Show autocomplete menu
 					list = MP.emojiAutocomplete(em);
 					if(list.length == 0) return;
@@ -5126,12 +5126,12 @@
 							(function(){
 								var first = true;
 								var out = '';
-								
+
 								for (var i in list){
 									out += '<li ' + (first ? 'class="active"' : '') + '><img align="absmiddle" alt=":' + i + ':" class="emoji" src="' + list[i] + '" title=":' + i + ':" />' + i + '</li>';
 									first = false;
 								}
-								
+
 								return out;
 							})()
 						+'</ul>\
@@ -5145,12 +5145,12 @@
 							(function(){
 								var first = true;
 								var out = '';
-								
+
 								for (var i in list){
 									out += '<li ' + (first ? 'class="active"' : '') + '>/' + list[i] + '</li>';
 									first = false;
 								}
-								
+
 								return out;
 							})()
 						+'</ul>\
@@ -5159,44 +5159,44 @@
 				/*var atPos = val.lastIndexOf('@', pos-1);
 				var spacePos = val.lastIndexOf(' ', pos-1);
 				var nextSpacePos = val.indexOf(' ', atPos);
-				
+
 				if (atPos == -1 || spacePos > atPos || pos == atPos+1 || (atPos != 0 && val.charAt(atPos-1) != ' ')) return;
-				
+
 				var stringVal = val.substr(atPos+1, (nextSpacePos > -1 ? nextSpacePos - atPos-1 : undefined));
-				
+
 				var list = MP.userAutocomplete(stringVal);
-				
+
 				if (!list.length) return;
-				
+
 				$('#chat-back').append('<div class="mention-autocomplete">\
 					<ul>'+
 						(function(){
 							var first = true;
 							var out = '';
-							
+
 							for (var i in list){
 								out += '<li ' + (first ? 'class="active"' : '') + ' style="' + MP.makeUsernameStyle(list[i].role) + '">' + MP.makeBadgeStyle(list[i].badge.top, list[i].badge.bottom, MP.getRole(list[i].role).style.color) + list[i].un + '</li>';
 								first = false;
 							}
-							
+
 							return out;
 						})()
 					+'</ul>\
 				</div>');*/
 			}
 		});
-	
+
 	$(document)
 		// Changing and accepting mentions
 		.on('mouseover', '.autocomplete li', function(){
 			var $ul = $(this).parents('ul');
-			
+
 			$ul.find('li.active').removeClass('active');
 			$(this).addClass('active');
 		})
 		.on('click', '.autocomplete li.active', function(){
 			var newPos = acceptAutocomplete();
-			
+
 			$('#msg-in')
 				.focus()
 				.caret(newPos + 1);
@@ -5204,30 +5204,30 @@
 		// Changing viewed playlist
 		.on('click', '.lib-fdr', function(){
 			var pid = $(this).attr('data-pid');
-			
+
 			if (MP.user.playlists[pid]){
 				MP.session.viewedPl = pid;
 				MP.applyModels();
-				
+
 				if (MP.user.playlists[pid].num != MP.user.playlists[pid].content.length){
 					MP.getPlaylistContents(pid);
 				}
 			}
 		})
-		
+
 		// Changing active playlist
 		.on('dblclick taphold', '.lib-fdr', function(){
 			var pid = $(this).attr('data-pid');
-			
+
 			if (MP.user.playlists[pid]){
 				MP.playlistActivate(pid);
 			}
 		})
-		
+
 		// Deleting playlist
 		.on('click', '.btn-delete-playlist', function(e){
 			if (!MP.session.viewedPl) return;
-			
+
 			MP.makeConfirmModal({
 				content: 'Are you sure you want to delete the playlist ' + $('<b></b>').text(MP.api.playlist.get(MP.session.viewedPl).name).prop('outerHTML') + '?',
 				dismissable: true,
@@ -5237,61 +5237,61 @@
 				}
 			});
 		})
-		
+
 		// Removing song
 		.on('click', '.btn-remove-song', function(){
 			var $base = $(this).parents('.lib-sng');
-			
+
 			MP.playlistRemove(MP.session.viewedPl, $base.attr('data-cid'));
 		})
-		
+
 		// Move song to bottom
 		.on('click', '.btn-song-bot', function(){
 			var $base = $(this).parents('.lib-sng');
-			
+
 			MP.playlistMove(MP.session.viewedPl, $base.attr('data-cid'), MP.user.playlists[ MP.session.viewedPl ].content.length);
 		})
 		// On arrow_up right_click move to bottom
 		.on('contextmenu taphold', '.lib-sng:not(:first-child) .btn-song-top', function(){
 			var $base = $(this).parents('.lib-sng');
-			
+
 			MP.playlistMove(MP.session.viewedPl, $base.attr('data-cid'), MP.user.playlists[ MP.session.viewedPl ].content.length);
 			return false;
 		})
-		
+
 		//Move song to top
 		.on('click', '.btn-song-top', function(){
 			var $base = $(this).parents('.lib-sng');
-			
+
 			MP.playlistMove(MP.session.viewedPl, $base.attr('data-cid'), 0);
 		})
 		// On arrow_down right_click move to top
 		.on('contextmenu taphold', '.lib-sng:first-child .btn-song-bot', function(){
 			var $base = $(this).parents('.lib-sng');
-			
+
 			MP.playlistMove(MP.session.viewedPl, $base.attr('data-cid'), 0);
 			return false;
 		})
-		
+
 		//Edit playlist name
 		.on('click', '.btn-rename-playlist', function(){
 			MP.showEditPlaylistModal(MP.session.viewedPl);
 		})
-		
+
 		//Edit song name
 		.on('click', '.btn-rename-song', function(){
 			var $base = $(this).parents('.lib-sng');
-			
+
 			MP.showEditPlaylistModal(MP.session.viewedPl, $base.attr('data-cid'));
 		})
-		
+
 		// Open video to preview
 		.on('dblclick', '.lib-sng,.yt-sng,.hist-sng', function(){
 			var cid = $(this).attr('data-cid');
-			
+
 			MP.mediaPreview.open(cid);
 		})
-		
+
 		// Closing media preview
 		.on('click', '.logo-menu .modal-bg, .btn-logo', function(e){
 			if (!$(e.target).closest('.modal').length){
@@ -5302,16 +5302,16 @@
 		// Closing modals
 		.on('click', '.modal-bg',function(e, dismissable){
 			e.originalEvent.dismissable = (typeof e.originalEvent.dismissable !== 'undefined' ? e.originalEvent.dismissable : true);
-			
+
 			if (!$(e.target).closest('.modal').length && e.originalEvent.dismissable)
 				$(this).remove();
 		})
 		// ESC key logo menu shortcut
 		.on('keydown', function(e){
 			var scope = angular.element($('body')).scope();
-			
+
 			if(!scope.roomSettings.shortcuts) return;
-			
+
 			var keyMenuBinding = {
 				76: 1,	// L -> Lobby
 				83: 2,	// S -> Settings
@@ -5334,7 +5334,7 @@
 				else {
 					vol_val = currentVol + 2;
 				}
-				
+
 				API.player.setVolume(vol_val);
 			} else if (e.which == 109 || e.which == 189){ // - -> Decrease Volume
 				var currentVol = API.player.getPlayer().getVolume();
@@ -5345,11 +5345,11 @@
 				else {
 					vol_val = currentVol - 2;
 				}
-				
+
 				API.player.setVolume(vol_val);
 			} else if (e.which == 77) { // M -> Mute/Unmute
 				var settings = JSON.parse(localStorage.getItem("settings"));
-		
+
 				API.player.setMute(!settings.player.mute);
 			} else if (keyMenuBinding[e.which]) {
 				if ($('.logo-menu').css('display') == 'none') {
@@ -5362,8 +5362,8 @@
 				scope.$apply();
 			}
 		})
-		
-		
+
+
 		// Onclick username mention
 		.on('contextmenu taphold','.cm .uname,.people-user .uname',function(){
 			var uname = $(this).text();
@@ -5373,8 +5373,8 @@
 			$('#msg-in').focus();
 			return false;
 		})
-		
-		
+
+
 		//OnRightClick or TapHold show user menu
 		.on('click','.cm .uname', function(){
 			var user = MP.seenUsers[parseInt($(this).attr('data-uid'))];
@@ -5410,8 +5410,8 @@
 			$('.btn-chat').click();
 			$('#msg-in').focus();
 		})
-		
-		
+
+
 		//Hide user menu on outside click
 		.on('click contextmenu taphold', function() {
 			$('.user-menu').remove();
@@ -5422,7 +5422,7 @@
 		.on('click','.user-menu .modal-ctrl', function() {
     		$('.user-menu').remove();
 		})
-		
+
 		//Onclick delete message
 		.on('click','.cm.message .msg-del-btn',function(){
 			var cid = $(this).parent().attr('id').match(/\d{1,}/);
@@ -5431,13 +5431,13 @@
 			}
 			MP.deleteChat(parseInt(cid[0]));
 		});
-	
+
 	var addPlaylistButton = function(e){
 		e.preventDefault();
 		var $input = $('#lib-add');
-		
+
 		if (!$input.val()) return;
-		
+
 		MP.playlistCreate($input.val(), function(err, data){
 			if (err){
                 MP.makeAlertModal({
@@ -5445,22 +5445,22 @@
                 });
                 return;
             }
-			
+
 			$input.val('');
 		});
 		return true;
 	};
-	
+
 	// Adding playlist by clicking the add button
 	$('.btn-add-playlist').on('click', addPlaylistButton);
-	
+
 	// Adding playlist by hitting the enter key while the input is focused
 	$('#lib-add').on('keydown', function(e){
 		if (e.which == 13) {
 			addPlaylistButton(e);
 		}
 	});
-	
+
 	//Youtube search
 	$('#lib-search')
 		// Hide search when the text input goes empty
@@ -5471,7 +5471,7 @@
 			// 	MP.applyModels();
 			// }
 		})
-		
+
 		// Show search again if the text box isn't empty
 		.on('click', function(e){
 			if ( $(this).val() != '' && MP.session.searchResults ){
@@ -5479,26 +5479,26 @@
 				MP.applyModels();
 			}
 		})
-		
+
 		// Execute search when the enter key is pressed
 		.on('keydown', function(e){
 			if (e.which == 13 && $(this).val() != '') {
 				//MP.session.songSearch = true;
-				
+
 				/*if ( $(this).val() == '' ){
 					//MP.session.songSearch = false;
 					MP.session.searchResults = null;
 					MP.applyModels();
 					return;
 				}*/
-				
+
 				MP.youtubeSearch($(this).val(), function(err, res){
 					MP.session.searchResults = res;
 					MP.session.viewedPl = null;
 					MP.applyModels();
-					
+
 					$('.lib-search-list').scrollTop(0);
-	
+
 					$('.yt-sng')
 						.draggable({
 							appendTo: '#app',
@@ -5518,7 +5518,7 @@
 								drop: function(e, ui){
 									var pid = $(this).attr('data-pid');
 									var cid = $(ui.draggable).attr('data-cid');
-									
+
 									MP.playlistAdd(pid, cid, 'top', function(err, data){
 										if(err == "SongAlreadyInPlaylist"){
 											MP.makeConfirmModal({
@@ -5536,7 +5536,7 @@
 							setTimeout(function() { $('.lib-fdr').droppable('destroy'); }, 100);
 						});
 				});
-				
+
 			}
 		});
 	//Playlist import
@@ -5570,7 +5570,7 @@
 						var ytPl = document.getElementById("yt-pl-import").value;
 						var mpFile = document.getElementById("mp-pl-import").value;
 						var plugFile = document.getElementById("plug-pl-import").value;
-						
+
 						if ((ytPl && (mpFile || plugFile)) || (mpFile && (ytPl || plugFile)) || (plugFile && (mpFile || ytPl))) {
 							MP.makeAlertModal({
 								content: 'You have specified more than 1 different import type. Please ensure that you only attempt to import 1 playlist type at a time.',
@@ -5580,7 +5580,7 @@
 							if (ytPl) {
 								var el = $('#yt-pl-import');
 								var pid = (el.val().match(/list=[a-z0-9_-]+(?=&|$)/i) || el.val().match(/^([a-z0-9_-]+)$/i) || [])[0];
-								
+
 								if(pid && pid != ''){
 									pid = pid.replace(/^list=/, '');
 									MP.makeCustomModal({
@@ -5751,7 +5751,7 @@
 									MP.makeAlertModal({
 										content: 'The browser you are using does not support the File APIs. Your import has been cancelled.',
 									});
-								}	
+								}
 							}
 						}
 					},
@@ -5760,8 +5760,8 @@
 			],
 			dismissable: true
 		});
-		
-		
+
+
 		// Import YouTube Playlist
 		//var el = $('#lib-import');
 		//var pid = (el.val().match(/list=[a-z0-9_-]+(?=&|$)/i) || el.val().match(/^([a-z0-9_-]+)$/i) || [])[0];
@@ -5797,12 +5797,12 @@
 		//	});
 		//}
 	});
-	
+
 	//Join DJ queue
 	$('.btn-join').on('click', function(){
 		if (!MP.isLoggedIn()) return;
 		if (!MP.session.queue.users) return;
-				
+
 		var pos = MP.session.queue.users.indexOf(MP.user.uid);
 		var cb = function(err){
 			if (err){
@@ -5812,7 +5812,7 @@
 				})
 			}
 		};
-		
+
 		if ( MP.session.queue.users.indexOf(MP.user.uid) > -1 || (MP.session.queue.currentdj && MP.session.queue.currentdj.uid == MP.user.uid) ) {
 			MP.makeConfirmModal({
 				content: 'Are you sure you want to leave the DJ queue?',
@@ -5826,32 +5826,32 @@
 			MP.djQueueJoin(cb);
 		}
 	});
-	
+
 	//Skip song
 	$('.btn-skip').on('click', function(){
 		MP.djQueueSkip();
 	});
-	
+
 	//Set last play before leave
 	$('.btn-lastdj').on('click', function(){
 		MP.toggleLastDj();
 	});
-	
+
 	//Toggle cycle
 	$('.btn-cycle').on('click', function(){
-		MP.djQueueCycle();	
+		MP.djQueueCycle();
 	});
-	
+
 	//Toggle lock
 	$('.btn-lock').on('click', function(){
-		MP.djQueueLock();	
+		MP.djQueueLock();
 	});
-	
+
 	// Remove active class on advance
 	MP.on('advance', function(){
 		$('.btn-grab.active, .btn-upvote.active, .btn-downvote.active').removeClass('active');
 	});
-	
+
 	// Grab button
 	$('.btn-grab').on('click', function(e){
 		if ($(e.target).closest('.popup').length) return;
@@ -5876,12 +5876,12 @@
 			MP.vote('grab');
 		}
 	});
-	
+
 	$('.playlists-grab').on('click', function(e){
 		var id = (MP.media.media ? MP.media.media.cid : null);
-		
+
 		if (id == null) return;
-		
+
 		if(!$(e.target).hasClass('pl-grab-create')){
 			var pid = e.target.attributes['data-pid'].textContent;
 			if (MP.user && pid && id !== false) {
@@ -5895,7 +5895,7 @@
 						});
 					}
 				});
-				
+
 				MP.vote('grab');
 			}
 		} else {
@@ -5918,7 +5918,7 @@
 						classes: 'modal-yes',
 						handler: function(e){
 							var name = $('#new-playlist').val();
-							
+
 							MP.playlistCreate(name, function(err, data){
 								if (err) return; //add a alert or another modal here
 
@@ -5933,32 +5933,32 @@
 
 		}
 	});
-	
+
 	// Snooze button
 	$('.btn-snooze').on('click', function(){
 		API.player.snooze();
 	});
-	
+
 	// Like button
 	$('.btn-upvote').on('click', function(){
 		MP.vote('like');
 	});
-	
+
 	// Dislike button
 	$('.btn-downvote').on('click', function(){
 		MP.vote('dislike');
 	});
-	
+
 	// Stream toggle button
 	$('.btn-stream').on('click',function(){
 		MP.toggleVideoStream();
 	});
-	
+
 	//Toggle HD
 	$('.btn-hd').on('click',function(){
 		MP.toggleHighDefinitionQuality();
 	});
-	
+
 	//Reset player position
 	$('.playback .navbar .draggable').on('contextmenu', function(e){
 	    var scope = angular.element($('body')).scope();
@@ -5967,37 +5967,37 @@
   		$('.playback').attr('style', '');
 	    return false;
 	});
-	
+
 	// Clickig various places to show login
 	$('#msg-in, .labels .uname, .btn-login, .btn-join').on('click', function(){
 		if (!MP.isLoggedIn()) MP.api.showLogin();
 	});
-	
+
 	$('.lib-sng-search .nav').on('click', function(e){
 		if ($(this).find('div').html() == 'search') {
 			$('#lib-search').trigger({
 				type: 'keydown',
 				which: 13
 			});
-		}	
+		}
 	});
-	
+
 	// Used for closing the login view
 	$('#creds-back').on('click', function(e){
 		if ( !$(e.target).closest('#creds').length )
 			MP.api.hideLogin();
 	})
-	
+
 	// Login form
 	$('#login')
 		.on('submit', function(e){
 			e.preventDefault();
-			
+
 			var fields = {
 				email: $('#l-email'),
 				pw: $('#l-password')
 			};
-			
+
 			for (var i in fields){
 				if (fields[i].val() == ''){
 					alert('No fields can be left blank');
@@ -6006,13 +6006,13 @@
 			}
 			console.log(fields.email.val());
 			if (!/.*@.*\..*/.test(fields.email.val())){ alert("Use email to login, not username"); return; }
-			
+
 			MP.login(fields.email.val(), fields.pw.val(), function(err, data){
 				if (err){ return; }
 				for (var i in fields){
 					fields[i].val('');
 				}
-				
+
 				MP.api.hideLogin();
 			});
 		})
@@ -6025,12 +6025,12 @@
 	$('#login .btn-login').on('click', function(e){
 		$('#login').trigger('submit');
 	});
-	
+
 	// Register form
 	$('#register')
 		.on('submit', function(e){
 			e.preventDefault();
-			
+
 			var fields = {
 				email: $('#r-email').val(),
 				un: $('#r-username').val(),
@@ -6038,19 +6038,19 @@
                 con: $('#r-confirm').val(),
 				captcha: (MP.session.isCaptcha ? grecaptcha.getResponse() : null),
 			};
-			
+
 			for (var i in fields){
 				if (fields[i] == ''){
 					alert('No fields can be left blank');
 					return;
 				}
 			}
-            
+
             if(fields.pw !== fields.con) {
                 alert('Passwords don\'t match');
                 return;
             }
-			
+
 			MP.signup(fields.email, fields.un, fields.pw, fields.captcha, function(err, data){
 				if (err) return;
 				MP.api.hideLogin();
@@ -6066,7 +6066,7 @@
 	$('#register div.ctrl').on('click', function(e){
 		$('#register').trigger('submit');
 	});
-	
+
 	//Forgot password form
 	$('.btn-fgt-pw').on('click', function(){
 		MP.api.hideLogin();
@@ -6094,19 +6094,19 @@
 					handler: function(){
 						//Get all fields
 						var fields = $('#frm-fgt-pw').serializeObject();
-						
+
 						//Remove empty fields
 						for(var k in fields){
 							if(k == '') fields[k] = null;
 						}
-						
+
 						//Hash new password
 						if(fields.newpass) fields.newpass = CryptoJS.SHA256(fields.newpass).toString();
-						
+
 						//Build and send socket request
 						var obj = {
 							type: 'recovery',
-							data: fields,	
+							data: fields,
 						};
 						obj.id = MP.addCallback(obj.type, function(err, data){
 							if(err) {
@@ -6127,84 +6127,84 @@
 			],
 		});
 	});
-	
+
 	//Sidebar
 	$('.btn-logo').on('click', function(){
 		MP.historyList.filter = "";
 		MP.applyModels();
-		
+
 		if($('.logo-menu').is(':animated')) return;
-		
+
 		$('.logo-menu').slideToggle('1000');
 	});
-	
+
 	$('.logo-btn-history').on('click', function() {
 		MP.historyList.filter = "";
 		MP.applyModels();
 	});
-	
+
 	//Staff list
 	$('.btn-staff').on('click', function(){
 		if (!MP.session.roomStaff.length) {
 			MP.getRoomStaff();
 		}
 	});
-	
+
 	//Banned users list
 	$('.btn-banned').on('click', function(){
 		if (!MP.session.bannedUsers.length) {
 			MP.getBannedUsers();
 		}
 	});
-	
+
 	//Playlist shuffle
 	$('.btn-shuffle-playlist').on('click', function(){
 		if (!MP.session.viewedPl) return;
-		
+
 		if (!MP.user.playlists[ MP.session.viewedPl ]) return;
-		
+
 		MP.makeConfirmModal({
 			content: 'Are you sure want to shuffle playlist ' + $('<b></b>').text(MP.user.playlists[ MP.session.viewedPl ].name).prop('outerHTML'),
 			callback: function(res){
 				if (res) MP.api.playlist.shuffle();
 			}
 		});
-		
+
 	});
-	
+
 	//Playlist export
 	$('.btn-export-playlist').on('click', function(){
 		if (!MP.session.viewedPl) return;
 		if (!MP.user.playlists[ MP.session.viewedPl ]) return;
 		API.playlist.export();
 	});
-	
+
 	//Switch between video and chat
 	$('.btn-video').on('click', function(){
 		$('#app-left').css('z-index','10');
 		$('#app-right').css('z-index','9');
 	});
-	
+
 	/* Video frame elements */
 	//Fullscreen
 	$('.btn-fullscreen').on('click', function(){
 		API.fullscreen();
-		
+
 		var settings = JSON.parse(localStorage.getItem("settings"));
 		settings.player.fullscreen = !settings.player.fullscreen;
 		localStorage.setItem("settings", JSON.stringify(settings));
 	});
-	
+
 	//Volume control
 	$('.rng-volume').on('mousemove', function(){
 		var vol = Math.max(0, Math.min($('.volume').val(), 100));
 		if (vol == API.player.getPlayer().getVolume()){
 			return;
 		}
-	
+
 		API.player.setVolume(vol);
 	});
-	
+
 	$('.volume').bind('mousewheel DOMMouseScroll', function(event){
 		var that = $('.volume');
 	    if (event.originalEvent.wheelDelta > 0 || event.originalEvent.detail < 0) {
@@ -6216,19 +6216,19 @@
 	        API.player.setVolume(API.player.getPlayer().getVolume() - 2);
 	    }
 	});
-	
+
 	$('.btn-volume div').on('click', function(){
 		var settings = JSON.parse(localStorage.getItem("settings"));
-		
+
 		API.player.setMute(!settings.player.mute);
 	});
-	
+
 	//Open video in new tab / window
 	$('.btn-youtube').click(function(){
 		if (MP.api.room.getMedia())
 			window.open('https://youtu.be/' + MP.api.room.getMedia().cid, '_blank');
 	});
-	
+
 	//Refresh video
 	$('.btn-refresh').click(function(){
 		var curTime = Date.now();
@@ -6237,13 +6237,13 @@
 			API.player.refresh();
 		});
 	});
-	
+
 	/* Right side bar tabs */
 	$('.btn-chat, .btn-people, .btn-waitlist').on('click', function(){
 		$('#app-right').css('z-index','10');
 		$('#app-left').css('z-index','9');
 	});
-	
+
 	/* Utility buttons */
 	//Logout
 	$('.logo-btn-logout').on('click', function(){
@@ -6261,37 +6261,37 @@
 			}
 		});
 	});
-	
+
 	//Tour
 	$('.logo-btn-tour').on('click', function(){
 		API.tour.start();
 	});
-	
+
 	$('.settings-timestamp').on('click', function(e) {
 		$('.settings-timestamp').removeClass('active');
 		$(this).addClass('active');
 	});
-	
+
 	/* Window focus */
 	$(window).on('focus', function(){
 		MP.session.hasfocus = true;
 		document.title = MP.session.oldPageTitle;
 	});
-	
+
 	$(window).on('blur', function(){
 		MP.session.hasfocus = false;
 	});
-	
+
 	/* Window resizing */
 	$(window).on('load', function(){
 		MP.session.oldPageTitle = document.title;
 	    var win = $(this);
 	    var settings = JSON.parse(localStorage.getItem("settings"));
-		
+
 		if (settings.player.stream && win.width() < 800) {
 			API.chat.log('<br>Your screen is too small to display the video, use /stream to disable it','Tips');
 		}
-		
+
 	    if (win.width() < 1366) {
 	    	($('.playback').hasClass('fullscreen')) ? null : API.fullscreen();
 	   	}else{
@@ -6302,14 +6302,14 @@
 		$('.user-menu').hide();
 	    var win = $(this);
 	    var settings = JSON.parse(localStorage.getItem("settings"));
-	    
+
 	    if (win.width() < 1366) {
 	    	($('.playback').hasClass('fullscreen')) ? null : API.fullscreen();
 	   	}
 	   	if (win.width() >= 1366) {
 			var fs = settings.player.fullscreen;
 			var pbfs = $('.playback').hasClass('fullscreen');
-			
+
 	    	( fs && !pbfs || !fs && pbfs) ? API.fullscreen() : null;
 	   	}
 	   	if (win.width() >= 1051) {
@@ -6317,11 +6317,11 @@
 	    	$('#app-left').css('z-index','10');
 	   	}
 	});
-	
+
 	if (window.angular){
-	
+
 		var ajsApp = angular.module('musiqpad', ['minicolors']);
-		
+
 		ajsApp.filter('orderByPlaylist', function() {
 			return function(items, field, reverse) {
 			    var filtered = [];
@@ -6336,37 +6336,37 @@
 			    return filtered;
 			};
 		});
-		
+
 		ajsApp.filter('orderByRole', function() {
 			return function(items, field, reverse) {
 			    var filtered = [];
 			    for (var j in MP.session.roleOrder){
 			    	var temp = [];
-			    	
+
 				    for (var i in items){
 				    	items[i].id = i;
-				    	
+
 				    	if (items[i].role == MP.session.roleOrder[j])
 				    		temp.push(items[i]);
 				    }
 				    temp.sort(function (a, b) {
 				    	return (a[field].localeCompare(b[field]));
 				    });
-				    
+
 				    filtered = filtered.concat(temp);
 			    }
-			    
+
 			    if(reverse) filtered.reverse();
 			    return filtered;
 			};
 		});
-		
+
 		ajsApp.filter('to_trusted', ['$sce', function($sce){
 	        return function(text) {
 	            return $sce.trustAsHtml(text);
 	        };
 	    }]);
-		
+
 		ajsApp.controller('MainController', function($scope) {
 			$scope.prop = {
 				t: 3,			// Logo menu
@@ -6375,7 +6375,7 @@
 				chatScroll: 0,	// Chat scroll memory
 				leaveAfterPlay: false,
 			};
-			
+
 			$scope.customSettings = {
     			theme: 'bootstrap',
   				position: 'bottom left',
@@ -6393,13 +6393,13 @@
   				show: null,
   				showSpeed: 100
   			};
-			
+
 			$scope.userSettings = {
 				newUserName: '',
 				newBadgeTop: '',
 				newBadgeBottom: ''
 			};
-			
+
 			$scope.roomSettings = {
 				userJoinLeaveMessages: false,
 				enableEmojis: true,
@@ -6421,60 +6421,60 @@
 				},
                 shortcuts: true,
 			};
-			
+
 			$scope.changeTab = function(inProp, val){
 				if (typeof $scope.prop[inProp] === 'undefined') return;
 				var curVal = $scope.prop[inProp];
-				
+
 				// Leaving chat tab
 				if (inProp == 'c' && curVal == 1 && val != 1){
 					$scope.prop.chatScroll = MP.api.chat.getPos();
 				}
-				
-				
+
+
 				$scope.prop[inProp] = val;
-				
+
 				if (inProp == 'c'){
-					
+
 					// Entering chat tab
 					if (val == 1){
-						
+
 						// If they were at the bottom of the chat tab before, they'll be at the bottom when they come back
 						if ($scope.prop.chatScroll >= 0){
 							$scope.prop.chatScroll = 0;
-							
+
 							// Using setTimeout to give Angular the time to update.  CAN'T scroll while tab is not visible.
 							setTimeout(function(){MP.api.chat.scrollBottom()}, 3);
 						}
 					}
 				}
 			};
-			
+
 			$scope.makeUsernameStyle = function(uid){
 				var user = MP.findUser(uid);
 				if (!user) return MP.makeUsernameStyle('default');
-				
+
 				return MP.makeUsernameStyle(user.role);
 			};
-			
+
 			$scope.makeUsernameStyleByRole = function(role){
 				if (!role) return MP.makeUsernameStyle('default');
-				
+
 				return MP.makeUsernameStyle(role);
 			};
-			
+
 			$scope.checkPerm = MP.checkPerm;
-			
+
 			$scope.makeTime = function(inTime, dur){
 				var h = Math.floor(inTime / 3600);
 				var m = Math.floor(inTime / 60) % 60;
 				var s = inTime % 60;
-				
+
 				return (h + m + s || dur) ? (h > 0 ? h + ':' : '') + ( '0' + m ).slice(-2) + ':' + ( '0' + s ).slice(-2) : 'LIVE';
 			};
 			$scope.makeTimeElapsed = function(inTime){
 				var diff = MP.timeConvert(new Date().getTime(), inTime + MP.session.serverDateDiff);
-				
+
 				if (diff.years > 0)	return diff.years + ' years ago';
 				if (diff.months > 0)	return diff.months + ' months ago';
 				if (diff.days > 0)	return diff.days + ' days ago';
@@ -6485,14 +6485,14 @@
 			$scope.findPosInWaitlist = function(uid){
 				return MP.findPosInWaitlist(uid);
 			};
-			
+
 			$scope.inHistory = function(cid){
 				if(!MP.historyList.historyInitialized) return false;
 				for(var k in MP.historyList.history)
 					if(MP.historyList.history[k].song.cid == cid) return true;
 				return false;
 			};
-			
+
 			$scope.filteredHistory = function(filterBy) {
 				var result = [];
 				if (filterBy == undefined || filterBy == null || filterBy == "") {
@@ -6514,39 +6514,39 @@
 				});
 				return result;
 			};
-			
+
 			$scope.makeBadgeStyle = function(opts){
 				return MP.makeBadgeStyle(opts);
 			};
-			
+
 			$scope.makeUsernameStyle = function(uid){
 				var user = MP.findUser(uid);
 				if (!user) return MP.makeUsernameStyle('default');
-				
+
 				return MP.makeUsernameStyle(user.role);
 			};
-			
+
 			$scope.getRole = function(role){
 				if (MP.getRole(role))
 					return MP.getRole(role);
-				
+
 				return {};
 			};
-			
+
 			$scope.$watch('roomSettings', function (newVal, oldVal) { $scope.saveUISettings() }, true);
 			//$scope.$watch('userSettings', function (newVal, oldVal) { $scope.saveSettings() }, true);
-			
+
 			$scope.saveUISettings = function() {
 				$(window).unbind('beforeunload', MP.leaveConfirmation);
 				if ($scope.roomSettings.leaveConfirmation && MP.findPosInWaitlist() != -1){
 					$(window).bind('beforeunload', MP.leaveConfirmation);
 				}
-				
+
 				var settings = JSON.parse(localStorage.getItem("settings"));
 				settings.roomSettings = $scope.roomSettings;
 				localStorage.setItem("settings", JSON.stringify(settings));
 			};
-			
+
 			$scope.saveSettings = function() {
 				$scope.user.badge.top = $('#badge-top-color-input').val() || $scope.user.badge.top;
 				$scope.user.badge.bottom = $('#badge-bottom-color-input').val() || $scope.user.badge.bottom;
@@ -6559,7 +6559,7 @@
 					$scope.userSettings.newUserName = '';
 				}
 			};
-			
+
 			var settings = JSON.parse(localStorage.getItem("settings"));
 			if (settings) {
 				if (settings.roomSettings == undefined || settings.roomSettings == null) {
@@ -6580,15 +6580,15 @@
 			}
 		});
 	}
-	
-/*	
-	
+
+/*
+
 })();
 
 //Loading
 (function() {
 */	var startLoad = 0;
-	
+
 	var loadingText = [
 		"Turning up the music...",
 		"Looking for a spot...",
@@ -6598,14 +6598,14 @@
 		"Nice meme...",
 		"Hiding the hamsters..."
 	];
-	
+
 	//Loading animation start
 	var interval = setInterval(function(){
 		$(".loading").fadeOut(function() {
 		  $('.loading').text(loadingText[Math.floor(Math.random() * loadingText.length)]);
 		}).fadeIn();
 	}, 2000);
-	
+
 	//LocalStorage check
 	if(!localStorage.getItem("settings")){
 		localStorage.setItem("settings", JSON.stringify({
@@ -6617,18 +6617,18 @@
 				stream: true
 			},
 			chat: {
-				//timestamp: 
+				//timestamp:
 			},
 		}));
 	}
-	
+
 	//Lightbox options
 	/*lightbox.option({
 		fadeDuration: 150,
 		albumLabel: '',
 		showImageNumberLabel: false,
 	});*/
-	
+
 	MP.getTokenName = function() {
 		if (config.selfHosted == true) {
 			if (MP.session.roomInfo.slug) {
@@ -6668,7 +6668,7 @@
 						if (err){ console.log('Token is invalid.'); return;}
 					});
 				}
-				
+
 				if (MP.session.roomInfo.bg) { $('#room-bg').css('background-image', 'url('+ MP.session.roomInfo.bg +')'); }
 				$('title').text(data.room.name);
 				$('.modal-bg').remove();
@@ -6678,11 +6678,11 @@
 						var elem = $('#messages .cm.message');
 						elem.find('.bdg-icon-dj').remove();
 						elem.find('.bdg:hidden').attr('class', 'bdg');
-						
+
 						//Render last chat
 						for(var i in data.lastChat){
 							if (data.lastChat[i].user.un && !MP.seenUsers[data.lastChat[i].user.uid]) MP.seenUsers[data.lastChat[i].user.uid] = data.lastChat[i].user;
-							
+
 							MP.addMessage({
 								message: data.lastChat[i].message,
 								uid: data.lastChat[i].user.uid,
@@ -6690,7 +6690,7 @@
 								time: data.lastChat[i].time
 							});
 						}
-						
+
 						//Render welcome message
 						$('#messages').append(
 							'<div class="cm room-greet">' +
@@ -6699,16 +6699,16 @@
 							'<span class="greet-uname">' + MP.emojiReplace(MP.session.roomInfo.name) + '</span>' +
 							'<br><span class="greet-umsg">' + MP.emojiReplace(MP.session.roomInfo.greet) + '</span></div></div></div>'
 						);
-						
+
 						// Waits for the append to DOM to go through, then scrolls to bottom
 						setTimeout(function(){
 							MP.api.chat.scrollBottom();
 						}, 3);
 					});
 					$chat.scrollTop($chat[0].scrollHeight);
-				
+
 				var playerSettings = JSON.parse(localStorage.settings).player;
-				
+
 				if (typeof API.player.getPlayer === 'function'){
 					if (data.queue.currentsong && playerSettings.stream){
 						API.player.getPlayer().loadVideoById(data.queue.currentsong.cid);
@@ -6720,14 +6720,14 @@
 					console.log('returned');
 					return;
 				}
-				
+
 				//Bind escape button
 				$(document).on('keydown', function(e){
 					if (e.which == 27){
 						$('div.ico-logo').click();
 					}
 				});
-				
+
 				//Get player ready
 				YT.ready(function(){
 					var player = new YT.Player('player', {
@@ -6750,21 +6750,21 @@
 								API.player.getPlayer = function(){
 									return player;
 								};
-								
+
 								var vol = playerSettings.volume;
-								
+
 								if (playerSettings.hd){
 									API.player.getPlayer().setPlaybackQuality('hd720');
 									$('.btn-hd div').addClass('active');
 								}
-								
+
 								if(data.queue.time) API.player.getPlayer().seekTo(data.queue.time);
-								
+
 								var voldiv = $('.volume');
-								
+
 								if (!playerSettings.mute){
 									API.player.setVolume(vol);
-									
+
 									if(vol == 0){
 										voldiv.text("volume_off");
 									} else if (vol <= 25) {
@@ -6774,7 +6774,7 @@
 									} else {
 										voldiv.text("volume_down");
 									}
-									
+
 									voldiv.val(vol);
 								}else{
 									API.player.setMute(true);
@@ -6784,36 +6784,47 @@
 								if (e.data == YT.PlayerState.PAUSED) API.player.getPlayer().playVideo();
 								if (e.data == YT.PlayerState.ENDED || e.data == YT.PlayerState.UNSTARTED) $('#player').hide();
 								if ((e.data == YT.PlayerState.CUED || e.data == YT.PlayerState.PLAYING ) && !MP.session.snooze) $('#player').show();
-								
+
 								// Duration of video loaded: duration * API.player.getPlayer().getVideoLoadedFraction()
 								if (e.data == YT.PlayerState.BUFFERING && startLoad != -1){
 									startLoad = Date.now();
 								}else{
 									startLoad = 0;
 								}
-								
+
 								if (e.data == YT.PlayerState.PLAYING && startLoad > 0) {
 									var loaded = API.player.getPlayer().getDuration() * API.player.getPlayer().getVideoLoadedFraction();
 									var curTime = API.player.getPlayer().getCurrentTime();
 									var adjustment = ((Date.now() - startLoad)/1000);
-									
-									if ( (curTime + adjustment) > loaded ){ 
+
+									if ( (curTime + adjustment) > loaded ){
 										//startLoad = -1;
 										API.player.getPlayer().seekTo( loaded );
 									}else{
 										API.player.getPlayer().seekTo( curTime + adjustment );
 									}
-									
+
 									startLoad = 0;
 								}
-								
+
+							},
+							'onError': function (e) {
+								if(e.data == 150) {
+									MP.makeAlertModal({
+										content:
+										'<div id="videoBlocked"> \
+											<p>This Video is not available in your Country</p>\
+											<p>Please choose an alternative from this list:</p>\
+										</div>',
+									})
+								}
 							}
 						}
 					});
 				});
 			});
 		};
-			
+
 		if (tok != ''){
 			console.log('Logging in with token');
 			MP.loginWithTok(tok, function(err, data){
@@ -6821,7 +6832,7 @@
 				if (err){ console.log('Token is invalid.'); return;}
 			});
 		}else{
-			
+
 			onLoad();
 		}
 	};
