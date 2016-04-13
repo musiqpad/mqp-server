@@ -5552,7 +5552,8 @@
 						<form action="" onsubmit="return false;">\
 						<div class="text">YouTube:</div><input id="yt-pl-import" type="text" placeholder="YouTube Playlist Link/ID" autocomplete="off"></input><br>\
 						<div class="text">musiqpad:</div><input id="mp-pl-import" type="file" /><br>\
-						<div class="text">Plug.DJ:</div><input id="plug-pl-import" type="file" />\
+						<div class="text">Plug.DJ:</div><input id="plug-pl-import" type="file" /><br>\
+						<div class="text">Dubtrack.fm:</div><input id="dt-pl-import" type="file" />\
 						</form>\
 					  </div>',
 			buttons: [
@@ -5570,13 +5571,14 @@
 						var ytPl = document.getElementById("yt-pl-import").value;
 						var mpFile = document.getElementById("mp-pl-import").value;
 						var plugFile = document.getElementById("plug-pl-import").value;
+						var dtFile = document.getElementById("dt-pl-import").value;
 						
-						if ((ytPl && (mpFile || plugFile)) || (mpFile && (ytPl || plugFile)) || (plugFile && (mpFile || ytPl))) {
+						if (!(!ytPl != !mpFile != !plugFile != !dtFile)) {
+							console.log(ytPl, mpFile, plugFile, dtFile);
 							MP.makeAlertModal({
 								content: 'You have specified more than 1 different import type. Please ensure that you only attempt to import 1 playlist type at a time.',
 							});
-						}
-						else {
+						} else {
 							if (ytPl) {
 								var el = $('#yt-pl-import');
 								var pid = (el.val().match(/list=[a-z0-9_-]+(?=&|$)/i) || el.val().match(/^([a-z0-9_-]+)$/i) || [])[0];
@@ -5611,11 +5613,10 @@
 										content: 'Invalid link or playlist ID',
 									});
 								}
-							}
-							else if (mpFile || plugFile) {
+							} else if (mpFile || plugFile || dtFile) {
 								if (window.File && window.FileReader && window.FileList && window.Blob) {
 									var fileReader = new FileReader();
-									var element = document.getElementById(mpFile ? 'mp-pl-import' : 'plug-pl-import');
+									var element = document.getElementById(mpFile ? 'mp-pl-import' : ( plugFile ? 'plug-pl-import' : 'dt-pl-import'));
 									fileReader.onload = function () {
 										var data = fileReader.result;
 										if (data) {
@@ -5671,8 +5672,7 @@
 														content: 'The JSON file selected does not appear to be using the correct format. This import only works using playlists exported from other musiqpad servers.',
 													});
 												}
-											}
-											else {
+											} else if(plugFile) {
 												if (data.is_plugdj_playlist && data.playlists) {
 													try {
 														var loopPlaylists = function(plNames, arr, pl, sleep) {
@@ -5711,8 +5711,7 @@
 																			});
 														    			}
 																	});
-																}
-														      	else {
+																} else {
 														      		pl++;
 														    		$('.modal-bg').remove();
 																	if(pl < plNames.length) {
@@ -5728,21 +5727,51 @@
 														}
 														var playlistNames = Object.getOwnPropertyNames(data.playlists);
 														loopPlaylists(playlistNames, data.playlists, 0, false);
-													}
-													catch (e) {
+													} catch (e) {
 														MP.makeAlertModal({
 															content: 'An error occurred whilst attempting to import your playlists. Please submit a buto a member of the musiqpad team including a screenshot of your console and a copy oyour JSON file.',
 														});
 													}
-												}
-												else {
+												} else {
 													MP.makeAlertModal({
 														content: 'The JSON file selected does not appear to be using the correct format. This import only works using playlists exported from Plug.DJ using pye.sq10.net',
 													});
 												}
+											} else {
+												if(data.status == "ok" && data.data && data.meta && data.meta.name){
+													var plName = data.meta.name;
+													var songCount = data.data.length;
+													
+													$('.modal-bg').remove();
+													MP.makeCustomModal({
+														content: 'Importing playlist <b>"' + plName + '"</b> containing ' + songCount + ' songs.<br>This may take a while.',
+														buttons: [],
+														dismissable: false,
+													});
+													
+													MP.api.playlist.create(plName, function(err, pldata){
+														if(!err){
+															var songs = [];
+															for(var i = 0; i < songCount; i++)
+																if(data.data[i].format == "1")
+																	songs.push(data.data[i].cid);
+															
+															MP.api.playlist.addSong(pldata.id, songs, function(err, data){
+																MP.makeAlertModal({
+																	content: 'Playlist imported successfully.',
+																});
+															});
+														} else {
+															
+														}
+													});
+												} else {
+													MP.makeAlertModal({
+														content: 'The JSON file selected does not appear to be using the correct format. This import only works using playlists exported from Dubtrack.fm using github.com/JTBrinkmann/Dubtrack-Playlist-Pusher',
+													});
+												}
 											}
-										}
-										else {
+										} else {
 											// Some Error
 										}
 									};
@@ -5760,42 +5789,6 @@
 			],
 			dismissable: true
 		});
-		
-		
-		// Import YouTube Playlist
-		//var el = $('#lib-import');
-		//var pid = (el.val().match(/list=[a-z0-9_-]+(?=&|$)/i) || el.val().match(/^([a-z0-9_-]+)$/i) || [])[0];
-		//
-		//if(pid && pid != ''){
-		//	pid = pid.replace(/^list=/, '');
-		//	MP.makeCustomModal({
-		//		content: 'Your playlist is being imported, please wait...',
-		//		buttons: [],
-		//		dismissable: false,
-		//	});
-		//	MP.api.playlist.import(pid, false, function(err, data){
-		//		if(err){
-		//			var errors = ['PlaylistNotFound', 'PlaylistEmpty', 'ConnectionError'];
-		//			var errmsgs = ['The specified playlist was not found, make sure the playlist exists and is either public or unlisted', 'The playlist you are trying to import is empty', 'Could not connect to YouTube Data API, please contact the pad owner'];
-		//			MP.makeAlertModal({
-		//				content: errmsgs[errors.indexOf(err)],
-		//			});
-		//		} else {
-		//			var names = '<b>' + data.content[0].name + '</b>';
-		//			if(data.content.length > 1)
-		//				for(var i = 1; i < data.content.length; i++)
-		//					names += ', ' + $('<b></b>').text(data.content[i].name).prop('outerHTML');
-		//			$('#lib-import').val('');
-		//			MP.makeAlertModal({
-		//				content: 'Playlist' + (data.content.length > 1 ? 's' : '') + ' ' + names + ' successfuly imported',
-		//			});
-		//		}
-		//	});
-		//} else {
-		//	MP.makeAlertModal({
-		//		content: 'Invalid link or playlist ID',
-		//	});
-		//}
 	});
 	
 	//Join DJ queue
