@@ -52,6 +52,33 @@
 		</div>
 		<div id="app">
 			<div id="room-bg"></div>
+			<div class="video-blocked-bg">
+				<div class="video-blocked-container">
+					<div class="video-blocked" style="">
+						<div class="video-blocked-box">
+							<div class="video-blocked-text">
+								<p>This Video is not available in your Country</p>
+								<p>Please choose an alternative from this list:</p>
+								<div class="video-blocked-list">
+									<div class="yt-sng" data-cid="{{z.cid}}" data-ng-repeat="z in searchResultsBlockedVideo" title="{{z.title}}">
+										<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
+										<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+										<div class="text" data-ng-bind="z.title"></div>
+										<div class="dur">
+											{{makeTime(z.duration)}}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="modal-controls">
+							<div class="modal-ctrl modal-no" id="CustomModalButton-0" style="width: 100%;">
+								<div class="mdi mdi-check"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
 			<div class="logo-menu">
 				<div class="logo-dash">
 					<div ng-click="prop.t = 1" data-ng-class="{'active' : prop.t == 1 || prop.t == undefined}" class="nav logo-btn-home" title="Home"><div class="mdi mdi-apps"></div></div>
@@ -77,10 +104,10 @@
 	  						<label for="color-input" class="form-control">Badge Bottom Color:</label>
 	  						<input minicolors="customSettings" id="badge-bottom-color-input" class="form-control minicolors-position-bottom minicolors-position-left" type="hidden" ng-model="userSettings.newBadgeBottom">
 	  					</div>
-						
-						
+
+
 						<div class="section-label">Room settings</div>
-						
+
 						<label>Show User Join/Leave Messages: <input type="checkbox" ng-model="roomSettings.userJoinLeaveMessages"></input></label>
 						<br>
 						<label>Time format: <div class="settings-timestamp format-12" ng-class="{active:roomSettings.chatTimestampFormat == '12hr'}">12 hour</div><div class="settings-timestamp format-24" ng-class="{active:roomSettings.chatTimestampFormat == '24hr'}">24 hour</div></label>
@@ -416,7 +443,7 @@
 				</div>
 			</div>
 		</div>
-		
+
 		<!--<script src="../lib/js/emojify.min.js"></script>-->
 		<!--<script>emojify.setConfig({img_dir:'https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic'});</script>-->
 		<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>

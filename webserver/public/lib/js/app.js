@@ -22,6 +22,7 @@
 				viewedPl: MP.session.viewedPl,
 				songSearch: MP.session.songSearch,
 				searchResults: MP.session.searchResults,
+				searchResultsBlockedVideo: MP.session.searchResultsBlockedVideo,
 				playlistResults: MP.session.playlistResults,
 				nextSong: ( (MP.user && MP.user.activepl && MP.user.playlists[ MP.user.activepl ] && MP.user.playlists[ MP.user.activepl ].content.length) ?
 					MP.user.playlists[ MP.user.activepl ].content[0] : 'No song selected'),
@@ -210,6 +211,7 @@
 			viewedPl: null,
 			songSearch: false,
 			searchResults: [],
+			searchResultsBlockedVideo: [],
 			nextSong: '',
 			userlist: [],
 			historyList: {},
@@ -229,6 +231,7 @@
 			viewedPl: null,
 			songSearch: false,
 			searchResults: [],
+			searchResultsBlockedVideo: [],
 			playlistResults: [],
 			queue: {},
 			roles: {},
@@ -3994,6 +3997,14 @@
 			if (!obj || "object" != typeof obj) return obj;
 			return $.extend(true, Array.isArray(obj) ? [] : {}, obj);
 		},
+		videoNotAvailable: function () {
+			console.debug('Searching for ' + MP.session.queue.currentsong.title);
+			MP.youtubeSearch(MP.session.queue.currentsong.title, function(err, res){
+				console.log(res);
+				MP.session.searchResultsBlockedVideo = res;
+				MP.applyModels();
+			});
+		}
 	};
 
 	// Exposing internal functions to the global scope
@@ -6730,6 +6741,7 @@
 
 				//Get player ready
 				YT.ready(function(){
+					var isFirstVideo = 1;
 					var player = new YT.Player('player', {
 						height: '390',
 						width: '640',
@@ -6781,6 +6793,12 @@
 								}
 							},
 							'onStateChange': function(e){
+								console.log("State: " + JSON.stringify(e.data));
+								if(isFirstVideo == 1 && e.data == -1) {
+									MP.videoNotAvailable();
+									isFirstVideo = 0;
+								}
+								window.vna = MP.videoNotAvailable;
 								if (e.data == YT.PlayerState.PAUSED) API.player.getPlayer().playVideo();
 								if (e.data == YT.PlayerState.ENDED || e.data == YT.PlayerState.UNSTARTED) $('#player').hide();
 								if ((e.data == YT.PlayerState.CUED || e.data == YT.PlayerState.PLAYING ) && !MP.session.snooze) $('#player').show();
@@ -6809,14 +6827,9 @@
 
 							},
 							'onError': function (e) {
+								console.log("YouTube Player Error: " + e);
 								if(e.data == 150) {
-									MP.makeAlertModal({
-										content:
-										'<div id="videoBlocked"> \
-											<p>This Video is not available in your Country</p>\
-											<p>Please choose an alternative from this list:</p>\
-										</div>',
-									})
+									MP.videoNotAvailable()
 								}
 							}
 						}
