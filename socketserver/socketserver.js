@@ -1756,21 +1756,25 @@ var SocketServer = function(server){
 						if (Array.isArray(data.data.cid)) {
 							var songsAdded = 0;
 							var videos = [];
+							
+							data.data.cid.filter(function(e, i, a){
+								return a.indexOf(e) != i;
+							});
+							
 							for (var i = 0, len = data.data.cid.length; i < len; i++) {
 								var cid = data.data.cid[i];
 
-								if (pl.data.content.indexOf(cid) <= -1) {
+								if (pl.data.content.indexOf(cid) == -1) {
 									pl.addSong(cid, data.data.pos, function(err, vidData, pos){
 										if (!err){
 											for (var i in vidData) {
 												videos.push(vidData[i]);
 											}
-										}
-										else {
+										} else {
 											console.log(err);
 										}
-										songsAdded++;
-										if (songsAdded + 1 == data.data.cid.length) {
+										
+										if (++songsAdded == data.data.cid.length) {
 											returnObj.data = {
 												video: videos,
 												pos: data.data.pos,
@@ -1781,8 +1785,7 @@ var SocketServer = function(server){
 										}
 									});
 								} else {
-									songsAdded++;
-									if (songsAdded + 1 == data.data.cid.length) {
+									if (++songsAdded == data.data.cid.length) {
 										returnObj.data = {
 											video: videos,
 											pos: data.data.pos,
@@ -1793,8 +1796,7 @@ var SocketServer = function(server){
 									}
 								}
 							}
-						}
-						else {
+						} else {
 							if (pl.data.content.indexOf(data.data.cid) > -1){
 								returnObj.data = {
 									error: 'SongAlreadyInPlaylist'
