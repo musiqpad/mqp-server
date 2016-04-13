@@ -1754,6 +1754,14 @@ var SocketServer = function(server){
 							data.data.pos = 'top';
 						}
 						if (Array.isArray(data.data.cid)) {
+							if (data.data.cid.length == 0) {
+								returnObj.data = {
+									error: 'emptyCidArray'
+								};
+								socket.sendJSON(returnObj);
+								
+								break;
+							}
 							var songsAdded = 0;
 							var videos = [];
 							
