@@ -2320,7 +2320,8 @@
 											# of playlists: " + data.playlists + "<br>\
 											Banned: " + (data.banned ? "true" : "false") + "<br>\
 											Online: " + (data.online ? "true (" + data.ip + ")" : "false") + "<br\
-											Uptime: " + (t - (t %= 86400000)) / 86400000 + "d " +  (t - (t %= 3600000)) / 3600000 + "h " + (t - (t %= 60000)) / 60000 + "m " +  (t - (t %= 1000)) / 1000 + "s<br>\
+											Uptime: " + (t - (t %= 86400000)) / 86400000 + "d " +  (t - (t %= 3600000)) / 3600000 + "h " +
+											(t - (t %= 60000)) / 60000 + "m " +  (t - (t %= 1000)) / 1000 + "s<br>\
 											Created: " + (new Date(data.created).toUTCString())
 											)
 						}
@@ -4009,6 +4010,9 @@
 					console.log(res);
 					MP.session.searchResultsBlockedVideo = res;
 					MP.applyModels();
+					MP.once('advance', function () {
+						$('.video-blocked-bg').attr('style', '');
+					}, true);
 				});
 			}
 		}
@@ -6838,7 +6842,6 @@
 
 							},
 							'onError': function (e) {
-								console.log("YouTube Player Error: " + e);
 								if(e.data == 150) {
 									MP.videoNotAvailable()
 								}
