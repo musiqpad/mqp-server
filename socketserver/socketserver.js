@@ -1400,12 +1400,14 @@ var SocketServer = function(server){
 						break;
 					}
 					
-					returnObj.data = {
-						success: true,
-						cid: that.room.sendMessage(socket, data.data.message)
-					};
-				
-					socket.sendJSON(returnObj);
+					that.room.sendMessage(socket, data.data.message, null, null, function(cid){
+						returnObj.data = {
+							success: true,
+							cid: cid,
+						};
+					
+						socket.sendJSON(returnObj);
+					});
 					break;
 				case 'staffchat':
 					/*

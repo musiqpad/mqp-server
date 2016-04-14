@@ -16,6 +16,7 @@ var DBUtils = require('./database_util');
 //Variables
 var currentPID = 0;
 var currentUID = 0;
+var currentCID = 0;
 var expires = 1000 * 60 * 60 * 24 * config.loginExpire;
 var usernames = [];
 
@@ -117,6 +118,32 @@ function LevelDB(callback) {
                     .on('end', function() {
                         return false;
                     });
+            });
+	    
+    //ChatDB
+    if(!this.ChatDB)
+        this.ChatDB = setupDB(dbdir + '/chat',
+
+            //If new DB is created
+            function(newdb) {
+                currentCID = 1;
+                log.debug('CIDCOUNTER set to 1');
+                newdb.put('CIDCOUNTER', 1);
+            },
+
+            //Callback
+            function(err, newdb) {
+                if (err) {
+                    throw new Error('Could not open ChatDB: ' + err);
+                }
+                if (currentCID != 0) return;
+
+                newdb.get('CIDCOUNTER', function(err, val) {
+                    if (err) {
+                        throw new Error('Cannot get CIDCOUNTER from PmDB. Might be corrupt');
+                    }
+                    currentCID = parseInt(val);
+                });
             });
 }
 
@@ -581,6 +608,12 @@ LevelDB.prototype.userEmailExists = function(key, callback) {
 
         if (callback) callback(err, true);
     });
+};
+
+//ChatDB
+LevelDB.prototype.logChat = function(uid, msg, special, callback) {
+    this.putJSON(this.ChatDB, currentCID, { uid: uid, msg: msg, special: special });
+    callback(currentCID++);
 };
 
 module.exports = new LevelDB();

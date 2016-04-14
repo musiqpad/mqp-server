@@ -28,7 +28,6 @@ var Room = function(socketServer, options){
 		ownerEmail: "",                      // Owner email for owner promotion
 		guestCanSeeChat: true, 	             // Whether guests can see the chat or not
 		bannedCanSeeChat: true,	             // Whether banned users can see the chat
-		chatID: 0,				             // Default CID
 		roomOwnerUN: null,		             // Username of the room owner to use with lobby API
 	}, options);
 	
@@ -443,47 +442,49 @@ Room.prototype.sendBroadcastMessage = function(message) {
 	this.sendAll({type:'broadcastMessage', data:message});
 };
 
-Room.prototype.sendMessage = function( sock, message, ext, specdata ){
+Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 	var that = this;
 	
-	log.debug('Number of users: ' + this.attendeeList.length);
 	message = message.substring(0,255).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-	this.roomInfo.chatID++;
-
-	this.sendAll({
-		type: 'chat',
-		data: {
-			uid: sock.user.uid, // Will always be present. Unauthd can't send messages
-			message: message,
-			time: Date.now(),
-			cid: this.roomInfo.chatID,
-			special: specdata
-		}
-	}, function(obj){
-		// Guests can't see chat with config variable set
-		if (!that.roomInfo.guestCanSeeChat && !obj.user) return false;
-		
-		// Banned users can't see chat with config variable set
-		if (!that.roomInfo.bannedCanSeeChat && obj.user && that.isUserBanned(obj.user.uid)) return false;
-		
-		// Check for extensive function
-		if("function" === typeof ext) if(!ext(obj)) return false;
-		return true;
-	});
+	callback = callback || function(){};
 	
-	//Save last X messages to show newly connected users
-	if(!specdata){
-		this.lastChat.push({
-			user: sock.user.getClientObj(),
-			message: message,
-			time: Date.now(),
-			cid: this.roomInfo.chatID
+	DB.logChat(sock.user.uid, message, specdata, function(cid){
+		that.sendAll({
+			type: 'chat',
+			data: {
+				uid: sock.user.uid, // Will always be present. Unauthd can't send messages
+				message: message,
+				time: Date.now(),
+				cid: cid,
+				special: specdata
+			}
+		}, function(obj){
+			// Guests can't see chat with config variable set
+			if (!that.roomInfo.guestCanSeeChat && !obj.user) return false;
+			
+			// Banned users can't see chat with config variable set
+			if (!that.roomInfo.bannedCanSeeChat && obj.user && that.isUserBanned(obj.user.uid)) return false;
+			
+			// Check for extensive function
+			if("function" === typeof ext) if(!ext(obj)) return false;
+			
+			return true;
 		});
-		if(this.lastChat.length > config.room.lastmsglimit) this.lastChat.shift();
-	}
-
-	return this.roomInfo.chatID;
+		
+		//Save last X messages to show newly connected users
+		if(!specdata){
+			that.lastChat.push({
+				user: sock.user.getClientObj(),
+				message: message,
+				time: Date.now(),
+				cid: cid,
+			});
+			if(that.lastChat.length > config.room.lastmsglimit) that.lastChat.shift();
+		}
+	
+		callback(cid);
+	});
 };
 
 Room.prototype.makePrevChatObj = function(){
