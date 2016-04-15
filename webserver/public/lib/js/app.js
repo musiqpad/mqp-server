@@ -1176,6 +1176,11 @@
 						callback('invalidPidOrCid');
 						return false;
 					}
+					
+					if (Array.isArray(cid) && cid.length == 0) {
+						callback('emptyCidArray');
+						return false;
+					}
 /*					
 					if (typeof pid == 'string'){
 						var pl = this.get().filter(function(a){return a.name == pid;})[0];
@@ -4745,7 +4750,7 @@
 					MP.session.queue.currentsong = data.data.next.song;
 					MP.media.media = data.data.next.song;
 					MP.media.start = data.data.next.start;
-					if(data.data.last.uid == MP.api.room.getUser().uid) MP.session.lastdj = false;
+					if (MP.user && data.data.last.uid == MP.user.uid) MP.session.lastdj = false;
 					
 					if(data.data.next.song){
 						MP.media.timeRemaining = data.data.next.song.duration;
@@ -5854,6 +5859,8 @@
 	
 	// Grab button
 	$('.btn-grab').on('click', function(e){
+		if (!MP.isLoggedIn()) return;
+		
 		if ($(e.target).closest('.popup').length) return;
 		if (Object.keys(MP.user.playlists) == 0) {
 			MP.makeAlertModal({
@@ -5878,6 +5885,8 @@
 	});
 	
 	$('.playlists-grab').on('click', function(e){
+		if (!MP.isLoggedIn()) return;
+		
 		var id = (MP.media.media ? MP.media.media.cid : null);
 		
 		if (id == null) return;
@@ -5969,7 +5978,7 @@
 	});
 	
 	// Clickig various places to show login
-	$('#msg-in, .labels .uname, .btn-login, .btn-join').on('click', function(){
+	$('#msg-in, .labels .uname, .btn-login, .btn-join, .btn-downvote, .btn-upvote, .btn-grab, .menu-mention').on('click', function(){
 		if (!MP.isLoggedIn()) MP.api.showLogin();
 	});
 	
