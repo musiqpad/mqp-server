@@ -4041,6 +4041,8 @@
 			},
 			getUsers: function(arr) { return MP.copyObject(MP.api.room.getUsers(arr)); },
 			getRoles: function(arr) { return MP.copyObject(MP.api.room.getRoles(arr)); },
+			getStaffRoles: function() { return MP.copyObject(MP.session.staffRoles); },
+			getRoleOrder: function() { return MP.copyObject(MP.session.roleOrder); },
 			getHistory: MP.api.room.getHistory,
 			getMedia: function() { return MP.copyObject(MP.api.room.getMedia()); },
 			getTimeElapsed: MP.api.room.getTimeElapsed,
