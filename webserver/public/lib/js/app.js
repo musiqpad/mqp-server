@@ -6840,7 +6840,6 @@
 
 							},
 							'onError': function (e) {
-								console.log("YouTube Player Error: " + e);
 								if(e.data == 150) {
 									MP.videoNotAvailable()
 								}
