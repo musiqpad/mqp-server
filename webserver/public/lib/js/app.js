@@ -1194,7 +1194,7 @@
 						}
 						pid = pl.id;
 					}
-*/				
+*/
 					if (!MP.user.playlists[pid]){
 						callback('playlistNotFound');
 						return false;
@@ -4012,7 +4012,6 @@
 			if(MP.isLoggedIn()) {
 				$('.video-blocked-bg').attr('style', 'display: table !important');
 				MP.youtubeSearch(MP.session.queue.currentsong.title, function(err, res){
-					console.log(res);
 					MP.session.searchResultsBlockedVideo = res;
 					MP.applyModels();
 					MP.once('advance', function () {

@@ -337,6 +337,7 @@ a {
     padding: 20px;
 }
 .video-blocked-list {
+  width: 720px;
   height: 520px;
   overflow-x: hidden;
   overflow-y: scroll;
