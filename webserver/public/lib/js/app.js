@@ -4010,8 +4010,10 @@
 		},
 		videoNotAvailable: function () {
 			if(MP.isLoggedIn()) {
+				$('.video-blocked-list').css('opacity', 0)
 				$('.video-blocked-bg').attr('style', 'display: table !important');
 				MP.youtubeSearch(MP.session.queue.currentsong.title, function(err, res){
+					$('.video-blocked-list').fadeTo('slow', 1);
 					MP.session.searchResultsBlockedVideo = res;
 					MP.applyModels();
 					MP.once('advance', function () {
@@ -5324,7 +5326,6 @@
 			var player = API.player.getPlayer();
 			player.loadVideoById(cid);
 			API.player.getPlayer().seekTo(MP.models.songDuration - MP.models.secondsLeftInSong)
-			console.log(cid);
 			$('.video-blocked-bg').attr("style", "");
 		})
 		// Closing media preview
@@ -6850,7 +6851,7 @@
 
 							},
 							'onError': function (e) {
-								if(e.data == 150) {
+								if(e.data == 150 && MP.models.songDuration != 5) {
 									MP.videoNotAvailable()
 								}
 							}
