@@ -1800,6 +1800,11 @@
 					return '<b>'+a.slice(1,-1)+'</b>';
 				});
 				
+				// parse italic tags
+				msg = ' ' + msg, msg = msg.replace(/(^|[^@])\b_([^_]*)_/g, function (g) {
+				  return ' <i>' + g.slice(2, -1) + '</i>';
+				}), msg = msg.replace(/^ ?/, '');
+				
 				//parse strike tags
 				msg = msg.replace(/~(.*?)~/g, function(a){
 					return '<s>'+a.slice(1,-1)+'</s>';
