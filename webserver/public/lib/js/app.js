@@ -1388,6 +1388,38 @@
 					}
 					document.head.appendChild(link);
 				},
+                desktopnotif: {
+                    getPermission: function(callback) {
+                        if (typeof Notification === 'undefined') {
+                            return false;
+                        }
+                        Notification.requestPermission(function (permission) {
+                            if (callback !== undefined) {
+                                callback(permission);
+                            }
+                        });
+                    },
+                    showNotification: function(title, message, iconPath) {
+                        iconPath = iconPath || "https://musiqpad.com/pads/lib/img/icon.png";
+                        MP.api.util.desktopnotif.getPermission(function(permission) {
+                            if (permission !== 'granted') return;
+
+                            var notification = new Notification(title, {
+                                icon: iconPath,
+                                body: message,
+                            });
+
+                            notification.onclick = function () {
+                                window.focus();
+                                this.close();
+                            };
+                            
+                            setTimeout(function() {
+                                notification.close();
+                            }, 3500);
+                        });
+                    }
+                },
 			},
 			showLogin: function(){
 				$('#creds-back').css('display','table');
@@ -4748,7 +4780,11 @@
 					}else{
 						player.loadVideoById(null);
 					}
-
+                    
+                    //Do desktop notification
+                    if(settings.roomSettings.desktopNotif && data.data.next.uid)
+                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + MP.findUser(data.data.next.uid).un + " just started playing\n" + data.data.next.song.title, "//i.ytimg.com/vi/" + data.data.next.song.cid + "/default.jpg");
+                    
 					//Changing the DJ's badge
 					if((MP.session.queue.currentdj || {}).uid != data.data.next.uid){
 						if(MP.session.queue.currentdj) {
@@ -6456,6 +6492,7 @@
 					thumbnails: false,
 				},
                 shortcuts: true,
+                desktopNotif: false,
 			};
 
 			$scope.changeTab = function(inProp, val){
