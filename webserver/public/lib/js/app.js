@@ -5796,7 +5796,7 @@
 														if(!err){
 															var songs = [];
 															for(var i = 0; i < songCount; i++)
-																if(data.data[i].format == "1")
+																if((data.data[i] || {}).format == "1")
 																	songs.push(data.data[i].cid);
 
 															MP.api.playlist.addSong(pldata.id, songs, function(err, data){
