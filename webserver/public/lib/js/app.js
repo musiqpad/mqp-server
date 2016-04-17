@@ -1406,7 +1406,7 @@
 
                             var notification = new Notification(title, {
                                 icon: iconPath,
-                                body: message,
+                                body: "[" + MP.session.roomInfo.slug + "] " + MP.session.roomInfo.name + "\n" + message,
                             });
 
                             notification.onclick = function () {
@@ -1784,23 +1784,25 @@
 
 				if (MP.user){
 					arr_mention.push('@' + MP.user.un);
-					if(MP.getRole(MP.user.role).mention && MP.getRole(user.role).permissions.indexOf('chat.specialMention')) arr_mention.push('@' + MP.getRole(MP.user.role).mention);
 				}
 
-				if (MP.isStaffMember(data.uid) && MP.isStaffMember()) {
-					arr_mention.push('@staff');
-				}
-
-				if (MP.checkPerm('chat.specialMention',user)){
-
-					if(settings.roomSettings.globalMention)
+				if (MP.checkPerm('chat.specialMention', user) && (settings.roomSettings.notifications.sound.global || settings.roomSettings.notifications.desktop.global)){
+					
+					if (MP.user){
+						console.log("SWAG");
 						arr_mention.push('@everyone');
 
-					if (queue_pos >= 0)
-						arr_mention.push('@djs');
-
-					if (!MP.user)
+						if (queue_pos >= 0)
+							arr_mention.push('@djs');
+						
+						if (MP.isStaffMember(data.uid) && MP.isStaffMember())
+							arr_mention.push('@staff');
+							
+						if(MP.getRole(MP.user.role).mention)
+							arr_mention.push('@' + MP.getRole(MP.user.role).mention);
+					} else {
 						arr_mention.push('@guests');
+					}
 				}
 
 				if (arr_mention.length != 0){
@@ -1822,7 +1824,15 @@
 						return;
 					}
 				}
-
+                
+                //Desktop notification
+                if(settings.roomSettings.notifications.desktop.chat)
+                    MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg);
+                
+                //Sound notification
+                if(settings.roomSettings.notifications.sound.chat)
+                    mentionSound.play();
+                
 				msg = MP.url.parse(msg,true);
 
 				// parse bold tags
@@ -1839,8 +1849,14 @@
 					document.title = '* ' + document.title;
 				}
 
-				if (mention && settings.roomSettings.soundMention){
-					mentionSound.play();
+				if (mention){
+                    //Desktop
+                    if(settings.roomSettings.notifications.desktop.mention && !settings.roomSettings.notifications.desktop.chat)
+                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " mentioned you\n" + msg);
+                    
+                    //Sound
+                    if(settings.roomSettings.notifications.sound.mention && !settings.roomSettings.notifications.sound.chat)
+                        mentionSound.play();
 				}
 
 				var badge = $(MP.makeBadgeStyle({ user: user }));
@@ -1884,18 +1900,25 @@
 					'<span class="umsg">' + msg + '</span></div></div></div>'
 				);
 			} else if (type == 'broadcast'){
-				var msg = data;
+				var msg = MP.escape(data);
 
 				$messages.append(
 					'<div class="cm broadcast"><span class="time">' + MP.makeTime(new Date()) + '</span>' +
 					'<div class="mdi mdi-alert msg"></div>' +
 					'<div class="text">' +
 //					MP.emojiReplace($('<span class="umsg"></span>').text(msg).prop('outerHTML')) + '</div></div></div>'
-					MP.emojiReplace(MP.escape(msg)) + '</div></div></div>'
+					MP.emojiReplace(msg) + '</div></div></div>'
 				);
-				if (settings.roomSettings.soundMention && settings.roomSettings.globalMention){
-					mentionSound.play();
-				}
+
+                //Desktop notification
+                if(settings.roomSettings.notifications.desktop.global){
+                    MP.api.util.desktopnotif.showNotification("musiqpad", "Received a broadcast\n" + msg);
+                }
+                
+                //Sound notification
+                if(settings.roomSettings.notifications.sound.global){
+                    mentionSound.play();
+                }
 			}
 
 			while($messages.children().length > (Number(JSON.parse(localStorage.settings).roomSettings.chatlimit) || $messages.children().length)){
@@ -4726,12 +4749,27 @@
 					break;
 				case API.DATA.EVENTS.USER_JOINED:
 					MP.userList.guests = data.data.guests;
-					if (data.data.user){
-						MP.seenUsers[ data.data.user.uid ] = data.data.user;
-						if (MP.userList.users.indexOf(data.data.user.uid) == -1){
-							MP.userList.users.push(data.data.user.uid);
-							if (settings.roomSettings && settings.roomSettings.userJoinLeaveMessages && !data.data.user.banned) {
-								MP.addMessage({ user: data.data.user, msg: 'joined', }, 'log');
+					var user = data.data.user;
+					
+					if (user){
+						MP.seenUsers[ user.uid ] = user;
+						if (MP.userList.users.indexOf(user.uid) == -1){
+							MP.userList.users.push(user.uid);
+							if (!user.banned) {
+								
+								//Chat
+								if(settings.roomSettings.notifications.chat.join)
+									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'log');
+								
+								//Desktop
+								if(settings.roomSettings.notifications.desktop.join){
+									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " joined");
+								}
+								
+								//Sound
+								if(settings.roomSettings.notifications.sound.join){
+									mentionSound.play();
+								}
 							}
 						}
 						console.log( 'User joined: ' + data.data.user.uid + ': ' + data.data.user.un);
@@ -4743,12 +4781,27 @@
 					break;
 				case API.DATA.EVENTS.USER_LEFT:
 					MP.userList.guests = data.data.guests;
-					if (data.data.user){
-						var ind = MP.userList.users.indexOf(data.data.user.uid);
+					var user = data.data.user;
+					
+					if (user){
+						var ind = MP.userList.users.indexOf(user.uid);
 						if (ind != -1){
 							MP.userList.users.splice( ind, 1);
-							if (settings.roomSettings && settings.roomSettings.userJoinLeaveMessages && !data.data.user.banned) {
-								MP.addMessage({user:data.data.user, msg:'left'}, 'log');
+							if (!user.banned) {
+								
+								//Chat
+								if(settings.roomSettings.notifications.chat.leave)
+									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'log');
+								
+								//Desktop
+								if(settings.roomSettings.notifications.desktop.leave){
+									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " left");
+								}
+								
+								//Sound
+								if(settings.roomSettings.notifications.sound.leave){
+									mentionSound.play();
+								}
 							}
 						}
 
@@ -4783,10 +4836,6 @@
 						player.loadVideoById(null);
 					}
                     
-                    //Do desktop notification
-                    if(settings.roomSettings.desktopNotif && data.data.next.uid)
-                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + MP.findUser(data.data.next.uid).un + " just started playing\n" + data.data.next.song.title, "//i.ytimg.com/vi/" + data.data.next.song.cid + "/default.jpg");
-                    
 					//Changing the DJ's badge
 					if((MP.session.queue.currentdj || {}).uid != data.data.next.uid){
 						if(MP.session.queue.currentdj) {
@@ -4801,10 +4850,27 @@
 							$('.bdg-icon.bdg-icon-dj').css('color', (MP.getRole(MP.api.room.getUser(data.data.next.uid).role).style || { color: 'white', }).color);
 						}
 					}
+                    
+                    //Do last DJ notifications
+                    if(data.data.last.uid){
+                        var lastdj = MP.findUser(data.data.last.uid);
 
-					//Just played chat message
-					if(settings.roomSettings.justplayed && data.data.last.song) MP.addMessage('<span data-uid="'+ MP.session.queue.currentdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(MP.session.queue.currentdj.role) + '">' + MP.session.queue.currentdj.un + '</span>just played <b>' + data.data.last.song.title + '</b>', 'system');
-
+                        //Chat
+                        if(settings.roomSettings.notifications.chat.advance_last)
+                            MP.addMessage('<span data-uid="'+ lastdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(lastdj.role) + '">' + lastdj.un + '</span>just played ' + data.data.last.song.title, 'system');
+                        
+                        //Desktop
+                        if(settings.roomSettings.notifications.desktop.advance_last){
+                            MP.api.util.desktopnotif.showNotification("musiqpad", "@" + lastdj.un + " just played\n" + data.data.last.song.title, "//i.ytimg.com/vi/" + data.data.last.song.cid + "/default.jpg");
+                        }
+                        
+                        //Sound
+                        if(settings.roomSettings.notifications.sound.advance_last){
+                            mentionSound.play();
+                        }
+                    }
+                    
+                    //Load data from received JSON
 					MP.session.queue.votes = {};
 					MP.session.queue.currentdj = (data.data.next.uid ? MP.findUser(data.data.next.uid) : null);
 					MP.session.queue.currentsong = data.data.next.song;
@@ -4812,6 +4878,23 @@
 					MP.media.start = data.data.next.start;
 					if(data.data.last.uid == MP.api.room.getUser().uid) MP.session.lastdj = false;
 
+                    //Do next DJ notifications
+                    if(data.data.next.uid){
+                        var nextdj = MP.findUser(data.data.next.uid);
+                        
+                        //Chat
+                        if(settings.roomSettings.notifications.chat.advance_next)
+                            MP.addMessage('<span data-uid="'+ nextdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(nextdj.role) + '">' + nextdj.un + '</span>just started playing ' + data.data.next.song.title, 'system');
+                        
+                        //Desktop
+                        if(settings.roomSettings.notifications.desktop.advance_next)
+                            MP.api.util.desktopnotif.showNotification("musiqpad", "@" + nextdj.un + " just started playing\n" + data.data.next.song.title, "//i.ytimg.com/vi/" + data.data.next.song.cid + "/default.jpg");
+                        
+                        //Sound
+                        if(settings.roomSettings.notifications.sound.advance_next)
+                            mentionSound.play();
+                    }
+                    
 					if(data.data.next.song){
 						MP.media.timeRemaining = data.data.next.song.duration;
 						MP.startTimeRemaining();
@@ -4862,11 +4945,45 @@
 					var vote = data.data;
 
 					MP.session.queue.votes = vote.votes;
+					
+					//Do notifications
+					if(vote.voted == 1){
+						var user = MP.findUser(vote.uid);
+						
+						if(vote.action == 'like'){
+							//Chat
+							if(settings.roomSettings.notifications.chat.like)
+								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>liked the song', 'system');
+							
+							//Desktop
+							if(settings.roomSettings.notifications.desktop.like)
+								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " liked the song");
+							
+							//Sound
+							if(settings.roomSettings.notifications.sound.like)
+								mentionSound.play();
+						} else if(vote.action == 'grab'){
+							//Chat
+							if(settings.roomSettings.notifications.chat.grab)
+								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>grabbed the song', 'system');
+							
+							//Desktop
+							if(settings.roomSettings.notifications.desktop.grab)
+								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " grabbed the song");
+							
+							//Sound
+							if(settings.roomSettings.notifications.sound.grab)
+								mentionSound.play();
+						}
+					}
+					
+					
 					if (MP.historyList.historyInitialized) {
 						if (MP.historyList.history[0] && MP.session.queue.currentsong == MP.historyList.history[0].song) {
 							MP.historyList.history[0].votes = vote.votes;
 						}
 					}
+					
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.USER_UPDATE:
@@ -5000,15 +5117,24 @@
 				case API.DATA.EVENTS.PRIVATE_MESSAGE:
 					MP.session.lastPMUid = data.data.uid;
 					var user = MP.findUser(data.data.uid);
-					API.chat.log('<br>' + MP.escape(data.data.message), '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message received from </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
+                    var msg = MP.escape(data.data.message);
 
 					if (!MP.session.hasfocus){
 						document.title = '! ' + document.title;
 					}
 
-					if (settings && settings.roomSettings && settings.roomSettings.soundMention){
-						mentionSound.play();
-					}
+					//Chat
+                    if(settings.roomSettings.notifications.chat.pm)
+                        API.chat.log('<br>' + msg, '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message received from </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
+                    
+                    //Desktop
+                    if(settings.roomSettings.notifications.desktop.pm)
+                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent you a private message\n" + msg);
+                    
+                    //Sound
+                    if(settings.roomSettings.notifications.sound.pm)
+                        mentionSound.play();
+                    
 					break;
 
 				case API.DATA.EVENTS.SERVER_RESPONSE:
@@ -6475,8 +6601,7 @@
 			};
 
 			$scope.roomSettings = {
-				userJoinLeaveMessages: false,
-				enableEmojis: true,
+                enableEmojis: true,
 				emojis: {
 					basic: true,
 					twitch: true,
@@ -6486,15 +6611,47 @@
 				playerStyle: '',
 				chatTimestampFormat: API.DATA.CHAT.TSFORMAT.HR24,
 				showImages: false,
-				soundMention: true,
 				leaveConfirmation: false,
 				chatlimit: 512,
-				justplayed: false,
 				library: {
 					thumbnails: false,
 				},
                 shortcuts: true,
-                desktopNotif: false,
+                notifications: {
+                	chat: {
+                		advance_last: false,
+                		advance_next: false,
+                		join: false,
+                		leave: false,
+                		like: false,
+                		grab: false,
+                        chat: false,
+                	},
+                	desktop: {
+                		advance_last: false,
+                		advance_next: false,
+                		join: false,
+                		leave: false,
+                		mention: false,
+                		broadcast: false,
+                		global: false,
+                		like: false,
+                		grab: false,
+                        chat: false,
+                	},
+                	sound: {
+                		advance_last: false,
+                		advance_next: false,
+                		join: false,
+                		leave: false,
+                		mention: true,
+                		broadcast: true,
+                		global: true,
+                		like: false,
+                		grab: false,
+                        chat: false,
+                	},
+                },
 			};
 
 			$scope.changeTab = function(inProp, val){
@@ -6640,11 +6797,9 @@
 				if (settings.roomSettings == undefined || settings.roomSettings == null) {
 					settings.roomSettings = $scope.roomSettings;
 					localStorage.setItem("settings", JSON.stringify(settings));
-				}
-				else {
-					for (var i in settings.roomSettings) {
-						$scope.roomSettings[i] = settings.roomSettings[i];
-					}
+				} else {
+					$.extend(true, $scope.roomSettings, settings.roomSettings);
+                    
 					if (settings.roomSettings.leaveConfirmation){
 						$(window).bind('beforeunload', MP.leaveConfirmation);
 					}
