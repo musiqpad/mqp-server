@@ -1822,7 +1822,15 @@
 						return;
 					}
 				}
-
+                
+                //Desktop notification
+                if(settings.roomSettings.notifications.desktop.chat)
+                    MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg);
+                
+                //Sound notification
+                if(settings.roomSettings.notifications.sound.chat)
+                    mentionSound.play();
+                
 				msg = MP.url.parse(msg,true);
 
 				// parse bold tags
@@ -1839,8 +1847,14 @@
 					document.title = '* ' + document.title;
 				}
 
-				if (mention && settings.roomSettings.soundMention){
-					mentionSound.play();
+				if (mention){
+                    //Desktop
+                    if(settings.roomSettings.notifications.desktop.mention && !settings.roomSettings.notifications.desktop.chat)
+                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " mentioned you\n" + msg);
+                    
+                    //Sound
+                    if(settings.roomSettings.notifications.sound.mention && !settings.roomSettings.notifications.sound.chat)
+                        mentionSound.play();
 				}
 
 				var badge = $(MP.makeBadgeStyle({ user: user }));
@@ -1884,18 +1898,25 @@
 					'<span class="umsg">' + msg + '</span></div></div></div>'
 				);
 			} else if (type == 'broadcast'){
-				var msg = data;
+				var msg = MP.escape(data);
 
 				$messages.append(
 					'<div class="cm broadcast"><span class="time">' + MP.makeTime(new Date()) + '</span>' +
 					'<div class="mdi mdi-alert msg"></div>' +
 					'<div class="text">' +
 //					MP.emojiReplace($('<span class="umsg"></span>').text(msg).prop('outerHTML')) + '</div></div></div>'
-					MP.emojiReplace(MP.escape(msg)) + '</div></div></div>'
+					MP.emojiReplace(msg) + '</div></div></div>'
 				);
-				if (settings.roomSettings.soundMention && settings.roomSettings.globalMention){
-					mentionSound.play();
-				}
+
+                //Desktop notification
+                if(settings.roomSettings.notifications.desktop.global){
+                    MP.api.util.desktopnotif.showNotification("musiqpad", "Received a broadcast\n" + msg);
+                }
+                
+                //Sound notification
+                if(settings.roomSettings.notifications.sound.global){
+                    mentionSound.play();
+                }
 			}
 
 			while($messages.children().length > (Number(JSON.parse(localStorage.settings).roomSettings.chatlimit) || $messages.children().length)){
@@ -5028,15 +5049,24 @@
 				case API.DATA.EVENTS.PRIVATE_MESSAGE:
 					MP.session.lastPMUid = data.data.uid;
 					var user = MP.findUser(data.data.uid);
-					API.chat.log('<br>' + MP.escape(data.data.message), '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message received from </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
+                    var msg = MP.escape(data.data.message);
 
 					if (!MP.session.hasfocus){
 						document.title = '! ' + document.title;
 					}
 
-					if (settings && settings.roomSettings && settings.roomSettings.soundMention){
-						mentionSound.play();
-					}
+					//Chat
+                    if(settings.roomSettings.notifications.chat.pm)
+                        API.chat.log('<br>' + msg, '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message received from </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
+                    
+                    //Desktop
+                    if(settings.roomSettings.notifications.desktop.pm)
+                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent you a private message\n" + msg);
+                    
+                    //Sound
+                    if(settings.roomSettings.notifications.sound.pm)
+                        mentionSound.play();
+                    
 					break;
 
 				case API.DATA.EVENTS.SERVER_RESPONSE:
