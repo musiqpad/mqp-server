@@ -1406,7 +1406,7 @@
 
                             var notification = new Notification(title, {
                                 icon: iconPath,
-                                body: message,
+                                body: "[" + MP.session.roomInfo.slug + "] " + MP.session.roomInfo.name + "\n" + message,
                             });
 
                             notification.onclick = function () {
@@ -1784,23 +1784,25 @@
 
 				if (MP.user){
 					arr_mention.push('@' + MP.user.un);
-					if(MP.getRole(MP.user.role).mention && MP.getRole(user.role).permissions.indexOf('chat.specialMention')) arr_mention.push('@' + MP.getRole(MP.user.role).mention);
 				}
 
-				if (MP.isStaffMember(data.uid) && MP.isStaffMember()) {
-					arr_mention.push('@staff');
-				}
-
-				if (MP.checkPerm('chat.specialMention',user)){
-
-					if(settings.roomSettings.globalMention)
+				if (MP.checkPerm('chat.specialMention', user) && (settings.roomSettings.notifications.sound.global || settings.roomSettings.notifications.desktop.global)){
+					
+					if (MP.user){
+						console.log("SWAG");
 						arr_mention.push('@everyone');
 
-					if (queue_pos >= 0)
-						arr_mention.push('@djs');
-
-					if (!MP.user)
+						if (queue_pos >= 0)
+							arr_mention.push('@djs');
+						
+						if (MP.isStaffMember(data.uid) && MP.isStaffMember())
+							arr_mention.push('@staff');
+							
+						if(MP.getRole(MP.user.role).mention)
+							arr_mention.push('@' + MP.getRole(MP.user.role).mention);
+					} else {
 						arr_mention.push('@guests');
+					}
 				}
 
 				if (arr_mention.length != 0){
@@ -4745,12 +4747,27 @@
 					break;
 				case API.DATA.EVENTS.USER_JOINED:
 					MP.userList.guests = data.data.guests;
-					if (data.data.user){
-						MP.seenUsers[ data.data.user.uid ] = data.data.user;
-						if (MP.userList.users.indexOf(data.data.user.uid) == -1){
-							MP.userList.users.push(data.data.user.uid);
-							if (settings.roomSettings && settings.roomSettings.userJoinLeaveMessages && !data.data.user.banned) {
-								MP.addMessage({ user: data.data.user, msg: 'joined', }, 'log');
+					var user = data.data.user;
+					
+					if (user){
+						MP.seenUsers[ user.uid ] = user;
+						if (MP.userList.users.indexOf(user.uid) == -1){
+							MP.userList.users.push(user.uid);
+							if (!user.banned) {
+								
+								//Chat
+								if(settings.roomSettings.notifications.chat.join)
+									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'log');
+								
+								//Desktop
+								if(settings.roomSettings.notifications.desktop.join){
+									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " joined");
+								}
+								
+								//Sound
+								if(settings.roomSettings.notifications.sound.join){
+									mentionSound.play();
+								}
 							}
 						}
 						console.log( 'User joined: ' + data.data.user.uid + ': ' + data.data.user.un);
@@ -4762,12 +4779,27 @@
 					break;
 				case API.DATA.EVENTS.USER_LEFT:
 					MP.userList.guests = data.data.guests;
-					if (data.data.user){
-						var ind = MP.userList.users.indexOf(data.data.user.uid);
+					var user = data.data.user;
+					
+					if (user){
+						var ind = MP.userList.users.indexOf(user.uid);
 						if (ind != -1){
 							MP.userList.users.splice( ind, 1);
-							if (settings.roomSettings && settings.roomSettings.userJoinLeaveMessages && !data.data.user.banned) {
-								MP.addMessage({user:data.data.user, msg:'left'}, 'log');
+							if (!user.banned) {
+								
+								//Chat
+								if(settings.roomSettings.notifications.chat.leave)
+									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'log');
+								
+								//Desktop
+								if(settings.roomSettings.notifications.desktop.leave){
+									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " left");
+								}
+								
+								//Sound
+								if(settings.roomSettings.notifications.sound.leave){
+									mentionSound.play();
+								}
 							}
 						}
 
@@ -4823,7 +4855,7 @@
 
                         //Chat
                         if(settings.roomSettings.notifications.chat.advance_last)
-                            MP.addMessage('<span data-uid="'+ lastdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(lastdj.role) + '">' + dj.un + '</span>just played ' + data.data.last.song.title, 'system');
+                            MP.addMessage('<span data-uid="'+ lastdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(lastdj.role) + '">' + lastdj.un + '</span>just played ' + data.data.last.song.title, 'system');
                         
                         //Desktop
                         if(settings.roomSettings.notifications.desktop.advance_last){
@@ -4850,7 +4882,7 @@
                         
                         //Chat
                         if(settings.roomSettings.notifications.chat.advance_next)
-                            MP.addMessage('<span data-uid="'+ nextdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(nextdj.role) + '">' + dj.un + '</span>just started playing ' + data.data.next.song.title, 'system');
+                            MP.addMessage('<span data-uid="'+ nextdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(nextdj.role) + '">' + nextdj.un + '</span>just started playing ' + data.data.next.song.title, 'system');
                         
                         //Desktop
                         if(settings.roomSettings.notifications.desktop.advance_next)
@@ -4911,11 +4943,13 @@
 					var vote = data.data;
 
 					MP.session.queue.votes = vote.votes;
+					
 					if (MP.historyList.historyInitialized) {
 						if (MP.historyList.history[0] && MP.session.queue.currentsong == MP.historyList.history[0].song) {
 							MP.historyList.history[0].votes = vote.votes;
 						}
 					}
+					
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.USER_UPDATE:
