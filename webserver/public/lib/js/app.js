@@ -1825,22 +1825,26 @@
 					}
 				}
                 
-                //Desktop notification
-                if(settings.roomSettings.notifications.desktop.chat)
-                    MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg);
-                
-                //Sound notification
-                if(settings.roomSettings.notifications.sound.chat)
-                    mentionSound.play();
+				//Do chat notifications
+				if(user.uid != MP.getUser().uid){
+					
+					//Desktop notification
+					if(settings.roomSettings.notifications.desktop.chat)
+						MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg);
+					
+					//Sound notification
+					if(settings.roomSettings.notifications.sound.chat)
+						mentionSound.play();
+				}
                 
 				msg = MP.url.parse(msg,true);
 
-				// parse bold tags
+				//Parse bold tags
 				msg = msg.replace(/\*(.*?)\*/g, function(a){
 					return '<b>'+a.slice(1,-1)+'</b>';
 				});
 
-				//parse strike tags
+				//Parse strike tags
 				msg = msg.replace(/~(.*?)~/g, function(a){
 					return '<s>'+a.slice(1,-1)+'</s>';
 				});
@@ -1850,6 +1854,7 @@
 				}
 
 				if (mention){
+					
                     //Desktop
                     if(settings.roomSettings.notifications.desktop.mention && !settings.roomSettings.notifications.desktop.chat)
                         MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " mentioned you\n" + msg);
