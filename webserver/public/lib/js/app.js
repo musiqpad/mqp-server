@@ -4040,8 +4040,10 @@
 				if(angular.element($('body')).scope().roomSettings.autoplayblocked) {
 					MP.youtubeSearch(MP.session.queue.currentsong.title, function(err, res){
 						var player = API.player.getPlayer();
-						player.loadVideoById(Object.keys(res)[0]);
-						API.player.getPlayer().seekTo(MP.models.songDuration - MP.models.secondsLeftInSong)
+						var videoId = player.getVideoData().video_id;
+						var indexVideo = Object.keys(res).indexOf(player.getVideoData().video_id) + 1;
+						player.loadVideoById(Object.keys(res)[indexVideo]);
+						player.seekTo(MP.models.songDuration - MP.models.secondsLeftInSong)
 					});
 				}
 				else {
