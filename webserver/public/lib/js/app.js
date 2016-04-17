@@ -4944,6 +4944,38 @@
 
 					MP.session.queue.votes = vote.votes;
 					
+					//Do notifications
+					if(vote.voted == 1){
+						var user = MP.findUser(vote.uid);
+						
+						if(vote.action == 'like'){
+							//Chat
+							if(settings.roomSettings.notifications.chat.like)
+								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>liked the song', 'system');
+							
+							//Desktop
+							if(settings.roomSettings.notifications.desktop.like)
+								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " liked the song");
+							
+							//Sound
+							if(settings.roomSettings.notifications.sound.like)
+								mentionSound.play();
+						} else if(vote.action == 'grab'){
+							//Chat
+							if(settings.roomSettings.notifications.chat.grab)
+								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>grabbed the song', 'system');
+							
+							//Desktop
+							if(settings.roomSettings.notifications.desktop.grab)
+								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " grabbed the song");
+							
+							//Sound
+							if(settings.roomSettings.notifications.sound.grab)
+								mentionSound.play();
+						}
+					}
+					
+					
 					if (MP.historyList.historyInitialized) {
 						if (MP.historyList.history[0] && MP.session.queue.currentsong == MP.historyList.history[0].song) {
 							MP.historyList.history[0].votes = vote.votes;
