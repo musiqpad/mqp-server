@@ -4781,10 +4781,6 @@
 						player.loadVideoById(null);
 					}
                     
-                    //Do desktop notification
-                    if(settings.roomSettings.desktopNotif && data.data.next.uid)
-                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + MP.findUser(data.data.next.uid).un + " just started playing\n" + data.data.next.song.title, "//i.ytimg.com/vi/" + data.data.next.song.cid + "/default.jpg");
-                    
 					//Changing the DJ's badge
 					if((MP.session.queue.currentdj || {}).uid != data.data.next.uid){
 						if(MP.session.queue.currentdj) {
@@ -4799,10 +4795,27 @@
 							$('.bdg-icon.bdg-icon-dj').css('color', (MP.getRole(MP.api.room.getUser(data.data.next.uid).role).style || { color: 'white', }).color);
 						}
 					}
+                    
+                    //Do last DJ notifications
+                    if(data.data.last.uid){
+                        var lastdj = MP.findUser(data.data.last.uid);
 
-					//Just played chat message
-					if(settings.roomSettings.justplayed && data.data.last.song) MP.addMessage('<span data-uid="'+ MP.session.queue.currentdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(MP.session.queue.currentdj.role) + '">' + MP.session.queue.currentdj.un + '</span>just played <b>' + data.data.last.song.title + '</b>', 'system');
-
+                        //Chat
+                        if(settings.roomSettings.notifications.chat.advance_last)
+                            MP.addMessage('<span data-uid="'+ lastdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(lastdj.role) + '">' + dj.un + '</span>just played ' + data.data.last.song.title, 'system');
+                        
+                        //Desktop
+                        if(settings.roomSettings.notifications.desktop.advance_last){
+                            MP.api.util.desktopnotif.showNotification("musiqpad", "@" + lastdj.un + " just played\n" + data.data.last.song.title, "//i.ytimg.com/vi/" + data.data.last.song.cid + "/default.jpg");
+                        }
+                        
+                        //Sound
+                        if(settings.roomSettings.notifications.sound.advance_last){
+                            mentionSound.play();
+                        }
+                    }
+                    
+                    //Load data from received JSON
 					MP.session.queue.votes = {};
 					MP.session.queue.currentdj = (data.data.next.uid ? MP.findUser(data.data.next.uid) : null);
 					MP.session.queue.currentsong = data.data.next.song;
@@ -4810,6 +4823,23 @@
 					MP.media.start = data.data.next.start;
 					if(data.data.last.uid == MP.api.room.getUser().uid) MP.session.lastdj = false;
 
+                    //Do next DJ notifications
+                    if(data.data.next.uid){
+                        var nextdj = MP.findUser(data.data.next.uid);
+                        
+                        //Chat
+                        if(settings.roomSettings.notifications.chat.advance_next)
+                            MP.addMessage('<span data-uid="'+ nextdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(nextdj.role) + '">' + dj.un + '</span>just started playing ' + data.data.next.song.title, 'system');
+                        
+                        //Desktop
+                        if(settings.roomSettings.notifications.desktop.advance_next)
+                            MP.api.util.desktopnotif.showNotification("musiqpad", "@" + nextdj.un + " just started playing\n" + data.data.next.song.title, "//i.ytimg.com/vi/" + data.data.next.song.cid + "/default.jpg");
+                        
+                        //Sound
+                        if(settings.roomSettings.notifications.sound.advance_next)
+                            mentionSound.play();
+                    }
+                    
 					if(data.data.next.song){
 						MP.media.timeRemaining = data.data.next.song.duration;
 						MP.startTimeRemaining();
@@ -6473,8 +6503,7 @@
 			};
 
 			$scope.roomSettings = {
-				userJoinLeaveMessages: false,
-				enableEmojis: true,
+                enableEmojis: true,
 				emojis: {
 					basic: true,
 					twitch: true,
@@ -6484,15 +6513,47 @@
 				playerStyle: '',
 				chatTimestampFormat: API.DATA.CHAT.TSFORMAT.HR24,
 				showImages: false,
-				soundMention: true,
 				leaveConfirmation: false,
 				chatlimit: 512,
-				justplayed: false,
 				library: {
 					thumbnails: false,
 				},
                 shortcuts: true,
-                desktopNotif: false,
+                notifications: {
+                	chat: {
+                		advance_last: false,
+                		advance_next: false,
+                		join: false,
+                		leave: false,
+                		like: false,
+                		grab: false,
+                        chat: false,
+                	},
+                	desktop: {
+                		advance_last: false,
+                		advance_next: false,
+                		join: false,
+                		leave: false,
+                		mention: false,
+                		broadcast: false,
+                		global: false,
+                		like: false,
+                		grab: false,
+                        chat: false,
+                	},
+                	sound: {
+                		advance_last: false,
+                		advance_next: false,
+                		join: false,
+                		leave: false,
+                		mention: true,
+                		broadcast: true,
+                		global: true,
+                		like: false,
+                		grab: false,
+                        chat: false,
+                	},
+                },
 			};
 
 			$scope.changeTab = function(inProp, val){
@@ -6638,11 +6699,9 @@
 				if (settings.roomSettings == undefined || settings.roomSettings == null) {
 					settings.roomSettings = $scope.roomSettings;
 					localStorage.setItem("settings", JSON.stringify(settings));
-				}
-				else {
-					for (var i in settings.roomSettings) {
-						$scope.roomSettings[i] = settings.roomSettings[i];
-					}
+				} else {
+					$.extend(true, $scope.roomSettings, settings.roomSettings);
+                    
 					if (settings.roomSettings.leaveConfirmation){
 						$(window).bind('beforeunload', MP.leaveConfirmation);
 					}
