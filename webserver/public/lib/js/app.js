@@ -6626,6 +6626,7 @@
                 		like: false,
                 		grab: false,
                         chat: false,
+						pm: true,
                 	},
                 	desktop: {
                 		advance_last: false,
@@ -6638,6 +6639,7 @@
                 		like: false,
                 		grab: false,
                         chat: false,
+						pm: false,
                 	},
                 	sound: {
                 		advance_last: false,
@@ -6650,6 +6652,7 @@
                 		like: false,
                 		grab: false,
                         chat: false,
+						pm: true,
                 	},
                 },
 			};
