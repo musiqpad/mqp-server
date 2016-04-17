@@ -1789,7 +1789,6 @@
 				if (MP.checkPerm('chat.specialMention', user) && (settings.roomSettings.notifications.sound.global || settings.roomSettings.notifications.desktop.global)){
 					
 					if (MP.user){
-						console.log("SWAG");
 						arr_mention.push('@everyone');
 
 						if (queue_pos >= 0)
@@ -1826,7 +1825,7 @@
 				}
                 
 				//Do chat notifications
-				if(user.uid != MP.getUser().uid){
+				if(user.uid != MP.api.room.getUser().uid){
 					
 					//Desktop notification
 					if(settings.roomSettings.notifications.desktop.chat)
