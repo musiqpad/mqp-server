@@ -1771,6 +1771,7 @@
 
 			if (type == 'chat'){
 				var msg = data.message;
+				var msg_plain = msg;
 
 				if (!msg){
 					return;
@@ -1829,7 +1830,7 @@
 					
 					//Desktop notification
 					if(settings.roomSettings.notifications.desktop.chat)
-						MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg);
+						MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg_plain);
 					
 					//Sound notification
 					if(settings.roomSettings.notifications.sound.chat)
@@ -1856,7 +1857,7 @@
 					
                     //Desktop
                     if(settings.roomSettings.notifications.desktop.mention && !settings.roomSettings.notifications.desktop.chat)
-                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " mentioned you\n" + msg);
+                        MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " mentioned you\n" + msg_plain);
                     
                     //Sound
                     if(settings.roomSettings.notifications.sound.mention && !settings.roomSettings.notifications.sound.chat)
@@ -5121,6 +5122,7 @@
 				case API.DATA.EVENTS.PRIVATE_MESSAGE:
 					MP.session.lastPMUid = data.data.uid;
 					var user = MP.findUser(data.data.uid);
+
                     var msg = MP.escape(data.data.message);
 
 					if (!MP.session.hasfocus){
