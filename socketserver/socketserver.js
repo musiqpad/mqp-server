@@ -1392,7 +1392,7 @@ var SocketServer = function(server){
 						break;
 					}
 					
-					if (!data.data.message || data.data.message == '') {
+					if (!data.data.message || data.data.message == '' || typeof data.data.message != 'string') {
 						returnObj.data = {
 							error: 'EmptyMessage'
 						};
@@ -1432,6 +1432,14 @@ var SocketServer = function(server){
 					if (!Roles.checkPermission(socket.user.role, 'chat.staff')){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!data.data.message || data.data.message == '' || typeof data.data.message != 'string') {
+						returnObj.data = {
+							error: 'EmptyMessage'
 						};
 						socket.sendJSON(returnObj);
 						break;
@@ -1514,6 +1522,15 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
+					
+					if (!data.data.message || typeof data.data.message != 'string'){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					that.room.sendBroadcastMessage(
 						data.data.message.replace('<', '&lt;').replace('>', '&gt;')
 					);
@@ -1529,7 +1546,7 @@ var SocketServer = function(server){
 					 }
 					*/
 					
-					if (!data.data.query){
+					if (!data.data.query || typeof data.data.query != 'string'){
 						returnObj.data = {
 							error: 'PropsMissing'
 						};
@@ -1589,7 +1606,9 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-						
+					
+					data.data.name = data.data.name.toString();
+					
 					socket.user.addPlaylist(data.data.name, function(err, pl){
 						if (err){ 
 							returnObj.data = {
@@ -1756,6 +1775,14 @@ var SocketServer = function(server){
 							data.data.pos = 'top';
 						}
 						if (Array.isArray(data.data.cid)) {
+							if (data.data.cid.length == 0) {
+								returnObj.data = {
+									error: 'emptyCidArray'
+								};
+								socket.sendJSON(returnObj);
+								
+								break;
+							}
 							var songsAdded = 0;
 							var videos = [];
 							
@@ -2052,6 +2079,14 @@ var SocketServer = function(server){
 						break;
 					}
 					
+					if (typeof data.data.voteType != 'string') {
+						returnObj.data = {
+							error: 'InvalidVoteType'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					var res = that.room.queue.vote(data.data.voteType, socket);
 					
 //					if (res){
@@ -2131,6 +2166,13 @@ var SocketServer = function(server){
 					 	}
 					 }
 					*/
+					if (typeof data.data.query != 'string') {
+						returnObj.data = {
+							error: 'InvalidQueryType'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
 					
 					YT.findChannels({
 						query: data.data.query,
@@ -2156,6 +2198,14 @@ var SocketServer = function(server){
 					 	}
 					 }
 					*/
+					
+					if (typeof data.data.query != 'string') {
+						returnObj.data = {
+							error: 'InvalidQueryType'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
 					
 					YT.findPlaylists({
 						query: data.data.query,
@@ -2183,7 +2233,7 @@ var SocketServer = function(server){
 					*/
 					
 					YT.getChannelPlaylists({
-						channelId: data.data.channelId,
+						channelId: data.data.channelId.toString(),
 						pageToken: data.data.pageToken,
 					}, function(err, data){
 						if(err) 
@@ -2208,7 +2258,7 @@ var SocketServer = function(server){
 					*/
 					
 					YT.getPlaylist({
-						playlistId: data.data.playlistId,
+						playlistId: data.data.playlistId.toString(),
 						pageToken: data.data.pageToken,
 					}, function(err, data){
 						if(err) 
@@ -2251,7 +2301,7 @@ var SocketServer = function(server){
 					
 					//Get playlist
 					YT.getPlaylistFull({
-						playlistId: data.data.playlistId,
+						playlistId: data.data.playlistId.toString(),
 						pageToken: data.data.pageToken,
 					}, function(err, videos){
 						//Handle error
@@ -2264,7 +2314,7 @@ var SocketServer = function(server){
 						}
 						
 						//Playlist creation and import
-						YT.getPlaylistName(data.data.playlistId, function(err, plname){
+						YT.getPlaylistName(data.data.playlistId.toString(), function(err, plname){
 							
 							//Prepare for multiple playlists if necessary, split by 200
 							var returnPlaylists = [];

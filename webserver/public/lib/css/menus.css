@@ -228,7 +228,7 @@ div.minicolors{
 	float: left;
 	margin-top: 1px;
 }
-.lib-sng .text, .yt-sng .text, .hist-sng .text {
+.lib-sng .text, .yt-blocked-sng .text, .yt-sng .text, .hist-sng .text {
 	margin: 0 10px;
 	float: left;
 	width: calc(100% - 272px);
@@ -236,7 +236,7 @@ div.minicolors{
     white-space: nowrap;
     text-overflow: ellipsis;
 }
-.yt-sng .text, .hist-sng .text {
+.yt-blocked-sng .text, .yt-sng .text, .hist-sng .text {
 	margin: 0 10px;
 	float: left;
 	width: calc(100% - 273px);
@@ -323,13 +323,16 @@ div.minicolors{
 	line-height: 40px;
 	background: #222326;
 }
-.yt-sng {
+.yt-blocked-sng, .yt-sng {
 	width: calc(100% - 30px);
 	height: 68px;
 	margin: 10px;
 	vertical-align: middle;
 	line-height: 70px;
 	background: #282C35;
+}
+.yt-blocked-sng {
+	cursor: pointer;
 }
 .hist-sng {
 	width: calc(100% - 30px);
