@@ -4764,7 +4764,7 @@
 								
 								//Chat
 								if(settings.roomSettings.notifications.chat.join)
-									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'log');
+									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'system');
 								
 								//Desktop
 								if(settings.roomSettings.notifications.desktop.join){
@@ -4796,7 +4796,7 @@
 								
 								//Chat
 								if(settings.roomSettings.notifications.chat.leave)
-									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'log');
+									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'system');
 								
 								//Desktop
 								if(settings.roomSettings.notifications.desktop.leave){
