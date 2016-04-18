@@ -316,6 +316,8 @@ a {
 .video-blocked {
   width: 740px !important;
   height: 700px !important;
+  max-width: 90vw !important;
+  max-height: 90vh;
 }
 .video-blocked, .modal {
     width: 500px;
@@ -341,6 +343,8 @@ a {
   height: 520px;
   overflow-x: hidden;
   overflow-y: scroll;
+  max-height: calc(70vh - 133px);
+  max-width: calc(93vw - 30px);
 }
 .modal-controls {
     height:40px;
