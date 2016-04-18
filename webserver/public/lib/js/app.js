@@ -6988,7 +6988,7 @@
 								setTimeout(function(){
 									 $('.loader, .loading').fadeOut(1000);
 									 $('.load').slideToggle(1000);
-									 if(player.getPlayerState() == -1)
+									 if (playerSettings.stream && player.getPlayerState() == -1)
 									 	MP.videoNotAvailable();
 								},2 * 1000);
 								clearInterval(interval);
