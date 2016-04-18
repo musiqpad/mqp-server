@@ -145,6 +145,20 @@ function LevelDB(callback) {
                     currentCID = parseInt(val);
                 });
             });
+            	    
+    //PmDB
+    if(!this.PmDB)
+        this.PmDB = setupDB(dbdir + '/pm',
+
+            //If new DB is created
+            function(newdb) {},
+
+            //Callback
+            function(err, newdb) {
+                if (err) {
+                    throw new Error('Could not open PmDB: ' + err);
+                }
+            });
 }
 
 function setupDB(dir, setup, callback){
@@ -614,6 +628,109 @@ LevelDB.prototype.userEmailExists = function(key, callback) {
 LevelDB.prototype.logChat = function(uid, msg, special, callback) {
     this.putJSON(this.ChatDB, currentCID, { uid: uid, msg: msg, special: special });
     callback(currentCID++);
+};
+
+//PmDB
+LevelDB.prototype.logPM = function(from, to, msg, callback) {
+    var that = this;
+    var key = Math.min(from, to) + ":" + Math.max(from, to);
+    
+    this.getJSON(this.PmDB, key, function(err, res){
+        var out = [];
+        
+        if(!err) out = res;
+        
+        out.push({
+            message: msg,
+            time: new Date(),
+            from: from,
+            unread: true,
+        });
+        
+        that.putJSON(that.PmDB, key, out);
+    });
+};
+
+LevelDB.prototype.getConversation = function(from, to, callback) {
+    var key = Math.min(from, to) + ":" + Math.max(from, to);
+    
+    this.getJSON(this.PmDB, key, function(err, res){
+        if(err){
+            callback(null, []);
+        } else {
+            callback(null, res);
+        }
+    });
+};
+
+LevelDB.prototype.getConversations = function(uid, callback) {
+    var that = this;
+    
+    var out = {};
+    var uids;
+    uid = uid.toString();
+    
+    this.PmDB.createReadStream()
+        .on('data', function(data) {
+            if (data.key.indexOf(':') == -1 || (uids = data.key.split(':')).indexOf(uid) == -1) return;
+
+            try {
+                var convo = JSON.parse(data.value);
+            } catch (e) {
+                return;
+            }
+            
+            var unread = 0;
+            convo.map(function(e){
+                if(e.unread && e.from != uid) unread++;
+                return {
+                    messages: e.messages,
+                    time: e.time,
+                    from: e.from,
+                };
+            });
+
+            out[uids[(uids.indexOf(uid) + 1) % 2]] = {
+                user: null,
+                messages: [ convo.pop() ],
+                unread: unread,
+            };
+        })
+        .on('end', function() {
+            var uids = Object.keys(out).map(function(e){ return parseInt(e); });
+            
+            if (uids.length > 0) {
+                that.getUserByUid(uids, function(err, result){
+                    if (err) {
+                        callback(err);
+                    } else {
+                        for (var id in result) {
+                            out[id].user = result[id].getClientObj();
+                        }
+                        callback(null, out);
+                    }
+                });
+            } else {
+                callback(null, out);
+            }
+            return false;
+        });
+};
+
+LevelDB.prototype.markConversationRead = function(uid, uid2, time) {
+    var that = this;
+    var key = Math.min(uid, uid2) + ":" + Math.max(uid, uid2);
+    
+    this.getJSON(this.PmDB, key, function(err, res) {
+        if(err) return;
+        
+        res.map(function(e){
+            if(e.from == uid2 && new Date(e.time) < new Date(time)) e.unread = false;
+            return e;
+        });
+        
+        that.putJSON(that.PmDB, key, res);
+    });
 };
 
 module.exports = new LevelDB();
