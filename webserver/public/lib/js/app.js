@@ -1403,6 +1403,9 @@
                         iconPath = iconPath || "https://musiqpad.com/pads/lib/img/icon.png";
                         MP.api.util.desktopnotif.getPermission(function(permission) {
                             if (permission !== 'granted') return;
+							
+							var settings = JSON.parse(localStorage.getItem("settings"));
+							if (!settings.roomSettings.notifications.desktop.showfocused && document.hasFocus()) return;
 
                             var notification = new Notification(title, {
                                 icon: iconPath,
@@ -6646,6 +6649,7 @@
                 		grab: false,
                         chat: false,
 						pm: false,
+						showfocused: true,
                 	},
                 	sound: {
                 		advance_last: false,
