@@ -1480,14 +1480,6 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					var userSock = that.room.findSocketByUid(data.data.uid);
-					if (userSock == null) {
-						returnObj.data = {
-							error: 'UserNotInPad'
-						};
-						socket.sendJSON(returnObj);
-						break;
-					}
 					if (typeof data.data.message != 'string' || !data.data.message){
 						returnObj.data = {
 							error: 'emptyMessage'
@@ -1505,13 +1497,150 @@ var SocketServer = function(server){
 					};
 					socket.sendJSON(returnObj);
 						
-					userSock.sendJSON({
-						type: 'privateMessage',
+					var userSock = that.room.findSocketByUid(data.data.uid);
+					if (userSock != null) {
+						userSock.sendJSON({
+							type: 'privateMessage',
+							data: {
+								uid: socket.user.uid,
+								message: msg
+							}
+						});
+					}
+					DB.logPM(socket.user.uid, data.data.uid, msg);
+					break;
+					
+				case 'getConversations':
+					/*
+				    Expected input object: 
+					{
+						type: 'getConversations',
 						data: {
-							uid: socket.user.uid,
-							message: msg
+						}
+					}
+					*/
+					if (!socket.room) {
+						returnObj.data = {
+							error: 'NotInPad'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					DB.getConversations(socket.user.uid, function(err, res) {
+						if (err) {
+							
+						} else {
+							for (var i in res) {
+								if (res[i].user && res[i].user.uid > 0){
+									res[i].user.role = that.room.findRole(res[i].user.uid);
+								}
+							}
+							returnObj.data = {
+								conversations: res
+							};
+							socket.sendJSON(returnObj);
 						}
 					});
+					break;
+					
+				case 'getPrivateConversation':
+					/*
+				    Expected input object: 
+					{
+						type: 'getPrivateConversation',
+						data: {
+							uid: uid
+						}
+					}
+					*/
+					
+					if (!socket.room) {
+						returnObj.data = {
+							error: 'NotInPad'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!data.data.uid) {
+						break;
+					}
+					DB.getUserByUid(data.data.uid, function(err, user) {
+						if (err) {
+							returnObj.data = {
+								error: 'UserNotFound'
+							};
+							socket.sendJSON(returnObj);
+							return;
+						}
+						DB.getConversation(socket.user.uid, data.data.uid, function(err, res) {
+							if (err) {
+								returnObj.data = {
+									error: 'FailedRetrievingPMs'
+								};
+								socket.sendJSON(returnObj);
+								return;
+							}
+							
+							returnObj.data = {
+								user: user.getClientObj(),
+								messages: res
+							}
+							socket.sendJSON(returnObj);
+						});
+					});
+					break;
+					
+				case 'markConversationRead':
+					/*
+				    Expected input object: 
+					{
+						type: 'markConversationRead',
+						data: {
+							uid: uid,
+							date: date
+						}
+					}
+					*/
+					if (!socket.room) {
+						returnObj.data = {
+							error: 'NotInPad'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (!Roles.checkPermission(socket.user.role, 'chat.private')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					if (!data.data.uid || ! data.data.date) {
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					DB.markConversationRead(socket.user.uid, data.data.uid, new Date(data.data.date));
 					break;
 				
 				case 'broadcastMessage':

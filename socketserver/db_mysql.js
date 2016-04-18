@@ -97,6 +97,16 @@ var MysqlDB = function(){
 					    PRIMARY KEY (`id`)\
 					);\
 					\
+					CREATE TABLE IF NOT EXISTS `history_pm` (\
+					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
+					    `msg` VARCHAR(256) NOT NULL DEFAULT 'NULL',\
+					    `from` INTEGER UNSIGNED NOT NULL,\
+					    `to` INTEGER UNSIGNED NOT NULL,\
+					    `time` DATETIME,\
+					    `unread` INTEGER UNSIGNED NOT NULL DEFAULT 1,\
+					    PRIMARY KEY (`id`)\
+					);\
+					\
 					CREATE TABLE IF NOT EXISTS `tokens` (\
 						`email` VARCHAR(254) NOT NULL,\
 						`token` VARCHAR(32) NOT NULL,\
@@ -725,11 +735,84 @@ MysqlDB.prototype.logChat = function(uid, msg, special, callback) {
     this.execute("INSERT INTO `history_chat` SET ?;", { msg: msg, uid: uid, time: new Date(), special: special }, function(err, res){
         if(err){
             log.error("Error logging chat message");
-            callback(err);
+            if (callback) callback(err);
         } else{ 
-            callback(null, res.insertId);
+            if (callback) callback(null, res.insertId);
         }
     });
+};
+
+//PmDB
+MysqlDB.prototype.logPM = function(from, to, msg, callback) {
+    this.execute("INSERT INTO `history_pm` SET ?;", { msg: msg, from: from, to: to, time: new Date() }, function(err, res){
+        if(err){
+            log.error("Error logging chat message");
+            if (callback) callback(err);
+        } else{ 
+            if (callback) callback(null, res.insertId);
+        }
+    });
+};
+
+MysqlDB.prototype.getConversation = function(from, to, callback) {  
+    this.execute("SELECT * FROM `history_pm` WHERE (? AND ?) OR (? AND ?) ORDER BY `time` ASC LIMIT 512;", [ { from: from}, { to: to }, { from: to }, { to: from } ], function(err, res) {
+        if(err){
+            callback(err);
+        } else {
+            var out = [];
+            for(var key in res){
+                out.push({message:res[key].msg,time:res[key].time,from:res[key].from});
+            }
+            callback(null, out);
+        }
+    });
+};
+
+MysqlDB.prototype.getConversations = function(uid, callback) {
+    var that = this;
+    this.execute("SELECT *, SUM(IF(?, unread, 0)) as `unread_total` FROM (SELECT `history_pm`.*, LEAST(`from`, `to`) as `from_r`, GREATEST(`from`, `to`) as `to_r` FROM `history_pm` ORDER BY `time` DESC) as `h` WHERE ? OR ? GROUP BY `h`.`from_r`, `h`.`to_r`;", [ { to: uid }, { from_r: uid }, { to_r: uid } ], function(err, res) {
+        if (err){
+            callback(err);
+        } else {
+            var out = {};
+            var uids = [];
+            for (var key in res) {
+                var otherUid = res[key].to == uid ? res[key].from : res[key].to;
+                
+                if (out[otherUid] === undefined) {
+                    uids.push(otherUid);
+                    out[otherUid] = {
+                        user: null,
+                        messages: [],
+                        unread: res[key].unread_total
+                    };
+                }
+                out[otherUid].messages.push({ message: res[key].msg, time: res[key].time, from: res[key].from });
+            }
+            
+            if (uids.length > 0) {
+                that.getUserByUid(uids, function(err, result){
+                    if (err) {
+                        callback(err);
+                    } else {
+                        for (var id in result) {
+                            if (out[id]) {
+                                out[id].user = result[id].getClientObj();
+                            }
+                        }
+                        callback(null, out);
+                    }
+                });
+            }
+            else {
+                callback(null, out);
+            }
+        }
+    });
+};
+
+MysqlDB.prototype.markConversationRead = function(uid, uid2, time) {
+    this.execute("UPDATE history_pm SET `unread` = 0 WHERE time < ? AND `to` = ? AND `from` = ?;", [time, uid, uid2])
 };
 
 module.exports = new MysqlDB;

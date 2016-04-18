@@ -32,12 +32,13 @@
     display: -webkit-flex;
     display: flex;
 }
-#chat {
+#chat, #pm-chat {
     position: absolute;
     z-index: 9;
     overflow-x: hidden;
     overflow-y: auto;
-    height: calc(100% - 41px);
+    height: calc(100% - 81px);
+	top: 40px;
     width: 100%;
     font-size: 14px;
     -webkit-touch-callout: text;
@@ -47,7 +48,7 @@
     -ms-user-select: text;
     user-select: text;
 }
-#messages {
+#messages, #pm-messages {
     margin: 0;
     padding: 0;
 }
@@ -75,7 +76,7 @@
 .greet-umsg {
     color: #A77DC2;
 }
-.uname {
+.uname, .username {
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
@@ -229,14 +230,31 @@
     position: relative;
     background: rgba(28, 28, 31, 0.4);
 }
-.waitlist-user, .people-user {
+.waitlist-user, .people-user, .pm-user {
     font-size: 14px;
     vertical-align: middle;
     line-height: 40px;
     height: 40px;
     padding: 0 6px;
 }
-.waitlist-user .uname, .people-user .uname, .user-menu .uname {
+.pm-user {
+    height: 60px;
+    cursor: pointer;
+}
+.pm-user-info {
+    line-height: 25px;
+}
+.pm-latest-info {
+    /*margin-left: 32px;*/
+}
+.pm-latest-info .time {
+    float: right;
+    color: #585858;
+}
+.pm-user .bdg {
+	margin: 4px 5px;
+}
+.waitlist-user .uname, .people-user .uname, .user-menu .uname, .pm-user .uname, .pm-user .username {
     margin: 0 5px;
     width: 300px;
 }
@@ -246,7 +264,7 @@
 .waitlist-user:first-child {
     background: rgba(167,125,194,0.2);
 }
-.waitlist-user:nth-child(even), .people-user:nth-child(even) {
+.waitlist-user:nth-child(even), .people-user:nth-child(even), .pm-user:nth-child(even) {
     background: rgba(28, 28, 31, 0.4);
 }
 .waitlist-user .nav {
@@ -254,6 +272,11 @@
 }
 .waitlist-user.self {
     background-color: #31160C;
+}
+.pm-info {
+    color: #88898C;
+    margin: 0 5px;
+    font-size: 12px;
 }
 .people-info {
     float: right;
@@ -274,6 +297,30 @@
 .currentdjqueue {
     font-weight: bold;
     float: right;
+}
+.btn-new-pm {
+    z-index:10;
+    position: absolute;
+    bottom:0;
+    left: 0;
+    right: 0;
+}
+.pms, .single-pm {
+    top: 40px;
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 41px);
+}
+.pm-group {
+    width: 100%;
+    top: 40px;
+    position: absolute;
+    height: calc(100% - 41px);
+}
+.pm-user-list{
+    max-height: 200px;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 

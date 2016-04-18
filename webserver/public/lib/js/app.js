@@ -48,6 +48,7 @@
 				allowemojis: MP.session.allowemojis,
 				lastdj: MP.session.lastdj,
 				description: MP.session.description,
+				pms: MP.pms
 			};
 
 			var $scope = angular.element( $("body") ).scope();
@@ -224,8 +225,10 @@
 			queue: {},
 			secondsLeftInSong: 0,
 			songDuration: 0,
-			songProgress: 0
+			songProgress: 0,
+			pms: {}
 		},
+		pms: {},
 		session: { // Used for temp variables specific to current session
 			roomInfo: {},
 			viewedPl: null,
@@ -927,9 +930,20 @@
 				isLoggedIn: function(){
 					return MP.isLoggedIn();
 				},
-				getUser: function(uid){
-					if (!uid) return MP.user;
-					return MP.findUser(uid);
+				getUser: function(uid, callback){
+	                if(callback) {
+	                    var obj = {
+	                        type: 'getUser',
+	                        data: {
+	                            uid: uid,
+	                        },
+	                    };
+	                    obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
+	                    socket.sendJSON(obj);
+	                } else {
+	                    if (!uid) return MP.user;
+	                    return MP.findUser(uid);
+	                }
 				},
 				getUsers: function(arr){
 					if (typeof arr == 'undefined')	arr = false;
@@ -1060,6 +1074,30 @@
 				}
 			},
 			chat: {
+				getConversations: function(callback) {
+					MP.getConversations(function (err, data) {
+						if (callback) {
+							if (callback.length == 1) {
+								callback(data);
+							}
+							else {
+								callback(err, data);
+							}
+						}
+					});
+				},
+				getPrivateConversation: function(uid, callback) {
+					MP.getPrivateConversation(uid, function (err, data) {
+						if (callback) {
+							if (callback.length == 1) {
+								callback(data);
+							}
+							else {
+								callback(err, data);
+							}
+						}
+					});
+				},
 				log: function(a,b){
 					MP.addMessage({msg:a,user:{un:b}}, 'log');
 				},
@@ -2446,6 +2484,47 @@
 				}
 			});
 		},
+		getPrivateConversation: function(uid, callback) {
+			if (!MP.checkPerm('chat.private')) return;
+			
+			var obj = {
+				type: 'getPrivateConversation',
+				data: {
+					uid: uid
+				}
+			};
+			
+			obj.id = MP.addCallback(obj.type, callback);
+			socket.sendJSON(obj);
+		},
+		getConversations: function(callback) {
+			if (!MP.checkPerm('chat.private')) return;
+			
+			var obj = {
+				type: 'getConversations',
+				data: { }
+			};
+			
+			obj.id = MP.addCallback(obj.type, callback);
+			socket.sendJSON(obj);
+		},
+		markConversationRead: function(uid, date) {
+			if (!MP.checkPerm('chat.private')) return;
+			
+			if (!date) {
+				date = Date.now();
+			}
+			
+			var obj = {
+				type: 'markConversationRead',
+				data: {
+					uid: uid,
+					date: date
+				}
+			};
+			
+			socket.sendJSON(obj);
+		},
 		deleteChat: function(cid, callback){
 			if (!MP.checkPerm('chat.delete')) return;
 
@@ -3410,9 +3489,48 @@
 				if (err){ if (callback) callback(err); console.log('Could not send private message: ' + err); return;}
 
 				if (callback) callback(err, data);
+				
+				MP.api.room.getUser(uid, function(err,user) {
+					if (err) {
+						
+					} else {
+						MP.addPrivateMessage(user, message, MP.user.uid);
+					}
+				});
 			});
 
 			socket.sendJSON(obj);
+		},
+		addPrivateMessage: function(user, message, fromUid) {
+			var messageObj = {
+					message: message,
+					time: Date.now(),
+					from: fromUid
+				};
+			var scope = angular.element($('body')).scope();
+			var messageUnread = 1;
+			if (scope.activepm && scope.activepm.user.uid == user.uid) {
+				messageUnread = 0;
+			}
+			if (!MP.pms[user.un]) {
+				MP.pms[user.un] = {
+					user: user,
+					messages: [
+						messageObj
+					],
+					unread: messageUnread
+				};
+			}
+			else {
+				MP.pms[user.un].messages.push(messageObj);
+				MP.pms[user.un].unread += messageUnread;
+			}
+			if (messageUnread == 0) {
+				MP.markConversationRead(user.uid);
+			}
+			MP.applyModels();
+			var $chat = $('#pm-chat');
+			$chat.scrollTop( $chat[0].scrollHeight );
 		},
 		getCurrentVideoTime: function(callback){
 			var obj = {
@@ -4114,18 +4232,7 @@
 			getInfo: MP.api.room.getInfo,
 			isLoggedIn: MP.api.room.isLoggedIn,
 			getUser: function(uid, callback) {
-				if(callback) {
-					var obj = {
-						type: 'getUser',
-						data: {
-							uid: uid,
-						},
-					};
-					obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
-					socket.sendJSON(obj);
-				} else {
-					return MP.api.room.getUser(uid);
-				}
+				return MP.api.room.getUser(uid, callback);
 			},
 			getUsers: function(arr) { return MP.copyObject(MP.api.room.getUsers(arr)); },
 			getRoles: function(arr) { return MP.copyObject(MP.api.room.getRoles(arr)); },
@@ -4159,6 +4266,7 @@
 			}
 		},
 		chat: {
+			getConversations: MP.api.chat.getConversations,
 			log: MP.api.chat.log,
 			system: MP.api.chat.system,
 			broadcast: MP.api.chat.broadcast,
@@ -4649,6 +4757,23 @@
 		if (data.token){
 			MP.cookie.setCookie(MP.getTokenName(), data.token, 7);
 		}
+		
+		MP.api.chat.getConversations(onLoadConversations);
+	};
+	
+	var onLoadConversations = function(err, data) {
+	    if (err) {
+	        
+	    } else {
+	        if (!data.conversations) return;
+	        MP.pms = {};
+	        for (var i in data.conversations) {
+	            var convo = data.conversations[i];
+	            convo.__init = false;
+	            MP.pms[convo.user.un] = convo;
+	        }
+	        MP.applyModels();
+	    }
 	};
 
 	var socketPort = config.serverPort;
@@ -5139,6 +5264,7 @@
                     if(settings.roomSettings.notifications.sound.pm)
                         mentionSound.play();
                     
+					MP.addPrivateMessage(user, data.data.message, data.data.uid);
 					break;
 
 				case API.DATA.EVENTS.SERVER_RESPONSE:
@@ -5204,6 +5330,35 @@
 			return mentionVal.length + 1;
 		}
 	};
+	
+	$('#pm-msg-in').on('keydown', function(e){
+	    if (e.which == 13) {
+	        e.preventDefault();
+	        var $input = $(this);
+	        var $chat = $('#pm-chat');
+	
+	        if (!$input.val()) return;
+	
+	        //MP.session.lastMessage = $input.val();
+	        //MP.sendMessage($input.val());
+	        var activepm = angular.element($('body')).scope().activepm;
+	        if (!activepm) {
+	            return;
+	        }
+	        MP.api.room.getUser(activepm.user.uid, function(err, user) {
+	            if (!user) {
+	                return;
+	            }
+	            var msg = $input.val();
+	            MP.privateMessage(user.uid, msg, function(err, data){
+		
+	            });
+	            $chat.scrollTop( $chat[0].scrollHeight );
+	            $input.val('');
+	        });
+	        return true;
+	    }
+	});
 
 	// Chat text box
 	$('#msg-in')
@@ -5395,6 +5550,89 @@
 
 			$ul.find('li.active').removeClass('active');
 			$(this).addClass('active');
+		})
+			// Create a new Private Message
+		.on('click', '.btn-new-pm', function() {
+			console.log('New PM Modal');
+			var users = MP.getUsersInRoom();
+			var userHtml = "";
+			for (var uid in users) {
+				userHtml += '<li>\
+								<div class="pm-user" data-pmuid="' + uid + '">\
+									<div>' + MP.makeBadgeStyle({user: users[uid], type: 'pmList' }) + '</div><div class="username" style="' + MP.makeUsernameStyle(users[uid].role) + '">' + users[uid].un + '</div>\
+								</div>\
+							</li>';
+			}
+			MP.makeCustomModal({
+				content: '<div class="model-new-pm">\
+							<h3>Select User</h3>\
+							<ul class="pm-user-list">' +
+								userHtml +
+							'</ul>\
+							<div class="offline-user">\
+							</div>\
+						  </div>',
+				buttons: [
+					{
+						icon: 'mdi-close',
+						handler: function(){
+							$('.modal-bg').remove();
+						},
+						classes: 'modal-ctrl modal-no'
+					},
+					{
+						icon: 'mdi-check',
+						handler: function(){
+							var pmuid = $('.pm-user-list li.selected div').attr('data-pmuid');
+							console.log('Selected User' + pmuid);
+							
+							$('.modal-bg').remove();
+							
+							MP.makeCustomModal({
+								content: '<div class="model-new-pm-message">\
+											<h3>Sending PM to ' + users[pmuid].un + '</h3>\
+											<input id="pm-in" type="text" maxlength="255" placeholder="Type message" autocomplete="off" data-ng-show="isLoggedIn" class="">\
+						  				  </div>',
+								buttons: [{
+									icon: 'mdi-close',
+									handler: function(){
+										$('.modal-bg').remove();
+									},
+									classes: 'modal-ctrl modal-no'
+								},
+								{
+									icon: 'mdi-check',
+									handler: function(){
+										var pmmessage = $('#pm-in').val();
+										console.log('Selected Message "' + pmmessage + '" sending to ID "' + pmuid + '" with UserName "' + users[pmuid].un + '"');
+										MP.api.chat.sendPrivate(pmuid, pmmessage, function(err, data){
+											if (err == undefined)
+											{
+												console.log(data);
+												if (data.success == true)
+												{
+													$('.modal-bg').remove();
+												}
+											}
+											else
+											{
+												console.log(err);
+											}
+										});
+									},
+									classes: 'modal-ctrl modal-yes'
+								}],
+								dismissable: true
+							});
+						},
+						classes: 'modal-ctrl modal-yes'
+					}
+				],
+				dismissable: true
+			});
+		})
+		.on('click', '.pm-user-list > li', function(){
+			$(this).addClass("selected").siblings().removeClass("selected");
 		})
 		.on('click', '.autocomplete li.active', function(){
 			var newPos = acceptAutocomplete();
@@ -6576,8 +6814,83 @@
 				t: 3,			// Logo menu
 				c: 1, 			// Right view (Chat, Waitlist, Userlist)
 				p: 1,			// People tabs inside of Userlist
+				ci: 1,          // Chat list internal
 				chatScroll: 0,	// Chat scroll memory
 				leaveAfterPlay: false,
+			};
+			
+			
+			$scope.activepm = null;
+			
+			$scope.getPMUnread = function() {
+				var total = 0;
+				for (var i in MP.pms) {
+					total += MP.pms[i].unread;
+				}
+				return total;
+			};
+			
+			$scope.pmFuncs = {
+				setPM: function(pmGroup) {
+					console.log(pmGroup);
+					$scope.activepm = pmGroup;
+					if (pmGroup && !pmGroup.__init) {
+						MP.api.chat.getPrivateConversation(pmGroup.user.uid, function(data) {
+							if (data) {
+								console.log(data);
+								MP.pms[pmGroup.user.un].messages = data.messages;
+								MP.pms[pmGroup.user.un].__init = true;
+								if (MP.pms[pmGroup.user.un].unread > 0) {
+									MP.markConversationRead(pmGroup.user.uid, Date.now());
+									MP.pms[pmGroup.user.un].unread = 0;
+								}
+								MP.applyModels();
+								var $chat = $('#pm-chat');
+								$chat.scrollTop( $chat[0].scrollHeight );
+							}
+						});
+					}
+					else if (pmGroup) {
+						if (pmGroup.unread > 0) {
+							MP.markConversationRead(pmGroup.user.uid, Date.now());
+							MP.pms[pmGroup.user.un].unread = 0;
+							MP.applyModels();
+						}
+					}
+				},
+				getPMGroupInfo: function(pmGroup) {
+					if (!pmGroup) return { lastPM: { time: null } };
+					var returnObj = {
+						lastPM: null,
+						unreadCount: pmGroup.unread ? pmGroup.unread : 0
+					};
+					if (pmGroup.messages.length > 0) {
+						returnObj.lastPM = pmGroup.messages[pmGroup.messages.length - 1];
+					}
+					
+					return returnObj;
+				},
+				makeMessageTime: function(time) {
+					if (time) {
+						if (Number(time) || typeof(time) === "string") {
+							time = new Date(time);
+						}
+						return MP.makeTime(time);
+					}
+					return "";
+				},
+				getOrderedPMs: function() {
+					var out = [];
+					for (var i in MP.pms) {
+						if ($scope.pmFuncs.getPMGroupInfo(MP.pms[i]).lastPM.time != null) {
+							out.push(MP.pms[i]);
+						}
+					}
+					out.sort(function(a,b){ 
+						return (new Date($scope.pmFuncs.getPMGroupInfo(b).lastPM.time).getTime()) - (new Date($scope.pmFuncs.getPMGroupInfo(a).lastPM.time).getTime());
+					});
+					return out;
+				}
 			};
 
 			$scope.customSettings = {
@@ -6764,7 +7077,14 @@
 
 				return MP.makeUsernameStyle(user.role);
 			};
-
+			
+			$scope.emojiReplace = function(text) {
+                if (text) {
+                    return MP.emojiReplace(text);
+                }
+                return "";
+            };
+			
 			$scope.getRole = function(role){
 				if (MP.getRole(role))
 					return MP.getRole(role);
