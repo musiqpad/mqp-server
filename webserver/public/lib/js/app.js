@@ -6876,12 +6876,12 @@
 					return returnObj;
 				},
 				changeToPMTab: function() {
+					$scope.prop.ci = 2;
 					if ($scope.activepm != null && $scope.activepm.unread > 0) {
 						MP.markConversationRead($scope.activepm.user.uid);
 						MP.pms[$scope.activepm.user.un].unread = 0;
 						MP.applyModels();
 					}
-					$scope.prop.ci = 2;
 				},
 				makeMessageTime: function(time) {
 					if (time) {
