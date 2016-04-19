@@ -449,7 +449,7 @@
 						</div>
 						<div class="lib-song-list" data-ng-show="viewedPl">
 							<div class="lib-sng" data-ng-class="{'lib-history' : inHistory(y.cid), 'lib-unavailable' : y.unavailable}" data-ng-repeat="y in viewedPlContents" data-cid="{{y.cid}}" title="{{y.title}}">
-								<img src="https://i.ytimg.com/vi/{{y.cid}}/default.jpg" class="lib-thumb" data-ng-show="roomSettings.library.thumbnails" >
+								<img ng-src="https://i.ytimg.com/vi/{{y.cid}}/default.jpg" class="lib-thumb" data-ng-show="roomSettings.library.thumbnails" >
 								<div class="text" data-ng-bind="y.title" title="{{y.title}}"></div>
 								<div class="nav btn-song-bot" title="Move to the Bottom"><div class="mdi mdi-arrow-down small"></div></div>
 								<div class="nav btn-song-top" title="Move to the Top"><div class="mdi mdi-arrow-up small"></div></div>
