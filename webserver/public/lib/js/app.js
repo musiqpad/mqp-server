@@ -6948,7 +6948,7 @@
                 		like: false,
                 		grab: false,
                         chat: false,
-						pm: true,
+						pm: false,
                 	},
                 	desktop: {
                 		advance_last: false,
