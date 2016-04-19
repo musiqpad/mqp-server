@@ -6484,7 +6484,8 @@
 	/* Window focus */
 	$(window).on('focus', function(){
 		MP.session.hasfocus = true;
-		document.title = MP.session.oldPageTitle;
+		if (MP.session.oldPageTitle)
+			document.title = MP.session.oldPageTitle;
 	});
 
 	$(window).on('blur', function(){
