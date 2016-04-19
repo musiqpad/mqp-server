@@ -6875,6 +6875,12 @@
 					
 					return returnObj;
 				},
+				changeToPMTab: function() {
+					if ($scope.activepm != null && $scope.activepm.unread > 0) {
+						MP.markConversationRead($scope.activepm.user.uid);
+					}
+					$scope.prop.ci = 2;
+				},
 				makeMessageTime: function(time) {
 					if (time) {
 						if (Number(time) || typeof(time) === "string") {

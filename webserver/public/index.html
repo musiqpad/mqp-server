@@ -580,7 +580,7 @@
 				<div data-ng-show="(prop.c == 1)" id="chat-back">
 					<div class="tray">
 						<div data-ng-click="prop.ci = 1" data-ng-class="{'active' : prop.ci == 1}" class="tab btn-mainchat" title="Chat"><div class="mdi mdi-message"></div></div>
-						<div data-ng-click="prop.ci = 2" data-ng-class="{'active' : prop.ci == 2}" class="tab btn-pm" title="Private Messages" data-ng-show="isLoggedIn"><div class="mdi mdi-message-text"></div><span class="icon-info" data-ng-show="getPMUnread() > 0" data-ng-bind="getPMUnread()"></span></div>
+						<div data-ng-click="pmFuncs.changeToPMTab()" data-ng-class="{'active' : prop.ci == 2}" class="tab btn-pm" title="Private Messages" data-ng-show="isLoggedIn"><div class="mdi mdi-message-text"></div><span class="icon-info" data-ng-show="getPMUnread() > 0" data-ng-bind="getPMUnread()"></span></div>
 					</div>
 					<div data-ng-show="(prop.ci == 1)" id="chat-container">
 						<div id="chat">
