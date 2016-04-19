@@ -3513,7 +3513,7 @@
 				};
 			var scope = angular.element($('body')).scope();
 			var messageUnread = 1;
-			if (scope.activepm && scope.activepm.user.uid == user.uid && scope.props.ci == 2) {
+			if (scope.activepm && scope.activepm.user.uid == user.uid && scope.prop.ci == 2) {
 				messageUnread = 0;
 			}
 			if (!MP.pms[user.un]) {
@@ -6878,6 +6878,8 @@
 				changeToPMTab: function() {
 					if ($scope.activepm != null && $scope.activepm.unread > 0) {
 						MP.markConversationRead($scope.activepm.user.uid);
+						MP.pms[$scope.activepm.user.un].unread = 0;
+						MP.applyModels();
 					}
 					$scope.prop.ci = 2;
 				},
