@@ -3513,7 +3513,7 @@
 				};
 			var scope = angular.element($('body')).scope();
 			var messageUnread = 1;
-			if (scope.activepm && scope.activepm.user.uid == user.uid) {
+			if (scope.activepm && scope.activepm.user.uid == user.uid && scope.props.ci == 2) {
 				messageUnread = 0;
 			}
 			if (!MP.pms[user.un]) {
