@@ -2780,6 +2780,41 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 					});
 					break;
+				case 'getUserByName':
+					/*
+					 Expects {
+					 	type: 'getUserByName',
+					 	data: {
+					 		un: un
+					 	}
+					 }
+					*/
+					if (!data.data.un){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					DB.getUserByName(data.data.un, { getPlaylists: false }, function(err, user){
+						//Handle error
+						if (err){
+							returnObj.data = {
+								error: err
+							};
+							socket.sendJSON(returnObj);
+							return;
+						}
+						
+						//Execute and return data
+						returnObj.data = {
+							user: user.getClientObj(),
+						};
+						returnObj.data.user.role = that.room.findRole(returnObj.data.user.uid);
+						socket.sendJSON(returnObj);
+					});
+					break;
                 case 'whois':
 					/*
 					 Expects {

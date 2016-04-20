@@ -945,6 +945,22 @@
 	                    return MP.findUser(uid);
 	                }
 				},
+				getUserByName: function(un, callback){
+	                if(callback) {
+	                    var obj = {
+	                        type: 'getUserByName',
+	                        data: {
+	                            un: un,
+	                        },
+	                    };
+	                    obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
+	                    socket.sendJSON(obj);
+	                } else {
+	                    if (!un) return MP.user;
+	                    var users = MP.api.util.objectToArray(MP.getUsersInRoom());
+						return users.filter(function(a){ return a.un == un; })[0];
+	                }
+				},
 				getUsers: function(arr){
 					if (typeof arr == 'undefined')	arr = false;
 
@@ -2208,8 +2224,7 @@
 					arr.shift();
 					var usernick = arr.shift().replace(/[@:]/g,'');
 
-					var users = MP.api.util.objectToArray(MP.getUsersInRoom());
-					var user = users.filter(function(a){ return a.un == usernick; })[0];
+					var user = MP.api.room.getUserByName(usernick);
 
 					if (!user) return;
 
@@ -2232,8 +2247,7 @@
 						return API.chat.log('<br>Try /ban @username', 'Ban user');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 
@@ -2252,8 +2266,7 @@
 						return API.chat.log('<br>Try /role @username', 'Set user role');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 
@@ -2270,8 +2283,7 @@
 						return API.chat.log('<br>Try /mute @username', 'Ignore user');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 
@@ -2290,8 +2302,7 @@
 						return API.chat.log('<br>Try /add @username', 'Add user to queue');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 					var position = parseInt(arr[1]);
@@ -2312,8 +2323,7 @@
 						return API.chat.log('<br>Try /rem @username', 'Remove user from queue');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 					MP.djQueueModRemove(user.uid);
@@ -2331,8 +2341,7 @@
 						return API.chat.log('<br>Try /move @username 1', 'Move user in queue');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 					var pos = parseInt(arr[1]);
@@ -2351,9 +2360,8 @@
 						return API.chat.log('<br>Try /swap @username1 @username2', 'Swap users in queue');
 					}
 
-					var users = MP.api.room.getUsers(true);
-					var user1 = users.filter(function(a){return a.un == arr[0].substring(1);})[0];
-					var user2 = users.filter(function(a){return a.un == arr[1].substring(1);})[0];
+					var user1 = MP.api.room.getUserByName(arr[0].substring(1));
+					var user2 = MP.api.room.getUserByName(arr[1].substring(1));
 
 					if (!user1 || !user2 || user1.uid == user2.uid)	return;
 					MP.djQueueModSwap(user1.uid,user2.uid);
@@ -3473,11 +3481,6 @@
 			}
 			if (typeof message != 'string' || !message){
 				if (callback) callback('emptyMessage');
-				return;
-			}
-
-			if (!MP.findUser(uid)){
-				if (callback) callback('userNotFound');
 				return;
 			}
 
@@ -5563,7 +5566,7 @@
 			var userHtml = "";
 			for (var uid in users) {
 				userHtml += '<li>\
-								<div class="pm-user" data-pmuid="' + uid + '">\
+								<div class="new-pm-user" data-pmuid="' + uid + '">\
 									<div>' + MP.makeBadgeStyle({user: users[uid], type: 'pmList' }) + '</div><div class="username" style="' + MP.makeUsernameStyle(users[uid].role) + '">' + users[uid].un + '</div>\
 								</div>\
 							</li>';
@@ -5576,6 +5579,9 @@
 							'</ul>\
 							<div class="offline-user">\
 							</div>\
+						  </div>\
+						  <div>\
+						  <input id="offline-pm-user" type="text" maxlength="255" placeholder="Type Username" autocomplete="off" data-ng-show="isLoggedIn" class="">\
 						  </div>',
 				buttons: [
 					{
@@ -5589,46 +5595,66 @@
 						icon: 'mdi-check',
 						handler: function(){
 							var pmuid = $('.pm-user-list li.selected div').attr('data-pmuid');
-							console.log('Selected User' + pmuid);
 							
-							$('.modal-bg').remove();
+							var offlineUsername = $('#offline-pm-user').val().replace(" ", "");
 							
-							MP.makeCustomModal({
-								content: '<div class="model-new-pm-message">\
-											<h3>Sending PM to ' + users[pmuid].un + '</h3>\
-											<input id="pm-in" type="text" maxlength="255" placeholder="Type message" autocomplete="off" data-ng-show="isLoggedIn" class="">\
-						  				  </div>',
-								buttons: [{
-									icon: 'mdi-close',
-									handler: function(){
-										$('.modal-bg').remove();
-									},
-									classes: 'modal-ctrl modal-no'
-								},
+							function userCallback(user) {
+								
+								if (user)
 								{
-									icon: 'mdi-check',
-									handler: function(){
-										var pmmessage = $('#pm-in').val();
-										console.log('Selected Message "' + pmmessage + '" sending to ID "' + pmuid + '" with UserName "' + users[pmuid].un + '"');
-										MP.api.chat.sendPrivate(pmuid, pmmessage, function(err, data){
-											if (err == undefined)
-											{
-												console.log(data);
-												if (data.success == true)
-												{
-													$('.modal-bg').remove();
-												}
-											}
-											else
-											{
-												console.log(err);
-											}
-										});
-									},
-									classes: 'modal-ctrl modal-yes'
-								}],
-								dismissable: true
-							});
+									console.log('Selected User ' + user.uid);
+									$('.modal-bg').remove();
+									
+									MP.makeCustomModal({
+										content: '<div class="model-new-pm-message">\
+													<h3>Sending PM to ' + user.un + '</h3>\
+													<input id="pm-in" type="text" maxlength="255" placeholder="Type message" autocomplete="off" data-ng-show="isLoggedIn" class="">\
+						  						  </div>',
+										buttons: [{
+											icon: 'mdi-close',
+											handler: function(){
+												$('.modal-bg').remove();
+											},
+											classes: 'modal-ctrl modal-no'
+										},
+										{
+											icon: 'mdi-check',
+											handler: function(){
+												var pmmessage = $('#pm-in').val();
+												
+												console.log('Selected Message "' + pmmessage + '" sending to ID "' + user.uid + '" with UserName "' + user.un + '"');
+												MP.api.chat.sendPrivate(user.uid, pmmessage, function(err, data){
+													if (err) {
+														console.log(err);
+													} else {
+														console.log(data);
+														if (data.success == true)
+														{
+															$('.modal-bg').remove();
+														}
+													}
+												});
+											},
+											classes: 'modal-ctrl modal-yes'
+										}],
+										dismissable: true
+									});
+								}
+							}
+							
+							if (offlineUsername && offlineUsername.length > 0)
+							{
+								var user = MP.api.room.getUserByName(offlineUsername, function(err, data){
+									if (err) {
+										// Display User Not Found/Whatever error
+									} else {
+										userCallback(data);
+									}
+								});
+							}
+							else {
+								userCallback(MP.getUser(pmuid));
+							}
 						},
 						classes: 'modal-ctrl modal-yes'
 					}

@@ -230,12 +230,21 @@
     position: relative;
     background: rgba(28, 28, 31, 0.4);
 }
-.waitlist-user, .people-user, .pm-user {
+.waitlist-user, .people-user, .pm-user, .new-pm-user {
     font-size: 14px;
     vertical-align: middle;
     line-height: 40px;
     height: 40px;
     padding: 0 6px;
+}
+.new-pm-user .bdg {
+    margin: 6px;
+}
+.new-pm-user {
+    line-height: 28px;
+}
+#offline-pm-user {
+    width: 365px;
 }
 .pm-user {
     height: 60px;
