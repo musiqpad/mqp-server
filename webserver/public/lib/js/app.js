@@ -6931,6 +6931,18 @@
 					return out;
 				}
 			};
+			
+			$scope.filterChat = function(type) {
+				type = type ? type : '';
+				switch (type) {
+					case 'mentions':
+						$('#messages .cm.message:not(.mention)').hide();
+						break;
+					default:
+						$('#messages .cm.message:not(.mention)').show();
+						break;
+				}
+			}
 
 			$scope.customSettings = {
     			theme: 'bootstrap',

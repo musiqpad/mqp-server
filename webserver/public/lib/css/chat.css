@@ -331,6 +331,16 @@
     overflow-y: scroll;
     overflow-x: hidden;
 }
+.tab.btn-mentions {
+    flex: 0.5;
+    -webkit-flex: 0.5;
+    -ms-flex: 0.5;
+}
+.tab.btn-mentions .icon-info {
+    font-size: 16px;
+    border-radius: 16px;
+    padding-bottom: 4px;
+}
 
 
 @keyframes flash-background {  
