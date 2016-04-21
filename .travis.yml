@@ -1,8 +1,16 @@
 language: node_js
 node_js:
-  - "5"
-  - "5.1"
-  - "4"
-  - "4.2"
-  - "4.1"
-  - "4.0"
+- '5'
+- '5.1'
+- '4'
+- '4.2'
+- '4.1'
+- '4.0'
+deploy:
+  provider: npm
+  email: support@musiqpad.com
+  api_key:
+    secure: gFR72hll7LrOld2tWIE7h2dZKsy01bN2Bw3a1VxBg56TGot3926DaL6FwZVLGbAb8/1YtINoW1GDdSBIR1Bf51qPVDfSMfWoW1JDkzr//WXq5nqYanyYXxwTlMk1Qdap8UyWF9Xv6ESLjg5pg+jS2Js/A9P7PNZk4/MXEFrg/t6vVJsb6VDXeHE0VgG9JZaOpgb/taLX7DCCOR/ToNTFtCui29PFS2ueVtIhs740jeo70eIMqNx5idkPuzXcIJE8lB+z22dfjKcKJlGeIyboIKeL3AGTMO/uBwjVEi7NUmWup3MDq9hE4+jvv3GPT43vvZwxA3ynhNvkMde43ymMwvPLudqEgDgJf9T1ZOEb0uBk5XfvnIqulZjEUZ8TAYRqS+3w3kBx2+ee6JT4/o07L8IFaSwqt1DYdFDKz2loFHW0oLJUCe+/T23QIVrHS1vwLu9FxIjCxBc3mGmmzwgNYpyeNaQXssyVDkTXP0zW2wrkqENeVx6PsS2G6RIA7/c5s04qhteeQ8FNVCtEltSa9zXCpEPtpl4GTSFyaU4YuFmEn4ghXjhi0Yt3005lL9BwPIp1vDnEz1ZxSk73/StYY3lPqmh9V66ESo7lNWUu0eN2lWkgVHjfQaJOt1oF1b6+GdDnvaFCsI/vVtNUFEA5BgCPaZAmqai2yZi4TFhe4V8=
+  on:
+    tags: true
+    repo: musiqpad/mqp-server
