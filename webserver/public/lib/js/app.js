@@ -5578,11 +5578,10 @@
 								userHtml +
 							'</ul>\
 							<div class="offline-user">\
+							<input id="offline-pm-user" type="text" maxlength="255" placeholder="Type Offline Username" autocomplete="off" data-ng-show="isLoggedIn" class="">\
 							</div>\
 						  </div>\
-						  <div>\
-						  <input id="offline-pm-user" type="text" maxlength="255" placeholder="Type Username" autocomplete="off" data-ng-show="isLoggedIn" class="">\
-						  </div>',
+						  <div>',
 				buttons: [
 					{
 						icon: 'mdi-close',
@@ -5646,7 +5645,15 @@
 							{
 								var user = MP.api.room.getUserByName(offlineUsername, function(err, data){
 									if (err) {
-										// Display User Not Found/Whatever error
+										if (err == "UserNotFound") {
+											MP.makeAlertModal({
+												content: 'The username you entered does not match a user from this server.'
+											});
+										} else {
+											MP.makeAlertModal({
+												content: 'An error occurred. Please try again later.'
+											});
+										}
 									} else {
 										userCallback(data);
 									}
@@ -5664,6 +5671,13 @@
 		})
 		.on('click', '.pm-user-list > li', function(){
 			$(this).addClass("selected").siblings().removeClass("selected");
+			$('#offline-pm-user').val('');
+		})
+		.on('input', '#offline-pm-user', function() {
+			var val = $(this).val();
+			if (val && val.length > 0) {
+				$('.pm-user-list > li').removeClass("selected");
+			}
 		})
 		.on('click', '.autocomplete li.active', function(){
 			var newPos = acceptAutocomplete();

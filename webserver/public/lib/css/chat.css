@@ -242,9 +242,14 @@
 }
 .new-pm-user {
     line-height: 28px;
+    height: 28px;
+}
+.pm-user-list li.selected {
+    background: rgba(167,125,194,0.2);
+    border-radius: 3px;
 }
 #offline-pm-user {
-    width: 365px;
+    width: calc(100% - 20px);
 }
 .pm-user {
     height: 60px;
@@ -327,9 +332,12 @@
     height: calc(100% - 41px);
 }
 .pm-user-list{
-    max-height: 200px;
-    overflow-y: scroll;
+    height: 200px;
+    overflow-y: auto;
     overflow-x: hidden;
+	border-bottom: 1px solid #444A59;
+    border-top: 1px solid #444A59;
+	padding: 5px 0;
 }
 .tab.btn-mentions {
     flex: 0.5;
