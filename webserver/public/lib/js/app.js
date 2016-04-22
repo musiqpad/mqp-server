@@ -1883,7 +1883,7 @@
 				}
                 
 				//Do chat notifications
-				if(user.uid != MP.api.room.getUser().uid){
+				if (MP.user && user.uid != MP.user.uid){
 					
 					//Desktop notification
 					if(settings.roomSettings.notifications.desktop.chat)
