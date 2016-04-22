@@ -5660,7 +5660,7 @@
 								});
 							}
 							else {
-								userCallback(MP.getUser(pmuid));
+								userCallback(MP.findUser(pmuid));
 							}
 						},
 						classes: 'modal-ctrl modal-yes'
@@ -6877,12 +6877,10 @@
 			
 			$scope.pmFuncs = {
 				setPM: function(pmGroup) {
-					console.log(pmGroup);
 					$scope.activepm = pmGroup;
 					if (pmGroup && !pmGroup.__init) {
 						MP.api.chat.getPrivateConversation(pmGroup.user.uid, function(data) {
 							if (data) {
-								console.log(data);
 								MP.pms[pmGroup.user.un].messages = data.messages;
 								MP.pms[pmGroup.user.un].__init = true;
 								if (MP.pms[pmGroup.user.un].unread > 0) {

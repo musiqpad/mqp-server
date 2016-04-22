@@ -288,6 +288,46 @@ a {
     border-radius: 50%;
     animation: spin-back 3s linear infinite;
 }
+.loader-small {
+    display: block;
+    position: relative;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    border-top-color: #A77DC2;
+    border-bottom-color: #A77DC2;
+    border-radius: 50%;
+    animation: spin-back 4s linear infinite;
+    margin: 0 0 0 -20px;
+}
+.loader-small:before {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border: 2px solid transparent;
+    border-top-color: #F46B40;
+    border-bottom-color: #F46B40;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+}
+.loader-small:after {
+    content: "";
+    position: absolute;
+    top: 11px;
+    left: 11px;
+    right: 11px;
+    bottom: 11px;
+    border: 2px solid transparent;
+    border-top-color: #89BE6C;
+    border-bottom-color: #89BE6C;
+    border-radius: 50%;
+    animation: spin-back 3s linear infinite;
+}
 .icon-info {
     background: #94959A;
     border-radius: 10px;

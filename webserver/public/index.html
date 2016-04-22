@@ -611,7 +611,8 @@
 							<div class="btn" data-ng-click="pmFuncs.setPM(null)">Back to PM list</div>
 							<div id="pm-chat">
 								<div id="pm-messages">
-									<div class="pm-message" data-ng-repeat="msg in activepm.messages">
+									<div class="loader-small" ng-show="!activepm.__init"></div>
+									<div class="pm-message" data-ng-repeat="msg in activepm.messages" ng-show="activepm.__init">
 										<div class="cm message">
 											<span class="time">{{(pmFuncs.makeMessageTime(msg.time))}}</span>
 											<div class="text">
