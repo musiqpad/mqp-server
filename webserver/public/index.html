@@ -578,11 +578,55 @@
 			</div>
 			<div id="app-right">
 				<div data-ng-show="(prop.c == 1)" id="chat-back">
-					<div id="chat">
-						<div id="messages"></div>
+					<div class="tray">
+						<div data-ng-click="prop.ci = 1; filterChat()" data-ng-class="{'active' : prop.ci == 1}" class="tab btn-mainchat" title="Chat"><div class="mdi mdi-message"></div></div>
+						<div data-ng-click="pmFuncs.changeToPMTab()" data-ng-class="{'active' : prop.ci == 2}" class="tab btn-pm" title="Private Messages" data-ng-show="isLoggedIn"><div class="mdi mdi-message-text"></div><span class="icon-info" data-ng-show="getPMUnread() > 0" data-ng-bind="getPMUnread()"></span></div>
+						<div data-ng-click="prop.ci = 3; filterChat('mentions')" data-ng-class="{'active' : prop.ci == 3}" class="tab btn-mentions" title="Mentions" data-ng-show="isLoggedIn"><span class="icon-info">@</span></div>
 					</div>
-					<div id="msg-form">
-						<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+					<div data-ng-show="(prop.ci == 1 || prop.ci == 3)" id="chat-container">
+						<div id="chat">
+							<div id="messages"></div>
+						</div>
+						<div id="msg-form">
+							<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+						</div>
+					</div>
+					<div data-ng-show="(prop.ci == 2 && isLoggedIn)" id="pm-container">
+						<div class="pms" data-ng-show="(activepm == null)">
+							<div class="pm-user" data-ng-class="{'self' : user.uid == pmgroup.uid}" data-ng-repeat="pmgroup in pmFuncs.getOrderedPMs()" data-ng-click="pmFuncs.setPM(pmgroup)">
+								<div class="pm-user-info">
+									<div ng-bind-html="makeBadgeStyle({ user: pmgroup.user, type: 'pm' }) | to_trusted"></div>
+									<span class="uname" style="{{makeUsernameStyleByRole(pmgroup.user.role)}}" data-ng-bind="pmgroup.user.un"></span>
+									<span class="icon-info" data-ng-show="pmgroup.unread > 0" data-ng-bind="pmgroup.unread"></span>
+								</div>
+								<div class="pm-latest-info">
+									<span class="pm-info" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.from == user.uid ? user.un : pmgroup.user.un)"></span>
+									<span class="pm-message" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.message)"></span>
+									<span class="time">{{(pmFuncs.makeMessageTime(pmFuncs.getPMGroupInfo(pmgroup).lastPM.time))}}</span>
+								</div>
+							</div>
+							<div class="btn btn-inner-pm btn-new-pm">New Message</div>
+						</div>
+						<div class="pm-group" data-ng-show="(activepm != null)">
+							<div class="btn btn-inner-pm btn-back-pm-list" data-ng-click="pmFuncs.setPM(null)">Back to PM list</div>
+							<div id="pm-chat">
+								<div id="pm-messages">
+									<div class="loader-small" ng-show="!activepm.__init"></div>
+									<div class="pm-message" data-ng-repeat="msg in activepm.messages" ng-show="activepm.__init">
+										<div class="cm message">
+											<span class="time">{{(pmFuncs.makeMessageTime(msg.time))}}</span>
+											<div class="text">
+												<span data-uid="{{msg.from}}" class="uname" style="{{(user.uid == msg.from ? makeUsernameStyleByRole(user.role) : makeUsernameStyleByRole(activepm.user.role))}}">{{(user.uid == msg.from ? user.un : activepm.user.un)}}</span>
+												<span class="umsg" ng-bind-html="emojiReplace(msg.message) | to_trusted"></span>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div id="pm-msg-form">
+								<input id="pm-msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off"></input>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div data-ng-show="(prop.c == 2)" id="people-back">

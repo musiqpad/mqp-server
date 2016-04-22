@@ -32,12 +32,13 @@
     display: -webkit-flex;
     display: flex;
 }
-#chat {
+#chat, #pm-chat {
     position: absolute;
     z-index: 9;
     overflow-x: hidden;
     overflow-y: auto;
-    height: calc(100% - 41px);
+    height: calc(100% - 81px);
+	top: 40px;
     width: 100%;
     font-size: 14px;
     -webkit-touch-callout: text;
@@ -47,7 +48,7 @@
     -ms-user-select: text;
     user-select: text;
 }
-#messages {
+#messages, #pm-messages {
     margin: 0;
     padding: 0;
 }
@@ -75,7 +76,7 @@
 .greet-umsg {
     color: #A77DC2;
 }
-.uname {
+.uname, .username {
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
@@ -229,14 +230,45 @@
     position: relative;
     background: rgba(28, 28, 31, 0.4);
 }
-.waitlist-user, .people-user {
+.waitlist-user, .people-user, .pm-user, .new-pm-user {
     font-size: 14px;
     vertical-align: middle;
     line-height: 40px;
     height: 40px;
     padding: 0 6px;
 }
-.waitlist-user .uname, .people-user .uname, .user-menu .uname {
+.new-pm-user .bdg {
+    margin: 6px;
+}
+.new-pm-user {
+    line-height: 28px;
+    height: 28px;
+}
+.pm-user-list li.selected {
+    background: rgba(167,125,194,0.2);
+    border-radius: 3px;
+}
+#offline-pm-user {
+    width: calc(100% - 20px);
+}
+.pm-user {
+    height: 60px;
+    cursor: pointer;
+}
+.pm-user-info {
+    line-height: 25px;
+}
+.pm-latest-info {
+    /*margin-left: 32px;*/
+}
+.pm-latest-info .time {
+    float: right;
+    color: #585858;
+}
+.pm-user .bdg {
+	margin: 4px 5px;
+}
+.waitlist-user .uname, .people-user .uname, .user-menu .uname, .pm-user .uname, .pm-user .username {
     margin: 0 5px;
     width: 300px;
 }
@@ -246,7 +278,7 @@
 .waitlist-user:first-child {
     background: rgba(167,125,194,0.2);
 }
-.waitlist-user:nth-child(even), .people-user:nth-child(even) {
+.waitlist-user:nth-child(even), .people-user:nth-child(even), .pm-user:nth-child(even) {
     background: rgba(28, 28, 31, 0.4);
 }
 .waitlist-user .nav {
@@ -254,6 +286,11 @@
 }
 .waitlist-user.self {
     background-color: #31160C;
+}
+.pm-info {
+    color: #88898C;
+    margin: 0 5px;
+    font-size: 12px;
 }
 .people-info {
     float: right;
@@ -274,6 +311,61 @@
 .currentdjqueue {
     font-weight: bold;
     float: right;
+}
+.btn-inner-pm {
+    z-index:10;
+    position: absolute;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: rgb(28, 28, 31) none repeat scroll 0% 0%;
+    border-radius: 0px;
+    line-height: 40px;
+    height: 40px;
+    padding: 0px;
+}
+.btn-inner-pm:hover {
+    background: rgba(146, 90, 255, .25);
+    color: white;
+}
+.btn-new-pm {
+    border-top: 1px solid rgb(68, 74, 89);
+    bottom: -2px;
+}
+.btn-back-pm-list {
+    top: 0px;
+    border-bottom: 1px solid rgb(68, 74, 89);
+    border-top: 1px solid rgb(68, 74, 89);
+}
+.pms, .single-pm {
+    top: 40px;
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 41px);
+}
+.pm-group {
+    width: 100%;
+    top: 40px;
+    position: absolute;
+    height: calc(100% - 41px);
+}
+.pm-user-list{
+    height: 200px;
+    overflow-y: auto;
+    overflow-x: hidden;
+	border-bottom: 1px solid #444A59;
+    border-top: 1px solid #444A59;
+	padding: 5px 0;
+}
+.tab.btn-mentions {
+    flex: 0.5;
+    -webkit-flex: 0.5;
+    -ms-flex: 0.5;
+}
+.tab.btn-mentions .icon-info {
+    font-size: 16px;
+    border-radius: 16px;
+    padding-bottom: 4px;
 }
 
 

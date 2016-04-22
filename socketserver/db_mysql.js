@@ -76,7 +76,7 @@ var MysqlDB = function(){
 					    PRIMARY KEY (`id`)\
 					);\
 					\
-					CREATE TABLE IF NOT EXISTS `history` (\
+					CREATE TABLE IF NOT EXISTS `history_dj` (\
 					    `slug` VARCHAR(32) NOT NULL,\
                         `dj` int(10) unsigned DEFAULT NULL,\
                         `cid` varchar(32) DEFAULT NULL,\
@@ -88,10 +88,22 @@ var MysqlDB = function(){
                         `dislike` int(10) unsigned NOT NULL DEFAULT '0'\
                     );\
 					\
-					CREATE TABLE IF NOT EXISTS `chat` (\
+					CREATE TABLE IF NOT EXISTS `history_chat` (\
+					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
+					    `msg` VARCHAR(256) NOT NULL,\
+					    `uid` INTEGER UNSIGNED NULL DEFAULT NULL,\
+						`special` VARCHAR(16) NULL DEFAULT NULL,\
+					    `time` DATETIME,\
+					    PRIMARY KEY (`id`)\
+					);\
+					\
+					CREATE TABLE IF NOT EXISTS `history_pm` (\
 					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
 					    `msg` VARCHAR(256) NOT NULL DEFAULT 'NULL',\
-					    `uid` INTEGER UNSIGNED NULL DEFAULT NULL,\
+					    `from` INTEGER UNSIGNED NOT NULL,\
+					    `to` INTEGER UNSIGNED NOT NULL,\
+					    `time` DATETIME,\
+					    `unread` INTEGER UNSIGNED NOT NULL DEFAULT 1,\
 					    PRIMARY KEY (`id`)\
 					);\
 					\
@@ -139,7 +151,7 @@ var MysqlDB = function(){
 	}
 }
 
-MysqlDB.prototype.execute = function(query, vars, callback) {
+MysqlDB.prototype.execute = function(query, vars, callback, trans) {
 	callback = callback || function(){};
 	
 	pool.getConnection(function(err, con){
@@ -148,10 +160,26 @@ MysqlDB.prototype.execute = function(query, vars, callback) {
 			return;
 		}
 		
-		con.query(query, vars, function(err, rows){
-			callback(err, rows);
-			con.release();
-		});
+		if(trans){
+		    con.beginTransaction(function(err) {
+                if (err) { callback(err); return }
+                
+                con.query(query, vars, function(err, rows) {
+                  if(err){
+                      callback(err);
+                      return con.rollback();
+                  } else {
+                      callback(null, rows);
+                      return con.commit();
+                  }
+                });
+            });
+		} else {
+		    con.query(query, vars, function(err, rows){
+    			callback(err, rows);
+    			con.release();
+    		});
+		}
 	});
 };
 
@@ -262,14 +290,14 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
             
             that.execute("\
             SELECT\
-                `history`.`cid`, UNIX_TIMESTAMP(`history`.`start`) as `start`, `history`.`title`, `history`.`duration`, `history`.`like`, `history`.`grab`, `history`.`dislike`,\
+                `h`.`cid`, UNIX_TIMESTAMP(`h`.`start`) as `start`, `h`.`title`, `h`.`duration`, `h`.`like`, `h`.`grab`, `h`.`dislike`,\
                 `users`.`badge_top`, `users`.`badge_bottom`, IFNULL((SELECT `role` FROM `roles` WHERE `roles`.`uid` = `users`.`id` AND ?), 'default') as `role`, `users`.`un`, `users`.`id`\
             FROM\
-                `history`\
+                `history_dj` AS `h`\
             LEFT OUTER JOIN\
                     `users`\
                 ON\
-                    `users`.`id` = `history`.`dj`\
+                    `users`.`id` = `h`.`dj`\
             WHERE\
                 ?\
             ORDER BY `start` ASC;\
@@ -311,6 +339,8 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
 
 MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var that = this;
+    
+    callback = callback || function(){};
 
     var outRoles = [], outBans = [], outHistory = [];
     
@@ -327,7 +357,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         outHistory.push([ slug, obj.user.uid, obj.song.cid, new Date(obj.start), obj.song.duration, obj.song.title, obj.votes.like, obj.votes.grab, obj.votes.dislike ]);
     }
     
-    var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `bans` WHERE ?;DELETE FROM `history` WHERE ?;";
+    var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `bans` WHERE ?;DELETE FROM `history_dj` WHERE ?;";
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
     
     if(outRoles.length){
@@ -339,11 +369,18 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
         params.push([ 'slug', 'uid', 'uid_by', 'reason', 'start', 'end' ], outBans);
     }
     if(outHistory.length){
-        query += "INSERT INTO `history`(??) VALUES ?;";
+        query += "INSERT INTO `history_dj`(??) VALUES ?;";
         params.push([ 'slug', 'dj', 'cid', 'start', 'duration', 'title', 'like', 'grab', 'dislike' ], outHistory);
     }
     
-    that.execute(query, params, callback);
+    that.execute(query, params, function(err, res){
+        if(err){
+            callback(err);
+        } else {
+            callback(null, res);
+        }
+        
+    }, true);
     
     return that;
 };
@@ -356,7 +393,7 @@ MysqlDB.prototype.deleteToken = function(tok) {
 MysqlDB.prototype.createToken = function(email) {
     var tok = DBUtils.makePass(email, Date.now());
 
-    this.execute("DELETE FROM `tokens` WHERE ?; INSERT INTO `tokens` SET ?, `created` = FROM_UNIXTIME(?);", [ { email: email, }, { token: tok, email: email, }, Date.now() / 1000]);
+    this.execute("DELETE FROM `tokens` WHERE ?; INSERT INTO `tokens` SET ?;", [ { email: email, }, { token: tok, email: email, created: new Date() } ]);
 
     return tok;
 };
@@ -575,8 +612,8 @@ MysqlDB.prototype.putUser = function(email, data, callback) {
     delete newData.badge;
     delete newData.playlists;
     this.execute("INSERT INTO `users`(??) VALUES(?) ON DUPLICATE KEY UPDATE ?;", [ Object.keys(newData), _.values(newData), newData ], function(err, res) {
-        if(res.insertId) callback(null, res.insertId);
-        else callback(err, res);
+        if(err) callback(err);
+        else callback(null, res.insertId);
     });
 };
 
@@ -691,6 +728,91 @@ MysqlDB.prototype.userEmailExists = function(key, callback) {
         if(err) callback(err);
         else callback(null, res[0].exists == 1);
     })
+};
+
+//ChatDB
+MysqlDB.prototype.logChat = function(uid, msg, special, callback) {
+    this.execute("INSERT INTO `history_chat` SET ?;", { msg: msg, uid: uid, time: new Date(), special: special }, function(err, res){
+        if(err){
+            log.error("Error logging chat message");
+            if (callback) callback(err);
+        } else{ 
+            if (callback) callback(null, res.insertId);
+        }
+    });
+};
+
+//PmDB
+MysqlDB.prototype.logPM = function(from, to, msg, callback) {
+    this.execute("INSERT INTO `history_pm` SET ?;", { msg: msg, from: from, to: to, time: new Date() }, function(err, res){
+        if(err){
+            log.error("Error logging chat message");
+            if (callback) callback(err);
+        } else{ 
+            if (callback) callback(null, res.insertId);
+        }
+    });
+};
+
+MysqlDB.prototype.getConversation = function(from, to, callback) {  
+    this.execute("SELECT * FROM `history_pm` WHERE (? AND ?) OR (? AND ?) ORDER BY `time` ASC LIMIT 512;", [ { from: from}, { to: to }, { from: to }, { to: from } ], function(err, res) {
+        if(err){
+            callback(err);
+        } else {
+            var out = [];
+            for(var key in res){
+                out.push({message:res[key].msg,time:res[key].time,from:res[key].from});
+            }
+            callback(null, out);
+        }
+    });
+};
+
+MysqlDB.prototype.getConversations = function(uid, callback) {
+    var that = this;
+    this.execute("SELECT *, SUM(IF(?, unread, 0)) as `unread_total` FROM (SELECT `history_pm`.*, LEAST(`from`, `to`) as `from_r`, GREATEST(`from`, `to`) as `to_r` FROM `history_pm` ORDER BY `time` DESC) as `h` WHERE ? OR ? GROUP BY `h`.`from_r`, `h`.`to_r`;", [ { to: uid }, { from_r: uid }, { to_r: uid } ], function(err, res) {
+        if (err){
+            callback(err);
+        } else {
+            var out = {};
+            var uids = [];
+            for (var key in res) {
+                var otherUid = res[key].to == uid ? res[key].from : res[key].to;
+                
+                if (out[otherUid] === undefined) {
+                    uids.push(otherUid);
+                    out[otherUid] = {
+                        user: null,
+                        messages: [],
+                        unread: res[key].unread_total
+                    };
+                }
+                out[otherUid].messages.push({ message: res[key].msg, time: res[key].time, from: res[key].from });
+            }
+            
+            if (uids.length > 0) {
+                that.getUserByUid(uids, function(err, result){
+                    if (err) {
+                        callback(err);
+                    } else {
+                        for (var id in result) {
+                            if (out[id]) {
+                                out[id].user = result[id].getClientObj();
+                            }
+                        }
+                        callback(null, out);
+                    }
+                });
+            }
+            else {
+                callback(null, out);
+            }
+        }
+    });
+};
+
+MysqlDB.prototype.markConversationRead = function(uid, uid2, time) {
+    this.execute("UPDATE history_pm SET `unread` = 0 WHERE time < ? AND `to` = ? AND `from` = ?;", [time, uid, uid2])
 };
 
 module.exports = new MysqlDB;
