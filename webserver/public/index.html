@@ -605,10 +605,10 @@
 									<span class="time">{{(pmFuncs.makeMessageTime(pmFuncs.getPMGroupInfo(pmgroup).lastPM.time))}}</span>
 								</div>
 							</div>
-							<div class="btn btn-new-pm">New Message</div>
+							<div class="btn btn-inner-pm btn-new-pm">New Message</div>
 						</div>
 						<div class="pm-group" data-ng-show="(activepm != null)">
-							<div class="btn" data-ng-click="pmFuncs.setPM(null)">Back to PM list</div>
+							<div class="btn btn-inner-pm btn-back-pm-list" data-ng-click="pmFuncs.setPM(null)">Back to PM list</div>
 							<div id="pm-chat">
 								<div id="pm-messages">
 									<div class="loader-small" ng-show="!activepm.__init"></div>
