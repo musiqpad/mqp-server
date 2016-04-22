@@ -5580,8 +5580,7 @@
 							<div class="offline-user">\
 							<input id="offline-pm-user" type="text" maxlength="255" placeholder="Type Offline Username" autocomplete="off" data-ng-show="isLoggedIn" class="">\
 							</div>\
-						  </div>\
-						  <div>',
+						  </div>',
 				buttons: [
 					{
 						icon: 'mdi-close',
