@@ -732,8 +732,22 @@ var SocketServer = function(server){
 						break;
 					}
 						
-					//TODO: Check over limit permission
-					//TODO: Check lock permission
+					if (that.room.queue.users.length >= that.room.queue.limit && !Roles.checkPermission(socket.user.role, 'djqueue.limit.bypass')){
+						returnObj.data = {
+							error: 'CannotJoinQueueOverLimit'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					if (that.room.queue.lock && !Roles.checkPermission(socket.user.role, 'djqueue.lock.bypass')){
+						returnObj.data = {
+							error: 'CannotJoinLockedQueue'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
 					if (!socket.user.activepl){
 						returnObj.data = {
 							error: 'CannotJoinQueueWithoutPlaylist'

@@ -113,6 +113,8 @@ config.db = {
 	'djqueue.cycle': Ability to enable/disable queue cycle
 	'djqueue.move': Ability to move, swap, add and remove people in the queue
 	'djqueue.playLiveVideos': Ability to play live videos with undefined duration
+	'djqueue.lock.bypass': Bypass locked queue
+	'djqueue.limit.bypass': Bypass queue limit
 	'chat.send': Abilty to send chat messages
 	'chat.delete': Ability to delete others' chat messages
 	'chat.specialMention': Ability to use @everyone, @guest and @djs as mention
@@ -180,6 +182,8 @@ config.roles = {
 			'djqueue.limit',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+            'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.broadcast',
@@ -222,6 +226,8 @@ config.roles = {
 			'djqueue.limit',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+			'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.broadcast',
@@ -265,6 +271,8 @@ config.roles = {
 			'djqueue.limit',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+			'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.delete',
@@ -304,6 +312,8 @@ config.roles = {
 			'djqueue.cycle',
 			'djqueue.move',
 			'djqueue.playLiveVideos',
+			'djqueue.limit.bypass',
+            'djqueue.lock.bypass',
 			'chat.send',
 			'chat.private',
 			'chat.delete',
