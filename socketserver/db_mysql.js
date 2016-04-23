@@ -712,7 +712,7 @@ MysqlDB.prototype.getUserByName = function(name, opts, callback) {
         opts = {};
     }
     
-    this.execute("SELECT `id`, `email` FROM `users` WHERE ?;", { username: name, }, function(err, res){
+    this.execute("SELECT `id`, `email` FROM `users` WHERE ?;", { un: name, }, function(err, res){
        if(err || res.length == 0) callback('UserNotFound');
        else {
            that.getUserNoLogin(res[0].id, function(err, data) {
