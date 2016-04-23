@@ -4743,8 +4743,8 @@
 	var mentionSound = new Audio('../pads/lib/sound/mention.wav');
 
 	var onLogin = function(err, data, callback){ // There's probably a better place for this...
-		if (data.error){
-			alert('There was an error signing up or logging in: ' + data.error);
+		if (err){
+			alert('There was an error signing up or logging in: ' + err);
 			MP.cookie.setCookie(MP.getTokenName(), '', -1);
 			if (callback) callback(err);
 			return;
