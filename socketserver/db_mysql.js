@@ -167,11 +167,12 @@ MysqlDB.prototype.execute = function(query, vars, callback, trans) {
                 con.query(query, vars, function(err, rows) {
                   if(err){
                       callback(err);
-                      return con.rollback();
+                      con.rollback();
                   } else {
                       callback(null, rows);
-                      return con.commit();
+                      con.commit();
                   }
+                  con.release();
                 });
             });
 		} else {
