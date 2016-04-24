@@ -6366,15 +6366,71 @@
 					});
 				}
 			});
-			MP.vote('grab');
+			if(!$(this).hasClass('btn-grab-history'))
+				MP.vote('grab');
 		}
 	});
 
+	$(document).on("click", ".playlists-grab-history", function(e){
+		console.log($(this));
+		if (!MP.isLoggedIn()) return;
+		
+		var id = $(this).parent().parent().data('cid');
+
+		if(!$(e.target).hasClass('pl-grab-create')){
+			var pid = e.target.attributes['data-pid'].textContent;
+			if (MP.user && pid && id !== false) {
+				MP.playlistAdd(pid, id, (MP.user.activepl == pid ? 'bottom' : 'top'), function(err, data){
+					if(err == 'SongAlreadyInPlaylist'){
+						MP.makeConfirmModal({
+							content: "Song is already in your playlist, would like to move it to the top?",
+							callback: function(res){
+								if(res) MP.api.playlist.moveSong(pid, id, 'top');
+							}
+						});
+					}
+				});
+
+			}
+		} else {
+			MP.makeCustomModal({
+				content: '<div>\
+					<h3>Please enter the name of your playlist</h3>\
+					<input type="text" class="new-playlist" id="new-playlist"/>\
+					</div>',
+				dismissable: true,
+				buttons: [
+					{
+						icon: 'mdi-close',
+						classes: 'modal-no',
+						handler: function(e){
+							$('.modal-bg').remove();
+						}
+					},
+					{
+						icon: 'mdi-check',
+						classes: 'modal-yes',
+						handler: function(e){
+							var name = $('#new-playlist').val();
+
+							MP.playlistCreate(name, function(err, data){
+								if (err) return; //add a alert or another modal here
+
+								MP.playlistAdd(data.id, id, 'top');
+								$('.modal-bg').remove();
+							});
+						}
+					}
+				]
+			});
+		}
+	});
+	
 	$('.playlists-grab').on('click', function(e){
 		if (!MP.isLoggedIn()) return;
 		
 		var id = (MP.media.media ? MP.media.media.cid : null);
-
+				
 		if (id == null) return;
 
 		if(!$(e.target).hasClass('pl-grab-create')){
@@ -6425,7 +6481,6 @@
 					}
 				]
 			});
-
 		}
 	});
 

@@ -475,7 +475,15 @@
 					</div>
 					<div class="hist-songs">
 						<div class="hist-sng" data-ng-repeat="h in filteredHistory(historyList.filter)" data-cid="{{h.song.cid}}">
-							<div class="nav"><div class="mdi mdi-history"></div></div>
+							<div class="nav btn-grab btn-grab-history">
+								<div class="mdi mdi-plus-circle-outline"></div>
+								<div class="popup playlists-grab-history playlists-grab">
+									<div class="pl-grab-create">Create a playlist</div>
+									<div class="pl-grab" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}">
+										{{x.name}}
+									</div>
+								</div>
+							</div>
 							<div class="nail" style="background-image: url('https://i.ytimg.com/vi/{{h.song.cid}}/default.jpg')"></div>
 							<div class="texts">
 								<p class="text sng" title="History Song Title" data-ng-bind="h.song.title"></p>

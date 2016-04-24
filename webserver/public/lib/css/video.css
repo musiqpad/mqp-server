@@ -197,6 +197,25 @@
     overflow-y: auto;
     overflow-x: hidden;
 }
+
+.btn-grab .playlists-grab-history {
+  line-height: 40px;
+  width: calc(158px);
+  bottom: inherit;
+  top: calc(100% - 1px);
+  z-index: 1;
+  border-top: none;
+  border-bottom: 1px solid #444A59;
+  position: absolute;
+  display: none;
+  border: 1px solid #444A59;
+  background-color: #1C1C1F;
+  color: #925AFF;
+  max-height: 150px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .pl-grab {
     white-space: nowrap;
     text-overflow: ellipsis;
