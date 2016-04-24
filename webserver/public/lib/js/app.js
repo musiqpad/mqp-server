@@ -5017,7 +5017,7 @@
 					MP.session.queue.currentsong = data.data.next.song;
 					MP.media.media = data.data.next.song;
 					MP.media.start = data.data.next.start;
-					if(data.data.last.uid == MP.api.room.getUser().uid) MP.session.lastdj = false;
+					if (MP.user && data.data.last.uid == MP.user.uid) MP.session.lastdj = false;
 
                     //Do next DJ notifications
                     if(data.data.next.uid){

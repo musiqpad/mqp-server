@@ -449,7 +449,7 @@ Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 
 	callback = callback || function(){};
 	
-	DB.logChat(sock.user.uid, message, specdata, function(cid){
+	DB.logChat(sock.user.uid, message, specdata, function(err, cid){
 		that.sendAll({
 			type: 'chat',
 			data: {

@@ -627,7 +627,7 @@ LevelDB.prototype.userEmailExists = function(key, callback) {
 //ChatDB
 LevelDB.prototype.logChat = function(uid, msg, special, callback) {
     this.putJSON(this.ChatDB, currentCID, { uid: uid, msg: msg, special: special });
-    callback(currentCID++);
+    callback(null, currentCID++);
 };
 
 //PmDB
