@@ -8,6 +8,8 @@ function Database(){
             return require('./db_level');
         case 'mysql':
             return require('./db_mysql');
+        case 'mongo':
+            return require('./db_mongo');
     }
 }
 

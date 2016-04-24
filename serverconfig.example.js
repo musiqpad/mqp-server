@@ -94,12 +94,16 @@ config.loginExpire = 7;
 
 // Database config
 config.db = {
-	dbType: 		'level',   				// Values "level" for LevelDB and "mysql" for MySQL
+	dbType: 		'level',   				// Values "level" for LevelDB, "mysql" for MySQL and "mongo" for MongoDB
 	dbDir: 			'./socketserver/db',	// Only used for LevelDB. Directory to save databases.  Default is ./socketserver/db
 	mysqlUser: 		'',     				// Only used for MySQL.  Database username
 	mysqlPassword: 	'', 					// Only used for MySQL.  Database password
 	mysqlHost: 		'',  					// Only used for MySQL.  Host address
 	mysqlDatabase: 	'', 					// Only used for MySQL.  Database being used
+	mongoUser: 		'',     				// Only used for MongoDB.  Database username
+	mongoPassword: 	'', 					// Only used for MongoDB.  Database password
+	mongoHost: 		'',						// Only used for MongoDB.  Host address
+	mongoDatabase:	'' 						// Only used for MongoDB.  Database being used
 };
 
 /*
