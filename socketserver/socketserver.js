@@ -333,7 +333,7 @@ var SocketServer = function(server){
 				return;
 			}
 			
-			// Return if unauthenticated socket or banned or restricter user tries to do anything other than signup, login, or join room.
+			// Return if unauthenticated socket or banned or restricted user tries to do anything other than signup, login, or join room.
 			var restricted = false;
 			if((!socket.user || (socket.room && that.room.isUserBanned(socket.user.uid)) || (restricted = (Date.now() - socket.user.created) <= config.room.signupcd) || socket.user.confirmation) && 
 				['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){

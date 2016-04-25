@@ -1501,7 +1501,9 @@
 				$('#creds-back').css('display','table');
 				$('.dash, #app-left, #app-right').hide();
 				$('#l-email').focus();
-				grecaptcha.reset();
+				
+				if (MP.session.isCaptcha)
+					grecaptcha.reset();
 			},
 			hideLogin: function(){
 				$('#creds-back').hide();
@@ -2695,9 +2697,12 @@
 					var server = data.time || client;
 
 					MP.session.serverDateDiff = (server < client ? server - client : client - server);
-					try{
-						grecaptcha.render('recaptcha', { sitekey: MP.session.captchakey, 'theme': 'dark',});
-					}catch(e){}
+					
+					if (MP.session.isCaptcha) {
+						try{
+							grecaptcha.render('recaptcha', { sitekey: MP.session.captchakey, 'theme': 'dark',});
+						}catch(e){}
+					}
 					MP.addCurrentToHistory();
 
 					$('.btn-grab.active, .btn-upvote.active, .btn-downvote.active').removeClass('active');
@@ -7329,7 +7334,7 @@
 	});*/
 
 	MP.getTokenName = function() {
-		if (config.selfHosted == true) {
+		if (config.selfHosted && location.host.indexOf('musqiqpad.com') != -1) {
 			if (MP.session.roomInfo.slug) {
 				return MP.session.roomInfo.slug + '-token';
 			}
@@ -7357,54 +7362,49 @@
 				if (err){
 					return;
 				}
+				
 				if(!MP.historyList.historyInitialized) {
 					MP.getHistory();
-				}
-				// Alpha Only
-				if (!MP.isLoggedIn()) {
-					var token = MP.cookie.getCookie(MP.getTokenName());
-					MP.loginWithTok(token, function(err, data){
-						if (err){ console.log('Token is invalid.'); return;}
-					});
 				}
 
 				if (MP.session.roomInfo.bg) { $('#room-bg').css('background-image', 'url('+ MP.session.roomInfo.bg +')'); }
 				$('title').text(data.room.name);
 				$('.modal-bg').remove();
-					var $chat = $('#chat');
-					MP.loadEmoji(false, function(){
-						//Remove all current DJ badges and show real badges
-						var elem = $('#messages .cm.message');
-						elem.find('.bdg-icon-dj').remove();
-						elem.find('.bdg:hidden').attr('class', 'bdg');
+				
+				var $chat = $('#chat');
+				MP.loadEmoji(false, function(){
+					//Remove all current DJ badges and show real badges
+					var elem = $('#messages .cm.message');
+					elem.find('.bdg-icon-dj').remove();
+					elem.find('.bdg:hidden').attr('class', 'bdg');
 
-						//Render last chat
-						for(var i in data.lastChat){
-							if (data.lastChat[i].user.un && !MP.seenUsers[data.lastChat[i].user.uid]) MP.seenUsers[data.lastChat[i].user.uid] = data.lastChat[i].user;
+					//Render last chat
+					for(var i in data.lastChat){
+						if (data.lastChat[i].user.un && !MP.seenUsers[data.lastChat[i].user.uid]) MP.seenUsers[data.lastChat[i].user.uid] = data.lastChat[i].user;
 
-							MP.addMessage({
-								message: data.lastChat[i].message,
-								uid: data.lastChat[i].user.uid,
-								cid: data.lastChat[i].cid,
-								time: data.lastChat[i].time
-							});
-						}
+						MP.addMessage({
+							message: data.lastChat[i].message,
+							uid: data.lastChat[i].user.uid,
+							cid: data.lastChat[i].cid,
+							time: data.lastChat[i].time
+						});
+					}
 
-						//Render welcome message
-						$('#messages').append(
-							'<div class="cm room-greet">' +
-							'<div class="mdi mdi-send msg" style="color:#A77DC2"></div>' +
-							'<div class="text">' +
-							'<span class="greet-uname">' + MP.emojiReplace(MP.session.roomInfo.name) + '</span>' +
-							'<br><span class="greet-umsg">' + MP.emojiReplace(MP.session.roomInfo.greet) + '</span></div></div></div>'
-						);
+					//Render welcome message
+					$('#messages').append(
+						'<div class="cm room-greet">' +
+						'<div class="mdi mdi-send msg" style="color:#A77DC2"></div>' +
+						'<div class="text">' +
+						'<span class="greet-uname">' + MP.emojiReplace(MP.session.roomInfo.name) + '</span>' +
+						'<br><span class="greet-umsg">' + MP.emojiReplace(MP.session.roomInfo.greet) + '</span></div></div></div>'
+					);
 
-						// Waits for the append to DOM to go through, then scrolls to bottom
-						setTimeout(function(){
-							MP.api.chat.scrollBottom();
-						}, 3);
-					});
-					$chat.scrollTop($chat[0].scrollHeight);
+					// Waits for the append to DOM to go through, then scrolls to bottom
+					setTimeout(function(){
+						MP.api.chat.scrollBottom();
+					}, 3);
+				});
+				$chat.scrollTop($chat[0].scrollHeight);
 
 				var playerSettings = JSON.parse(localStorage.settings).player;
 
