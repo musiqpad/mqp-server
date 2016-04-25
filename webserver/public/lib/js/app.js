@@ -7144,6 +7144,20 @@
 			};
 
 			$scope.checkPerm = MP.checkPerm;
+			
+			$scope.checkDeskNotifPerm = function(){
+                if (typeof Notification === 'undefined') {
+                    return false;
+                }
+                Notification.requestPermission(function(perm){
+                	if(perm != "granted"){
+                		var perms = $scope.roomSettings.notifications.desktop;
+                		for(var key in perms)
+                			perms[key] = false;
+                		$scope.$apply();
+                	}
+                });
+			};
 
 			$scope.makeTime = function(inTime, dur){
 				var h = Math.floor(inTime / 3600);
