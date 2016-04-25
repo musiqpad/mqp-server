@@ -474,7 +474,8 @@
 						<div class="nav btn-clear-filter" data-ng-click="historyList.filter = null"><div class="mdi mdi-close small"></div></div>
 					</div>
 					<div class="hist-songs">
-						<div class="hist-sng" data-ng-repeat="h in filteredHistory(historyList.filter)" data-cid="{{h.song.cid}}">
+						<div class="hist-sng" data-ng-repeat="h in historyList.history" data-cid="{{h.song.cid}}" data-ng-show="filteredHistory(h, historyList.filter)">
+							<div class="nav">{{$index + 1}}</div>
 							<div class="nav btn-grab btn-grab-history">
 								<div class="mdi mdi-plus-circle-outline"></div>
 								<div class="popup playlists-grab-history playlists-grab">

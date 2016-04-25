@@ -245,7 +245,7 @@ div.minicolors{
     text-overflow: ellipsis;
 }
 .hist-sng .texts {
-	width: calc(100% - 412px);
+	width: calc(100% - 452px);
 	float: left;
     margin: 20px 10px;
 }

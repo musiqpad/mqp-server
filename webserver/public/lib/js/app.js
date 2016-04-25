@@ -7173,26 +7173,12 @@
 				return false;
 			};
 
-			$scope.filteredHistory = function(filterBy) {
-				var result = [];
-				if (filterBy == undefined || filterBy == null || filterBy == "") {
-					return $scope.historyList ? $scope.historyList.history : [];
+			$scope.filteredHistory = function(h, filterBy) {
+				try{
+					return !(filterBy = filterBy.toLowerCase()) || h.song.title.toLowerCase().indexOf(filterBy) > -1 || h.song.cid.toLowerCase().indexOf(filterBy) > -1 || h.user.un.toLowerCase().indexOf(filterBy) > -1;
+				} catch(e){
+					return true;
 				}
-				angular.forEach($scope.historyList.history, function(h) {
-					try {
-						if (h.song.title.toLowerCase().indexOf(filterBy.toLowerCase()) > -1) {
-							result.push(h);
-						}
-						else if (h.song.cid.toLowerCase().indexOf(filterBy.toLowerCase()) > -1) {
-							result.push(h);
-						}
-						else if (h.user.un.toLowerCase().indexOf(filterBy.toLowerCase()) > -1) {
-							result.push(h);
-						}
-					}
-					catch (e) {}
-				});
-				return result;
 			};
 
 			$scope.makeBadgeStyle = function(opts){
