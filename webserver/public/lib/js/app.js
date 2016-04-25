@@ -6920,7 +6920,7 @@
 
 		ajsApp.controller('MainController', function($scope) {
 			$scope.prop = {
-				t: 3,			// Logo menu
+				t: 1,			// Logo menu
 				c: 1, 			// Right view (Chat, Waitlist, Userlist)
 				p: 1,			// People tabs inside of Userlist
 				ci: 1,          // Chat list internal
