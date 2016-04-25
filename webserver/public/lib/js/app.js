@@ -1174,9 +1174,23 @@
 					return MP.user.playlists[MP.user.activepl];
 				},
 				active: function(pid, callback){
-					if (!MP.user || !MP.user.activepl || !MP.user.playlists || !MP.user.playlists[MP.user.activepl]) return null;
-
-					return MP.user.playlists[MP.user.activepl];
+					if (!pid){
+						if (typeof callback === 'function') callback('invalidPlaylistID');
+						return false;
+					}
+					
+					if (!MP.user){
+						if (typeof callback === 'function') callback('notLoggedIn');
+						return false;
+					}
+					
+					if (!MP.user.playlists || !MP.user.playlists[pid]) {
+						if (typeof callback === 'function') callback('playlistNotFound');
+						return;
+					}
+					
+					MP.playlistActivate(pid, callback);
+					return true;
 				},
 				getNextSong: function(){
 					if (!MP.user || !MP.user.activepl || !MP.user.playlists || !MP.user.playlists[MP.user.activepl]) return null;
