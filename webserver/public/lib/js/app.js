@@ -4306,7 +4306,7 @@
 			create: MP.api.playlist.create,
 			delete: MP.api.playlist.delete,
 			getActive: MP.api.playlist.getActive,
-			active: MP.api.playlist.active,
+			activate: MP.api.playlist.activate,
 			getNextSong: MP.api.playlist.getNextSong,
 			addSong: MP.api.playlist.addSong,
 			removeSong: MP.api.playlist.removeSong,
