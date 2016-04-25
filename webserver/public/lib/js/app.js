@@ -1173,7 +1173,7 @@
 					if (!MP.user || !MP.user.activepl || !MP.user.playlists || !MP.user.playlists[MP.user.activepl]) return null;
 					return MP.user.playlists[MP.user.activepl];
 				},
-				active: function(pid, callback){
+				activate: function(pid, callback){
 					if (!pid){
 						if (typeof callback === 'function') callback('invalidPlaylistID');
 						return false;
