@@ -7334,7 +7334,7 @@
 	});*/
 
 	MP.getTokenName = function() {
-		if (config.selfHosted && location.host.indexOf('musqiqpad.com') != -1) {
+		if (config.selfHosted && location.host.indexOf('musiqpad.com') != -1) {
 			if (MP.session.roomInfo.slug) {
 				return MP.session.roomInfo.slug + '-token';
 			}
@@ -7342,7 +7342,7 @@
 				var urlParams = (location.pathname + '').split('/');
   				var i = urlParams.indexOf('p');
   				if (urlParams.length >= (i + 2)) {
-    				var roomSlug = urlParams[i + 1];
+    				var roomSlug = decodeURIComponent(urlParams[i + 1]);
     				return roomSlug + '-token';
   				}
 			}
