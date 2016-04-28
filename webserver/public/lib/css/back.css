@@ -4,7 +4,8 @@
     height: 100%;
     background-image:url('https://cdn.musiqpad.com/img/city-scape.jpg');
     background-repeat: no-repeat;
-    background-size: 100% 100%;
+    background-size: cover;
+	background-position: center;
 }
 body {
     margin: 0;
