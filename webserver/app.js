@@ -5,11 +5,6 @@ var https = require('https');
 var fs = require('fs');
 var config = require('../serverconfig.js');
 
-// CSS requires 
-var less = require('less');
-var cleancss = (new (require('clean-css')));
-
-
 var app = express();
 var server = null;
 var server2 = null;
@@ -26,17 +21,6 @@ if (config.certificate && config.certificate.key && config.certificate.cert){
 
 //var server = http.createServer(app);
 
-// app.get(/\.css/i, function(req, res){
-//   fs.readFile( path.resolve(__dirname, 'public/' + req.originalUrl), function(err, data){
-//     if (err){
-//       res.status('404');
-//       res.send('File not found');
-//       return;
-//     }
-//     res.set("Content-type", "text/css");
-//     res.send(cleancss.minify(data).styles);
-//   })
-// });
 
 app.use(function(req, res, next) {
   if(!req.secure && config.webServer.redirectHTTP) {
@@ -60,14 +44,6 @@ app.get('/api/room', function(req,res){
   };
   res.send(roomInfo);
 });
-
-// app.get('*/css/style.css', function(req, res){
-//   less.render('@import "public/css/style.less";', {},
-//       function (e, output) {
-//         res.header("Content-type", "text/css");
-//         res.send(cleancss.minify(output.css).styles);
-//       });
-// });
 
 server.listen(config.webServer.port || process.env.PORT, config.webServer.address || process.env.IP, function(){
   var addr = server.address();
