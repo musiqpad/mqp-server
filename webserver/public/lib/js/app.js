@@ -2507,7 +2507,7 @@
 							};
 							MP.api.chat.log(msgs[err] || "Error: " + err);
 						} else {
-							MP.api.chat.log(data.un + "<br>" + data.history.map(function(e){ return e.address + ": " + e.time }).join('<br>'));
+							MP.api.chat.log(data.un + "<br>" + data.history.map(function(e){ return e.address + ": " + e.time.slice(0, 19).replace('T', ' '); }).join('<br>'));
 						}
 					});
 				},
