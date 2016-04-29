@@ -1324,6 +1324,10 @@ var SocketServer = function(server){
 							}
 						}
 						
+						//Log user's IP address
+						var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
+						DB.logIp(ip, user.uid);
+
 						returnObj.data = {
 							token: ( token ? token : null),
 							room: that.room.getRoomMeta(),
