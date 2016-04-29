@@ -2900,6 +2900,70 @@ var SocketServer = function(server){
 					else
 						DB.getUserByUid(data.data.uid, { getPlaylists: false }, cb);
 					break;
+				case 'iphistory':
+					/*
+					 Expects {
+					 	type: 'iphistory',
+					 	data: {
+					 		uid: uid,
+					 		un: un
+					 	}
+					 }
+					*/
+					//Check for props
+					if (!data.data.uid == !data.data.un){
+						returnObj.data = {
+							error: 'WrongProps'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Check for permission
+					if (!Roles.checkPermission(socket.user.role, 'room.whois.iphistory')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Callback
+					var cb = function(err, user){
+						if(err){
+							returnObj.data = {
+								error: err
+							};
+							socket.sendJSON(returnObj);
+							return;
+						} else {
+							DB.getIpHistory(user.uid, function(err, res){
+								
+								//Handle error
+								if(err || !res.length){
+									returnObj.data = {
+										error: 'IpHistoryNotFound',
+										un: user.un,
+									};
+									socket.sendJSON(returnObj);
+									return;
+								}
+								
+								//Return data
+								returnObj.data = {
+									history: res,
+									un: user.un,
+								};
+								socket.sendJSON(returnObj);
+							});
+						}
+					}
+					
+					if(data.data.un)
+						DB.getUserByName(data.data.un, { getPlaylists: false }, cb);
+					else
+						DB.getUserByUid(~~(data.data.uid), { getPlaylists: false }, cb);
+					break;
 			}
 		});
 	});

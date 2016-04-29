@@ -827,4 +827,13 @@ MysqlDB.prototype.logIp = function(address, uid) {
     this.execute("INSERT INTO `history_ip` SET ?;", { address: address, uid: uid, time: new Date() });
 };
 
+MysqlDB.prototype.getIpHistory = function(uid, callback) {
+     this.execute("SELECT * FROM (SELECT `address`, `time` FROM `history_ip` WHERE ? ORDER BY `time` DESC) as `h` GROUP BY `h`.`address` ORDER BY `h`.`time` ASC;", { uid: uid }, function(err, data) {
+         if(err)
+            callback(err);
+         else
+            callback(err, data)
+     });
+};
+
 module.exports = new MysqlDB;

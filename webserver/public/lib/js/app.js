@@ -1087,7 +1087,41 @@
 
 					MP.unbanUser(uid, callback);
 					return true;
-				}
+				},
+				whois: function(data, callback){
+	                if(!MP.checkPerm('room.whois')) return false;
+	
+					var obj = {
+						type: 'whois',
+						data: (Number.isNaN(data) || !Number.isInteger(Number(data))) ?
+							{ un: (((data || "")[0] == '@' ? data.slice(1) : data) || MP.user.un) }
+								:
+							{ uid: data }
+					}
+	
+					obj.id = MP.addCallback(obj.type, callback);
+	
+					socket.sendJSON(obj);
+	
+					return true;
+				},
+				iphistory: function(data, callback){
+					if(!MP.checkPerm('room.whois.iphistory')) return false;
+	
+					var obj = {
+						type: 'iphistory',
+						data: (Number.isNaN(data) || !Number.isInteger(Number(data))) ?
+							{ un: (((data || "")[0] == '@' ? data.slice(1) : data) || MP.user.un) }
+								:
+							{ uid: data }
+					}
+	
+					obj.id = MP.addCallback(obj.type, callback);
+	
+					socket.sendJSON(obj);
+	
+					return true;
+				},
 			},
 			chat: {
 				getConversations: function(callback) {
@@ -2457,7 +2491,27 @@
 						}
 					});
 				},
-			}
+			},
+			
+			iplist: {
+				description: 'Shows all IP addresses the user connected from and their last connection time',
+				aliases: [ 'whoipis' ],
+				staff: true,
+				permission: 'room.whois.iphistory',
+				exec: function(arr){
+					API.room.iphistory(arr[1], function(err, data){
+						if(err){
+							var msgs = {
+								"UserNotFound": "User not found",
+								"IpHistoryNotFound": (data || {}).un + "<br>No IP history for this user",
+							};
+							MP.api.chat.log(msgs[err] || "Error: " + err);
+						} else {
+							MP.api.chat.log(data.un + "<br>" + data.history.map(function(e){ return e.address + ": " + e.time }).join('<br>'));
+						}
+					});
+				},
+			},
 		},
 		sendMessage: function(message, staff){
 			staff = staff || false;
@@ -4278,23 +4332,8 @@
 			getBannedUsers: MP.api.room.getBannedUsers,
 			banUser: MP.api.room.banUser,
 			unbanUser: MP.api.room.unbanUser,
-			whois: function(data, callback){
-                if(!MP.checkPerm('room.whois')) return false;
-
-				var obj = {
-					type: 'whois',
-					data: (Number.isNaN(data) || !Number.isInteger(Number(data))) ?
-						{ un: (((data || "")[0] == '@' ? data.slice(1) : data) || MP.user.un) }
-							:
-						{ uid: data }
-				}
-
-				obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
-
-				socket.sendJSON(obj);
-
-				return true;
-			}
+			whois: MP.api.room.whois,
+			iphistory: MP.api.room.iphistory
 		},
 		chat: {
 			getConversations: MP.api.chat.getConversations,

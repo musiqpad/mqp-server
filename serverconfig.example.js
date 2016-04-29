@@ -134,6 +134,7 @@ config.db = {
 	'room.banUser': Ability to ban and unban users
 	'room.ratelimit.bypass': Will bypass ratelimit
     'room.whois': Possibility to request additional information about a user
+    'room.whois.iphistory': Possibility to request all IP addresses that the user logged from since account creation
 	
 	NOTE: Changing the PROPERTY NAME will break role assignments.  Title can be changed
 	without breaking things, but property name must stay the same.
@@ -203,6 +204,7 @@ config.roles = {
 			'room.banUser',
 			'room.ratelimit.bypass',
             'room.whois',
+            'room.whois.iphistory',
 		],
 		canGrantRoles: [
 			'dev',
@@ -292,6 +294,7 @@ config.roles = {
 			'room.banUser',
 			'room.ratelimit.bypass',
             'room.whois',
+            'room.whois.iphistory',
 		],
 		canGrantRoles: [
 			'supervisor',
