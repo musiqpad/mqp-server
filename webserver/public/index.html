@@ -424,7 +424,8 @@
 						<div class="lib-fdr" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}" ng-class="{selected: x.id == viewedPl}">
 							<div class="text" title="{{x.name}}" data-ng-bind="x.name"></div>
 							<div class="nav"><span class="icon-info" data-ng-bind="x.num"></span></div>
-							<div class="nav"><div ng-if="activepl == x.id" class="mdi mdi-checkbox-marked-circle small green"></div></div>
+							<div ng-if="activepl == x.id" class="nav"><div class="mdi mdi-checkbox-marked-circle small green"></div></div>
+							<div ng-if="activepl != x.id" class="nav"><div class="btn-activate-playlist mdi mdi-checkbox-blank-circle-outline small"></div></div>
 						</div>
 						</div>
 						<div class="lib-fdr-search btn-import">

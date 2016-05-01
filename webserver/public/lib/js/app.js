@@ -5730,6 +5730,13 @@
 				MP.playlistActivate(pid);
 			}
 		})
+		.on('click', '.btn-activate-playlist', function(){
+			var pid = $(this).parent().parent().data('pid')
+
+			if (MP.user.playlists[pid]){
+				MP.playlistActivate(pid);
+			}
+		})
 
 		// Deleting playlist
 		.on('click', '.btn-delete-playlist', function(e){
