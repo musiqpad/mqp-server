@@ -4384,7 +4384,6 @@
 		},
 		fullscreen: function() {
 			$('.playback').toggleClass('fullscreen');
-			$('.video').toggleClass('fullscreen');
 			if (($('.btn-fullscreen > div').hasClass('mdi-fullscreen'))){
 				$('.btn-fullscreen > div').removeClass('mdi-fullscreen').addClass('mdi-fullscreen-exit');
 				//$(".playback").draggable({disabled:true}).resizable({disabled:true}).attr('style', '');
