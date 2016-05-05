@@ -2679,6 +2679,8 @@
 					if (callback) callback(err, data);
 					return;
 				}
+				checkForUpdates();
+				setInterval(checkForUpdates, 1000 * 60 * 60 * 2);
 				MP.getUsers(function(){
 					MP.session.roomInfo = data.room;
 					MP.session.queue = data.queue;
@@ -4759,7 +4761,20 @@
 	};
 
 	var mentionSound = new Audio('../pads/lib/sound/mention.wav');
-
+	
+	var checkForUpdates = function () {
+		if(MP.checkPerm('server.checkForUpdates')) {
+			var obj = {
+				type: 'checkForUpdates',
+				data: {},
+			};
+			obj.id = MP.addCallback(obj.type, function(err, data) {
+				MP.addMessage('Update available: ' + data.update.current + " → " + data.update.latest, "system");
+			});
+			socket.sendJSON(obj);
+		}
+	};
+	
 	var onLogin = function(err, data, callback){ // There's probably a better place for this...
 		if (err){
 			alert('There was an error signing up or logging in: ' + err);
@@ -5584,7 +5599,6 @@
 		})
 			// Create a new Private Message
 		.on('click', '.btn-new-pm', function() {
-			console.log('New PM Modal');
 			var users = MP.getUsersInRoom();
 			var userHtml = "";
 			for (var uid in users) {
@@ -5943,7 +5957,6 @@
     		$('.user-menu').remove();
 		})
 		.on('click','#video-blocked-button', function() {
-			console.log(1);
 				$('.video-blocked-bg').attr('style', "");
 		})
 		//Onclick delete message
@@ -6397,7 +6410,6 @@
 	});
 
 	$(document).on("click", ".playlists-grab-history", function(e){
-		console.log($(this));
 		if (!MP.isLoggedIn()) return;
 		
 		var id = $(this).parent().parent().data('cid');

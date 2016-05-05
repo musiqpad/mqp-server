@@ -203,6 +203,7 @@ config.roles = {
 			'room.banUser',
 			'room.ratelimit.bypass',
             'room.whois',
+			'server.checkForUpdates',
 		],
 		canGrantRoles: [
 			'dev',

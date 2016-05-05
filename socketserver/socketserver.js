@@ -6,6 +6,7 @@ var Duration = require('durationjs');
 var request = require('request');
 var util = require('util');
 var extend = require('extend');
+var updateNotifier = require('update-notifier');
 
 //Files
 var config = require('../serverconfig');
@@ -286,7 +287,7 @@ var SocketServer = function(server){
 		});
 		
 		
-		socket.on("message", function(data, flags){
+		socket.on("message", function(data, flags){			
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 			
 			log.debug(ip + " sent: " + data);
@@ -2895,6 +2896,26 @@ var SocketServer = function(server){
 						DB.getUserByName(data.data.un, { getPlaylists: false }, cb);
 					else
 						DB.getUserByUid(data.data.uid, { getPlaylists: false }, cb);
+					break;
+				case 'checkForUpdates':
+					//Check for permission
+					if (!Roles.checkPermission(socket.user.role, 'server.checkForUpdates')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					const pkg = require('./../package.json');
+					var notifier = updateNotifier({
+						pkg,
+						updateCheckInterval: 0
+					});
+					
+					returnObj.data = {
+						update: notifier.update,
+					};
+					socket.sendJSON(returnObj);
 					break;
 			}
 		});
