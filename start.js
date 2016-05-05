@@ -21,8 +21,7 @@ function checkForUpdates() {
     pkg,
     updateCheckInterval: 0
   });
-
-  if(notifier) {
+  if(notifier.update) {
     var message = '\n' + boxen('Update available ' + chalk.dim(notifier.update.current) + chalk.reset(' → ') + chalk.green(notifier.update.latest), {
       padding: 1,
       margin: 1,
