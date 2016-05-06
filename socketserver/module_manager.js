@@ -29,7 +29,7 @@ ModuleManager.prototype.RegisterEvent = function(event, callback, module) {
     }
   }
   currentLevel.__events.push({ cb:callback });
-  console.log(JSON.stringify(this.__events));
+  module.Logger.info('Event Registered: \'' + event + '\'');
 //  if (!this.__events[event]) {
 //    this.__events[event] = [];
 //  }
