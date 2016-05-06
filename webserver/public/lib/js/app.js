@@ -2229,9 +2229,9 @@
 				},
 			},
 
-			whisper: {
+			pm: {
 				description: 'Sends a private message',
-				aliases: ['w', 'pm'],
+				aliases: ['w', 'whisper'],
                 permission: 'chat.private',
 				exec: function(arr){
 					if (!MP.checkPerm('chat.private')) {
