@@ -254,6 +254,7 @@
 .pm-user {
     height: 60px;
     cursor: pointer;
+    overflow-wrap: break-word;
 }
 .pm-user-info {
     line-height: 25px;
