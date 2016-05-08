@@ -5588,7 +5588,42 @@
 				</div>');*/
 			}
 		});
-
+		var newMsgs;
+	function checkMoreMessages() {
+		var distance = $('#messages')[0].clientHeight - $('#chat')[0].clientHeight;
+		var scroll = $('#chat').scrollTop();
+		if (!(distance > scroll + 100)) {
+			newMsgs = false;
+			if(!$(".more-messages-indicator").hasClass("hidden")){
+				 $(".more-messages-indicator").addClass("hidden");
+			}
+		}
+		else {
+			newMsgs = true;
+		}
+	}
+	MP.on("chat", function () {
+		if (newMsgs) {
+			console.log("Chat + scrolled up");
+			if($(".more-messages-indicator").hasClass("hidden")){
+				 $(".more-messages-indicator").removeClass("hidden");
+			}
+		}
+	});
+	var chatScrollTimeout;
+	$('#chat').on('scroll', function () {
+		if (chatScrollTimeout) {
+        clearTimeout(chatScrollTimeout);
+        chatScrollTimeout = null;
+    }
+    chatScrollTimeout = setTimeout(checkMoreMessages, 250);
+	});
+	$('.more-messages-indicator').click(function () {
+		$('#chat').scrollTop($('#messages')[0].clientHeight - $('#chat')[0].clientHeight);
+		if(!$(".more-messages-indicator").hasClass("hidden")){
+			 $(".more-messages-indicator").addClass("hidden");
+		 }
+	});
 	$(document)
 		// Changing and accepting mentions
 		.on('mouseover', '.autocomplete li', function(){

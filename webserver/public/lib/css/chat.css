@@ -251,12 +251,7 @@
 #offline-pm-user {
     width: calc(100% - 20px);
 }
-.pm-user {
-    height: auto;
-    line-height: normal;
-    cursor: pointer;
-    overflow-wrap: break-word;
-}
+
 .pm-user-info {
     line-height: 25px;
 }
@@ -370,6 +365,22 @@
     padding-bottom: 4px;
 }
 
+.more-messages-indicator {
+    cursor: pointer;
+    position: absolute;
+    top: -31px;
+    text-align: center;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.91);
+    display: inline;
+    line-height: 30px;
+    /* height: 25px; */
+}
+
+.pm-info {
+  line-height: 29px;
+  margin: 0;
+}
 
 @keyframes flash-background {  
     from { background: rgba(244, 107, 64, .25); }

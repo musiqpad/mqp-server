@@ -598,23 +598,27 @@
 							<div id="messages"></div>
 						</div>
 						<div id="msg-form">
+							<div class="more-messages-indicator hidden">
+								More messages below.
+							</div>
 							<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
 						</div>
 					</div>
 					<div data-ng-show="(prop.ci == 2 && isLoggedIn)" id="pm-container">
 						<div class="pms" data-ng-show="(activepm == null)">
-							<div class="pm-user" data-ng-class="{'self' : user.uid == pmgroup.uid}" data-ng-repeat="pmgroup in pmFuncs.getOrderedPMs()" data-ng-click="pmFuncs.setPM(pmgroup)">
-								<div class="pm-user-info">
-									<div ng-bind-html="makeBadgeStyle({ user: pmgroup.user, type: 'pm' }) | to_trusted"></div>
-									<span class="uname" style="{{makeUsernameStyleByRole(pmgroup.user.role)}}" data-ng-bind="pmgroup.user.un"></span>
-									<span class="icon-info" data-ng-show="pmgroup.unread > 0" data-ng-bind="pmgroup.unread"></span>
+								<div class="cm message" data-ng-class="{'self' : user.uid == pmgroup.uid}" data-ng-repeat="pmgroup in pmFuncs.getOrderedPMs()" data-ng-click="pmFuncs.setPM(pmgroup)">
+										<div ng-bind-html="makeBadgeStyle({ user: pmgroup.user, type: 'pm' }) | to_trusted"></div>
+										<span class="time">{{(pmFuncs.makeMessageTime(pmFuncs.getPMGroupInfo(pmgroup).lastPM.time))}}</span>
+										<div class="text">
+											<span class="uname" style="{{makeUsernameStyleByRole(pmgroup.user.role)}}" data-ng-bind="pmgroup.user.un"></span>
+											<span class="icon-info" data-ng-show="pmgroup.unread > 0" data-ng-bind="pmgroup.unread"></span>
+											<br>
+											<div class="pm-msg">
+												<span class="pm-info ng-binding" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.from == user.uid ? user.un : pmgroup.user.un)"></span>
+												<span class="umsg" ng-bind-html="emojiReplace(pmFuncs.getPMGroupInfo(pmgroup).lastPM.message) | to_trusted"></span>
+											</div>
+										</div>									
 								</div>
-								<div class="pm-latest-info">
-									<span class="pm-info" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.from == user.uid ? user.un : pmgroup.user.un)"></span>
-									<span class="pm-message" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.message)"></span>
-									<span class="time">{{(pmFuncs.makeMessageTime(pmFuncs.getPMGroupInfo(pmgroup).lastPM.time))}}</span>
-								</div>
-							</div>
 							<div class="btn btn-inner-pm btn-new-pm">New Message</div>
 						</div>
 						<div class="pm-group" data-ng-show="(activepm != null)">
