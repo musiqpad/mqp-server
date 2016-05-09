@@ -327,7 +327,7 @@
 }
 .btn-new-pm {
     border-top: 1px solid rgb(68, 74, 89);
-    bottom: -2px;
+    bottom: -1px;
 }
 .btn-back-pm-list {
     top: 0px;
@@ -335,10 +335,11 @@
     border-top: 1px solid rgb(68, 74, 89);
 }
 .pms, .single-pm {
+    overflow: auto;
     top: 40px;
+    bottom: 41px;
     position: absolute;
     width: 100%;
-    height: calc(100% - 41px);
 }
 .pm-group {
     width: 100%;

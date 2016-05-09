@@ -4769,7 +4769,8 @@
 				data: {},
 			};
 			obj.id = MP.addCallback(obj.type, function(err, data) {
-				MP.addMessage('Update available: ' + data.update.current + " → " + data.update.latest, "system");
+				if(data.update)
+					MP.addMessage('Update available: ' + data.update.current + " → " + data.update.latest, "system");
 			});
 			socket.sendJSON(obj);
 		}
