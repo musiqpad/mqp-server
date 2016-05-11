@@ -120,7 +120,7 @@ var MysqlDB = function(){
                         `role` VARCHAR(32) NOT NULL\
                     );\
                     \
-                    CREATE TABLE IF NOT EXISTS `bans` (\
+                    CREATE TABLE IF NOT EXISTS `restrictions` (\
                         `slug` VARCHAR(32),\
                         `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
                         `uid` INT(11) NOT NULL,\
@@ -128,6 +128,7 @@ var MysqlDB = function(){
                         `reason` VARCHAR(256) NULL,\
                         `start` DATETIME,\
                         `end` DATETIME,\
+                        `type` VARCHAR(10),\
                         PRIMARY KEY (`id`)\
                     );\
                     \
@@ -260,7 +261,7 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
     
     var out = {
         roles: {},
-        bans: {},
+        restrictions: {},
         history: [],
     }
     
@@ -272,23 +273,24 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
             out.roles[res[ind].role].push(res[ind].uid);
         }
        
-        that.execute("SELECT `uid`, `uid_by`, `reason`, UNIX_TIMESTAMP(`start`), UNIX_TIMESTAMP(`end`), (SELECT `role` FROM `roles` WHERE `roles`.`uid` = `bans`.`uid_by` AND ?) as `role` FROM `bans` WHERE ?;", [ { slug: slug, }, { slug: slug, } ], function(err, res) {
+        that.execute("SELECT `uid`, `uid_by`, `reason`, UNIX_TIMESTAMP(`start`) as `start`, UNIX_TIMESTAMP(`end`) as `end`, (SELECT `role` FROM `roles` WHERE `roles`.`uid` = `restrictions`.`uid_by` AND ?) as `role`, `type` FROM `restrictions` WHERE ?;", [ { slug: slug, }, { slug: slug, } ], function(err, res) {
             if(err) { callback(err); return; }
             
             for(var ind in res){
                 var obj = res[ind];
-                out.bans[obj.uid] = {
+                out.restrictions[obj.uid] = out.restrictions[obj.uid] || {};
+                out.restrictions[obj.uid][obj.type] = {
                     uid: obj.uid,
                     start: obj.start * 1000,
                     end: obj.end * 1000,
                     reason: obj.reason,
-                    bannedBy: {
+                    source: {
                         uid: obj.uid_by,
                         role: obj.role,
                     }
                 }
             }
-            
+
             that.execute("\
             SELECT\
                 `h`.`cid`, UNIX_TIMESTAMP(`h`.`start`) as `start`, `h`.`title`, `h`.`duration`, `h`.`like`, `h`.`grab`, `h`.`dislike`,\
@@ -343,31 +345,34 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
     
     callback = callback || function(){};
 
-    var outRoles = [], outBans = [], outHistory = [];
+    var outRoles = [], outRestrictions = [], outHistory = [];
     
     for(var key in val.roles){
         for(var ind in val.roles[key])
             outRoles.push([ slug, val.roles[key][ind], key ]);
     }
-    for(var key in val.bans){
-        var obj = val.bans[key];
-        outBans.push([ slug, key, obj.bannedBy.uid, obj.reason, new Date(obj.start), new Date(obj.end) ]);
+    for(var key in val.restrictions){
+        var obj = val.restrictions[key];
+        for(var type in obj){
+            var restobj = obj[type];
+            outRestrictions.push([ slug, key, restobj.source.uid, restobj.reason, new Date(restobj.start), new Date(restobj.end), type ]);
+        }
     }
     for(var ind in val.history){
         var obj = val.history[ind];
         outHistory.push([ slug, obj.user.uid, obj.song.cid, new Date(obj.start), obj.song.duration, obj.song.title, obj.votes.like, obj.votes.grab, obj.votes.dislike ]);
     }
     
-    var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `bans` WHERE ?;DELETE FROM `history_dj` WHERE ?;";
+    var query = "DELETE FROM `roles` WHERE ?; DELETE FROM `restrictions` WHERE ?;DELETE FROM `history_dj` WHERE ?;";
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
     
     if(outRoles.length){
         query += "INSERT INTO `roles`(??) VALUES ?;";
         params.push([ 'slug', 'uid', 'role' ], outRoles);
     }
-    if(outBans.length){
-        query += "INSERT INTO `bans`(??) VALUES ?;";
-        params.push([ 'slug', 'uid', 'uid_by', 'reason', 'start', 'end' ], outBans);
+    if(outRestrictions.length){
+        query += "INSERT INTO `restrictions`(??) VALUES ?;";
+        params.push([ 'slug', 'uid', 'uid_by', 'reason', 'start', 'end', 'type' ], outRestrictions);
     }
     if(outHistory.length){
         query += "INSERT INTO `history_dj`(??) VALUES ?;";
