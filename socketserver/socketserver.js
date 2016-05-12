@@ -2898,6 +2898,10 @@ var SocketServer = function(server){
 					else
 						DB.getUserByUid(data.data.uid, { getPlaylists: false }, cb);
 					break;
+
+				default:
+					ModuleManager.DispatchEvent('SOCKET.CUSTOM', data);
+					break;
 			}
 		});
 	});

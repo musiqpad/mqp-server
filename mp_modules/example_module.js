@@ -7,6 +7,7 @@ function ExampleModule(module) {
   this.module.RegisterEvent('ROOM.USER.*', function (data) { that.module.Logger.info('ROOM.USER: ' + JSON.stringify(data)); });
   this.module.RegisterEvent('ROOM.USER.MAKE_OWNER', function (data) { that.module.Logger.info('ROOM.USER.MAKE_OWNER: ' + JSON.stringify(data)); });
   this.module.RegisterEvent('ROOM.CHAT.*', function (data) { that.module.Logger.info('ROOM.CHAT: ' + JSON.stringify(data)); });
+  this.module.RegisterEvent('SOCKET.CUSTOM', function (data) { that.module.Logger.info('SOCKET.CUSTOM: ' + JSON.stringify(data)); })
 };
 
 module.exports = ExampleModule;
