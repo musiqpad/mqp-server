@@ -528,7 +528,7 @@
 			append: function(element, url, imgClickUrl){
 				imgClickUrl = imgClickUrl ? imgClickUrl : url;
 				var settings = JSON.parse(localStorage.getItem("settings"));
-				element.append('<span class="image-content" style="color: #79BE6C; cursor: pointer;"><span class="image-toggle" onclick="API.util.toggle_images(\''+escape(url)+'\',\''+escape(imgClickUrl)+'\',this);" style="cursor: pointer;">[Show Image]</span></span> ');
+				element.append('<span class="image-content" style="color: #79BE6C; cursor: pointer;"><span class="image-toggle" onclick="API.util.toggle_images(\''+escape('https://i.mqp.io/sslproxy?'+url)+'\',\''+escape(imgClickUrl)+'\',this);" style="cursor: pointer;">[Show Image]</span></span> ');
 
 				if (settings && settings.roomSettings && settings.roomSettings.showImages)
 					element.find('.image-toggle').last().click();
@@ -1178,17 +1178,17 @@
 						if (typeof callback === 'function') callback('invalidPlaylistID');
 						return false;
 					}
-					
+
 					if (!MP.user){
 						if (typeof callback === 'function') callback('notLoggedIn');
 						return false;
 					}
-					
+
 					if (!MP.user.playlists || !MP.user.playlists[pid]) {
 						if (typeof callback === 'function') callback('playlistNotFound');
 						return;
 					}
-					
+
 					MP.playlistActivate(pid, callback);
 					return true;
 				},
@@ -1247,7 +1247,7 @@
 						callback('invalidPidOrCid');
 						return false;
 					}
-					
+
 					if (Array.isArray(cid) && cid.length == 0) {
 						callback('emptyCidArray');
 						return false;
@@ -1476,7 +1476,7 @@
                         iconPath = iconPath || "https://musiqpad.com/pads/lib/img/icon.png";
                         MP.api.util.desktopnotif.getPermission(function(permission) {
                             if (permission !== 'granted') return;
-							
+
 							var settings = JSON.parse(localStorage.getItem("settings"));
 							if (!settings.roomSettings.notifications.desktop.showfocused && document.hasFocus()) return;
 
@@ -1489,7 +1489,7 @@
                                 window.focus();
                                 this.close();
                             };
-                            
+
                             setTimeout(function() {
                                 notification.close();
                             }, 3500);
@@ -1501,7 +1501,7 @@
 				$('#creds-back').css('display','table');
 				$('.dash, #app-left, #app-right').hide();
 				$('#l-email').focus();
-				
+
 				if (MP.session.isCaptcha)
 					grecaptcha.reset();
 			},
@@ -1866,16 +1866,16 @@
 				}
 
 				if (MP.checkPerm('chat.specialMention', user) && (settings.roomSettings.notifications.sound.global || settings.roomSettings.notifications.desktop.global)){
-					
+
 					if (MP.user){
 						arr_mention.push('@everyone');
 
 						if (queue_pos >= 0)
 							arr_mention.push('@djs');
-						
+
 						if (MP.isStaffMember(data.uid) && MP.isStaffMember())
 							arr_mention.push('@staff');
-							
+
 						if(MP.getRole(MP.user.role).mention)
 							arr_mention.push('@' + MP.getRole(MP.user.role).mention);
 					} else {
@@ -1902,19 +1902,19 @@
 						return;
 					}
 				}
-                
+
 				//Do chat notifications
 				if (MP.user && user.uid != MP.user.uid){
-					
+
 					//Desktop notification
 					if(settings.roomSettings.notifications.desktop.chat)
 						MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent a chat message\n" + msg_plain);
-					
+
 					//Sound notification
 					if(settings.roomSettings.notifications.sound.chat)
 						mentionSound.play();
 				}
-                
+
 				msg = MP.url.parse(msg,true);
 
 				//Parse bold tags
@@ -1932,11 +1932,11 @@
 				}
 
 				if (mention){
-					
+
                     //Desktop
                     if(settings.roomSettings.notifications.desktop.mention && !settings.roomSettings.notifications.desktop.chat)
                         MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " mentioned you\n" + msg_plain);
-                    
+
                     //Sound
                     if(settings.roomSettings.notifications.sound.mention && !settings.roomSettings.notifications.sound.chat)
                         mentionSound.play();
@@ -1997,7 +1997,7 @@
                 if(settings.roomSettings.notifications.desktop.global){
                     MP.api.util.desktopnotif.showNotification("musiqpad", "Received a broadcast\n" + msg);
                 }
-                
+
                 //Sound notification
                 if(settings.roomSettings.notifications.sound.global){
                     mentionSound.play();
@@ -2519,35 +2519,35 @@
 		},
 		getPrivateConversation: function(uid, callback) {
 			if (!MP.checkPerm('chat.private')) return;
-			
+
 			var obj = {
 				type: 'getPrivateConversation',
 				data: {
 					uid: uid
 				}
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, callback);
 			socket.sendJSON(obj);
 		},
 		getConversations: function(callback) {
 			if (!MP.checkPerm('chat.private')) return;
-			
+
 			var obj = {
 				type: 'getConversations',
 				data: { }
 			};
-			
+
 			obj.id = MP.addCallback(obj.type, callback);
 			socket.sendJSON(obj);
 		},
 		markConversationRead: function(uid, date) {
 			if (!MP.checkPerm('chat.private')) return;
-			
+
 			if (!date) {
 				date = Date.now();
 			}
-			
+
 			var obj = {
 				type: 'markConversationRead',
 				data: {
@@ -2555,7 +2555,7 @@
 					date: date
 				}
 			};
-			
+
 			socket.sendJSON(obj);
 		},
 		deleteChat: function(cid, callback){
@@ -2699,7 +2699,7 @@
 					var server = data.time || client;
 
 					MP.session.serverDateDiff = (server < client ? server - client : client - server);
-					
+
 					if (MP.session.isCaptcha) {
 						try{
 							grecaptcha.render('recaptcha', { sitekey: MP.session.captchakey, 'theme': 'dark',});
@@ -3522,10 +3522,10 @@
 				if (err){ if (callback) callback(err); console.log('Could not send private message: ' + err); return;}
 
 				if (callback) callback(err, data);
-				
+
 				MP.api.room.getUser(uid, function(err,user) {
 					if (err) {
-						
+
 					} else {
 						MP.addPrivateMessage(user, message, MP.user.uid);
 					}
@@ -4761,7 +4761,7 @@
 	};
 
 	var mentionSound = new Audio('../pads/lib/sound/mention.wav');
-	
+
 	var checkForUpdates = function () {
 		if(MP.checkPerm('server.checkForUpdates')) {
 			var obj = {
@@ -4775,7 +4775,7 @@
 			socket.sendJSON(obj);
 		}
 	};
-	
+
 	var onLogin = function(err, data, callback){ // There's probably a better place for this...
 		if (err){
 			alert('There was an error signing up or logging in: ' + err);
@@ -4803,13 +4803,13 @@
 		if (data.token){
 			MP.cookie.setCookie(MP.getTokenName(), data.token, 7);
 		}
-		
+
 		MP.api.chat.getConversations(onLoadConversations);
 	};
-	
+
 	var onLoadConversations = function(err, data) {
 	    if (err) {
-	        
+
 	    } else {
 	        if (!data.conversations) return;
 	        MP.pms = {};
@@ -4925,22 +4925,22 @@
 				case API.DATA.EVENTS.USER_JOINED:
 					MP.userList.guests = data.data.guests;
 					var user = data.data.user;
-					
+
 					if (user){
 						MP.seenUsers[ user.uid ] = user;
 						if (MP.userList.users.indexOf(user.uid) == -1){
 							MP.userList.users.push(user.uid);
 							if (!user.banned) {
-								
+
 								//Chat
 								if(settings.roomSettings.notifications.chat.join)
 									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'system');
-								
+
 								//Desktop
 								if(settings.roomSettings.notifications.desktop.join){
 									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " joined");
 								}
-								
+
 								//Sound
 								if(settings.roomSettings.notifications.sound.join){
 									mentionSound.play();
@@ -4957,22 +4957,22 @@
 				case API.DATA.EVENTS.USER_LEFT:
 					MP.userList.guests = data.data.guests;
 					var user = data.data.user;
-					
+
 					if (user){
 						var ind = MP.userList.users.indexOf(user.uid);
 						if (ind != -1){
 							MP.userList.users.splice( ind, 1);
 							if (!user.banned) {
-								
+
 								//Chat
 								if(settings.roomSettings.notifications.chat.leave)
 									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'system');
-								
+
 								//Desktop
 								if(settings.roomSettings.notifications.desktop.leave){
 									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " left");
 								}
-								
+
 								//Sound
 								if(settings.roomSettings.notifications.sound.leave){
 									mentionSound.play();
@@ -5010,7 +5010,7 @@
 					}else{
 						player.loadVideoById(null);
 					}
-                    
+
 					//Changing the DJ's badge
 					if((MP.session.queue.currentdj || {}).uid != data.data.next.uid){
 						if(MP.session.queue.currentdj) {
@@ -5025,7 +5025,7 @@
 							$('.bdg-icon.bdg-icon-dj').css('color', (MP.getRole(MP.api.room.getUser(data.data.next.uid).role).style || { color: 'white', }).color);
 						}
 					}
-                    
+
                     //Do last DJ notifications
                     if(data.data.last.uid){
                         var lastdj = MP.findUser(data.data.last.uid);
@@ -5033,18 +5033,18 @@
                         //Chat
                         if(settings.roomSettings.notifications.chat.advance_last)
                             MP.addMessage('<span data-uid="'+ lastdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(lastdj.role) + '">' + lastdj.un + '</span>just played ' + data.data.last.song.title, 'system');
-                        
+
                         //Desktop
                         if(settings.roomSettings.notifications.desktop.advance_last){
                             MP.api.util.desktopnotif.showNotification("musiqpad", "@" + lastdj.un + " just played\n" + data.data.last.song.title, "//i.ytimg.com/vi/" + data.data.last.song.cid + "/default.jpg");
                         }
-                        
+
                         //Sound
                         if(settings.roomSettings.notifications.sound.advance_last){
                             mentionSound.play();
                         }
                     }
-                    
+
                     //Load data from received JSON
 					MP.session.queue.votes = {};
 					MP.session.queue.currentdj = (data.data.next.uid ? MP.findUser(data.data.next.uid) : null);
@@ -5056,20 +5056,20 @@
                     //Do next DJ notifications
                     if(data.data.next.uid){
                         var nextdj = MP.findUser(data.data.next.uid);
-                        
+
                         //Chat
                         if(settings.roomSettings.notifications.chat.advance_next)
                             MP.addMessage('<span data-uid="'+ nextdj.uid +'" class="uname" style="' + MP.makeUsernameStyle(nextdj.role) + '">' + nextdj.un + '</span>just started playing ' + data.data.next.song.title, 'system');
-                        
+
                         //Desktop
                         if(settings.roomSettings.notifications.desktop.advance_next)
                             MP.api.util.desktopnotif.showNotification("musiqpad", "@" + nextdj.un + " just started playing\n" + data.data.next.song.title, "//i.ytimg.com/vi/" + data.data.next.song.cid + "/default.jpg");
-                        
+
                         //Sound
                         if(settings.roomSettings.notifications.sound.advance_next)
                             mentionSound.play();
                     }
-                    
+
 					if(data.data.next.song){
 						MP.media.timeRemaining = data.data.next.song.duration;
 						MP.startTimeRemaining();
@@ -5120,20 +5120,20 @@
 					var vote = data.data;
 
 					MP.session.queue.votes = vote.votes;
-					
+
 					//Do notifications
 					if(vote.voted == 1){
 						var user = MP.findUser(vote.uid);
-						
+
 						if(vote.action == 'like'){
 							//Chat
 							if(settings.roomSettings.notifications.chat.like)
 								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>liked the song', 'system');
-							
+
 							//Desktop
 							if(settings.roomSettings.notifications.desktop.like)
 								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " liked the song");
-							
+
 							//Sound
 							if(settings.roomSettings.notifications.sound.like)
 								mentionSound.play();
@@ -5141,24 +5141,24 @@
 							//Chat
 							if(settings.roomSettings.notifications.chat.grab)
 								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>grabbed the song', 'system');
-							
+
 							//Desktop
 							if(settings.roomSettings.notifications.desktop.grab)
 								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " grabbed the song");
-							
+
 							//Sound
 							if(settings.roomSettings.notifications.sound.grab)
 								mentionSound.play();
 						}
 					}
-					
-					
+
+
 					if (MP.historyList.historyInitialized) {
 						if (MP.historyList.history[0] && MP.session.queue.currentsong == MP.historyList.history[0].song) {
 							MP.historyList.history[0].votes = vote.votes;
 						}
 					}
-					
+
 					MP.applyModels();
 					break;
 				case API.DATA.EVENTS.USER_UPDATE:
@@ -5302,15 +5302,15 @@
 					//Chat
                     if(settings.roomSettings.notifications.chat.pm)
                         API.chat.log('<br>' + msg, '<span onclick="$(\'#msg-in\').val(\'/pm '+ user.un + ' \').focus();">Private Message received from </span><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>');
-                    
+
                     //Desktop
                     if(settings.roomSettings.notifications.desktop.pm)
                         MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " sent you a private message\n" + msg);
-                    
+
                     //Sound
                     if(settings.roomSettings.notifications.sound.pm)
                         mentionSound.play();
-                    
+
 					MP.addPrivateMessage(user, data.data.message, data.data.uid);
 					break;
 
@@ -5377,15 +5377,15 @@
 			return mentionVal.length + 1;
 		}
 	};
-	
+
 	$('#pm-msg-in').on('keydown', function(e){
 	    if (e.which == 13) {
 	        e.preventDefault();
 	        var $input = $(this);
 	        var $chat = $('#pm-chat');
-	
+
 	        if (!$input.val()) return;
-	
+
 	        //MP.session.lastMessage = $input.val();
 	        //MP.sendMessage($input.val());
 	        var activepm = angular.element($('body')).scope().activepm;
@@ -5398,7 +5398,7 @@
 	            }
 	            var msg = $input.val();
 	            MP.privateMessage(user.uid, msg, function(err, data){
-		
+
 	            });
 	            $chat.scrollTop( $chat[0].scrollHeight );
 	            $input.val('');
@@ -5666,16 +5666,16 @@
 						icon: 'mdi-check',
 						handler: function(){
 							var pmuid = $('.pm-user-list li.selected div').attr('data-pmuid');
-							
+
 							var offlineUsername = $('#offline-pm-user').val().replace(" ", "");
-							
+
 							function userCallback(user) {
-								
+
 								if (user)
 								{
 									console.log('Selected User ' + user.uid);
 									$('.modal-bg').remove();
-									
+
 									MP.makeCustomModal({
 										content: '<div class="model-new-pm-message">\
 													<h3>Sending PM to ' + user.un + '</h3>\
@@ -5692,7 +5692,7 @@
 											icon: 'mdi-check',
 											handler: function(){
 												var pmmessage = $('#pm-in').val();
-												
+
 												console.log('Selected Message "' + pmmessage + '" sending to ID "' + user.uid + '" with UserName "' + user.un + '"');
 												MP.api.chat.sendPrivate(user.uid, pmmessage, function(err, data){
 													if (err) {
@@ -5712,7 +5712,7 @@
 									});
 								}
 							}
-							
+
 							if (offlineUsername && offlineUsername.length > 0)
 							{
 								var user = MP.api.room.getUserByName(offlineUsername, function(err, data){
@@ -6420,7 +6420,7 @@
 	// Grab button
 	$('.btn-grab').on('click', function(e){
 		if (!MP.isLoggedIn()) return;
-		
+
 		if ($(e.target).closest('.popup').length) return;
 		if (Object.keys(MP.user.playlists) == 0) {
 			MP.makeAlertModal({
@@ -6447,7 +6447,7 @@
 
 	$(document).on("click", ".playlists-grab-history", function(e){
 		if (!MP.isLoggedIn()) return;
-		
+
 		var id = $(this).parent().parent().data('cid');
 
 		if(!$(e.target).hasClass('pl-grab-create')){
@@ -6498,12 +6498,12 @@
 			});
 		}
 	});
-	
+
 	$('.playlists-grab').on('click', function(e){
 		if (!MP.isLoggedIn()) return;
-		
+
 		var id = (MP.media.media ? MP.media.media.cid : null);
-				
+
 		if (id == null) return;
 
 		if(!$(e.target).hasClass('pl-grab-create')){
@@ -7000,10 +7000,10 @@
 				chatScroll: 0,	// Chat scroll memory
 				leaveAfterPlay: false,
 			};
-			
-			
+
+
 			$scope.activepm = null;
-			
+
 			$scope.getPMUnread = function() {
 				var total = 0;
 				for (var i in MP.pms) {
@@ -7011,7 +7011,7 @@
 				}
 				return total;
 			};
-			
+
 			$scope.pmFuncs = {
 				setPM: function(pmGroup) {
 					$scope.activepm = pmGroup;
@@ -7047,7 +7047,7 @@
 					if (pmGroup.messages.length > 0) {
 						returnObj.lastPM = pmGroup.messages[pmGroup.messages.length - 1];
 					}
-					
+
 					return returnObj;
 				},
 				changeToPMTab: function() {
@@ -7074,13 +7074,13 @@
 							out.push(MP.pms[i]);
 						}
 					}
-					out.sort(function(a,b){ 
+					out.sort(function(a,b){
 						return (new Date($scope.pmFuncs.getPMGroupInfo(b).lastPM.time).getTime()) - (new Date($scope.pmFuncs.getPMGroupInfo(a).lastPM.time).getTime());
 					});
 					return out;
 				}
 			};
-			
+
 			$scope.filterChat = function(type) {
 				type = type ? type : '';
 				switch (type) {
@@ -7217,7 +7217,7 @@
 			};
 
 			$scope.checkPerm = MP.checkPerm;
-			
+
 			$scope.checkDeskNotifPerm = function(){
                 if (typeof Notification === 'undefined') {
                     return false;
@@ -7278,14 +7278,14 @@
 
 				return MP.makeUsernameStyle(user.role);
 			};
-			
+
 			$scope.emojiReplace = function(text) {
                 if (text) {
                     return MP.emojiReplace(text);
                 }
                 return "";
             };
-			
+
 			$scope.getRole = function(role){
 				if (MP.getRole(role))
 					return MP.getRole(role);
@@ -7327,7 +7327,7 @@
 					localStorage.setItem("settings", JSON.stringify(settings));
 				} else {
 					$.extend(true, $scope.roomSettings, settings.roomSettings);
-                    
+
 					if (settings.roomSettings.leaveConfirmation){
 						$(window).bind('beforeunload', MP.leaveConfirmation);
 					}
@@ -7416,7 +7416,7 @@
 				if (err){
 					return;
 				}
-				
+
 				if(!MP.historyList.historyInitialized) {
 					MP.getHistory();
 				}
@@ -7424,7 +7424,7 @@
 				if (MP.session.roomInfo.bg) { $('#room-bg').css('background-image', 'url('+ MP.session.roomInfo.bg +')'); }
 				$('title').text(data.room.name);
 				$('.modal-bg').remove();
-				
+
 				var $chat = $('#chat');
 				MP.loadEmoji(false, function(){
 					//Remove all current DJ badges and show real badges
