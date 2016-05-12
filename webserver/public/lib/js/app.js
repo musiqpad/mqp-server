@@ -528,7 +528,10 @@
 			append: function(element, url, imgClickUrl){
 				imgClickUrl = imgClickUrl ? imgClickUrl : url;
 				var settings = JSON.parse(localStorage.getItem("settings"));
-				element.append('<span class="image-content" style="color: #79BE6C; cursor: pointer;"><span class="image-toggle" onclick="API.util.toggle_images(\''+escape('https://i.mqp.io/sslproxy?'+url)+'\',\''+escape(imgClickUrl)+'\',this);" style="cursor: pointer;">[Show Image]</span></span> ');
+				if (url.indexOf('https://i.mqp.io/sslproxy?') != 0) {
+					url = 'https://i.mqp.io/sslproxy?' + url;
+				}
+				element.append('<span class="image-content" style="color: #79BE6C; cursor: pointer;"><span class="image-toggle" onclick="API.util.toggle_images(\''+escape(url)+'\',\''+escape(imgClickUrl)+'\',this);" style="cursor: pointer;">[Show Image]</span></span> ');
 
 				if (settings && settings.roomSettings && settings.roomSettings.showImages)
 					element.find('.image-toggle').last().click();
@@ -547,6 +550,9 @@
 					var settings = JSON.parse(localStorage.getItem("settings"));
 
 					for (var i in urls){
+						if (urls[i].match(/(https?:\/\/i.mqp.io\/sslproxy\?)/g) != null) {
+							continue;
+						}
 						if (urls[i].match(/\.(png|jpe?g|gif)/i) != null){
 							MP.chatImage.append(msgdom, urls[i]);
 						}else{
