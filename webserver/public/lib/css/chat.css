@@ -23,6 +23,11 @@
     word-break: break-word;
     word-wrap: break-word;
 }
+#msg-in.msg-staffchat {
+    background: #1C1C1F url(https://i.imgur.com/LN95YWu.png) no-repeat scroll 7px 7px;
+    padding-left: 60px;
+    width: calc(100% - 70px);
+}
 #app-right .tray {
     position:absolute;
     top:0;
@@ -355,12 +360,12 @@
     border-top: 1px solid #444A59;
 	padding: 5px 0;
 }
-.tab.btn-mentions {
+.tab.btn-mentions, .tab-menu.btn-mentions {
     flex: 0.5;
     -webkit-flex: 0.5;
     -ms-flex: 0.5;
 }
-.tab.btn-mentions .icon-info {
+.tab.btn-mentions .icon-info, .tab-menu.btn-mentions .icon-info {
     font-size: 16px;
     border-radius: 16px;
     padding-bottom: 4px;
@@ -383,7 +388,7 @@
   margin: 0;
 }
 
-@keyframes flash-background {  
+@keyframes flash-background {
     from { background: rgba(244, 107, 64, .25); }
     to { background: default; }
 }

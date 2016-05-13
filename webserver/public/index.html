@@ -591,7 +591,13 @@
 					<div class="tray">
 						<div data-ng-click="prop.ci = 1; filterChat()" data-ng-class="{'active' : prop.ci == 1}" class="tab btn-mainchat" title="Chat"><div class="mdi mdi-message"></div></div>
 						<div data-ng-click="pmFuncs.changeToPMTab()" data-ng-class="{'active' : prop.ci == 2}" class="tab btn-pm" title="Private Messages" data-ng-show="isLoggedIn && checkPerm('chat.private')"><div class="mdi mdi-message-text"></div><span class="icon-info" data-ng-show="getPMUnread() > 0" data-ng-bind="getPMUnread()"></span></div>
-						<div data-ng-click="prop.ci = 3; filterChat('mentions')" data-ng-class="{'active' : prop.ci == 3}" class="tab btn-mentions" title="Mentions" data-ng-show="isLoggedIn"><span class="icon-info">@</span></div>
+						<div data-ng-click="prop.ci = 3; filterChat(filters[activeFilter].filterType)" data-ng-class="{'active' : prop.ci == 3}" class="tab-menu btn-mentions btn-{{filters[activeFilter].filterType}}" title="{{filters[activeFilter].name}}" data-ng-show="isLoggedIn">
+							<div class="{{filters[activeFilter].classes}}"><span class="icon-info" data-ng-show="filters[activeFilter].text && filters[activeFilter].text != ''" data-ng-bind="filters[activeFilter].text"></span></div>
+							<div class="chat-filter-menu">
+								<div data-ng-repeat="filter in filters" data-ng-show="filter.show()" data-ng-click="setFilter(filter.index)" data-ng-class="{'active' : prop.ci == 3 && activeFilter == filter.index}" class="tab btn-{{filter.filterType}}" title="{{filter.name}}" data-ng-show="isLoggedIn"><div class="{{filter.classes}}"><span class="icon-info" data-ng-show="filter.text && filter.text != ''" data-ng-bind="filter.text"></span></div></div>
+								<!--<div data-ng-click="prop.ci = 4; filterChat('staff')" data-ng-class="{'active' : prop.ci == 4, 'hidden' : prop.ci > 3}" class="tab btn-mentions" title="Mentions" data-ng-show="isLoggedIn"><span class="icon-info">@</span></div>-->
+							</div>
+						</div>
 					</div>
 					<div data-ng-show="(prop.ci == 1 || prop.ci == 3)" id="chat-container">
 						<div id="chat">
@@ -601,7 +607,7 @@
 							<div class="more-messages-indicator hidden">
 								More messages below.
 							</div>
-							<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+							<input id="msg-in" type="text" ng-class="{'msg-staffchat': filters[activeFilter].filterType == 'staff' && prop.ci == 3}" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
 						</div>
 					</div>
 					<div data-ng-show="(prop.ci == 2 && isLoggedIn)" id="pm-container">
@@ -617,7 +623,7 @@
 												<span class="pm-info ng-binding" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.from == user.uid ? user.un : pmgroup.user.un)"></span>
 												<span class="umsg" ng-bind-html="emojiReplace(pmFuncs.getPMGroupInfo(pmgroup).lastPM.message) | to_trusted"></span>
 											</div>
-										</div>									
+										</div>
 								</div>
 						</div>
 						<div class="btn btn-inner-pm btn-new-pm">New Message</div>
