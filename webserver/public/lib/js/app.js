@@ -532,6 +532,7 @@
 					url = 'https://i.mqp.io/sslproxy?' + url;
 				}
 				element.append('<span class="image-content" style="color: #79BE6C; cursor: pointer;"><span class="image-toggle" onclick="API.util.toggle_images(\''+escape(url)+'\',\''+escape(imgClickUrl)+'\',this);" style="cursor: pointer;">[Show Image]</span></span> ');
+				element.closest('.cm').addClass('cm-media');
 
 				if (settings && settings.roomSettings && settings.roomSettings.showImages)
 					element.find('.image-toggle').last().click();
@@ -1096,6 +1097,12 @@
 				}
 			},
 			chat: {
+				filter: '',
+				filterTypes: {
+					'mentions': function () { return $('#messages .cm.message:not(.mention)'); },
+					'staff': function () { return $('#messages .cm.message:not(.staffchat)'); },
+					'media': function () { return $('#messages .cm.message:not(.cm-media)'); }
+				},
 				getConversations: function(callback) {
 					MP.getConversations(function (err, data) {
 						if (callback) {
@@ -1966,6 +1973,12 @@
 					'<div class="text"><span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>' +
 					'<span class="umsg">' + MP.emojiReplace(msg) + '</span></div></div>'
 				);
+				if (MP.api.chat.filterTypes[MP.api.chat.filter]) {
+					for (var i in MP.api.chat.filterTypes) {
+						MP.api.chat.filterTypes[i]().show();
+					}
+					MP.api.chat.filterTypes[MP.api.chat.filter]().hide();
+				}
 				MP.chatImage.parse(msg, data.cid);
 			} else if (type == 'log'){
 				var user = data.user || {};
@@ -5466,7 +5479,7 @@
 						if (!$input.val()) return;
 
 						MP.session.lastMessage = $input.val();
-						MP.sendMessage($input.val());
+						MP.sendMessage($input.val(), $input.hasClass('msg-staffchat'));
 						$chat.scrollTop( $chat[0].scrollHeight );
 						$input.val('');
 						return true;
@@ -7088,16 +7101,50 @@
 			};
 
 			$scope.filterChat = function(type) {
-				type = type ? type : '';
-				switch (type) {
-					case 'mentions':
-						$('#messages .cm.message:not(.mention)').hide();
-						break;
-					default:
-						$('#messages .cm.message:not(.mention)').show();
-						break;
+				type = (type ? type : '').toLowerCase();
+				MP.api.chat.filter = type;
+				for (var i in MP.api.chat.filterTypes) {
+					MP.api.chat.filterTypes[i]().show();
+				}
+				if (MP.api.chat.filterTypes[type]) {
+					MP.api.chat.filterTypes[type]().hide();
+				}
+			};
+
+			$scope.activeFilter = 0;
+			$scope.setFilter = function(index) {
+				if ($scope.filters[index]) {
+					$scope.activeFilter = index;
+					$scope.filterChat($scope.filters[index].filterType);
+					$scope.prop.ci = 3;
 				}
 			}
+			$scope.filters = [
+				{
+					name: 'Mentions',
+					filterType: 'mentions',
+					onclick: '',
+					text: '@',
+					show: function() { return true; },
+					index: 0
+				},
+				{
+					name: 'Staff Chat',
+					filterType: 'staff',
+					onclick: '',
+					classes: 'mdi mdi-account-key',
+					show: function() { return $scope.checkPerm('chat.staff'); },
+					index: 1
+				},
+				{
+					name: 'Media',
+					filterType: 'media',
+					onclick: '',
+					classes: 'mdi mdi-image',
+					show: function() { return true },
+					index: 2
+				}
+			]
 
 			$scope.customSettings = {
     			theme: 'bootstrap',
