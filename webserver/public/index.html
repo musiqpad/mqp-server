@@ -199,6 +199,11 @@
 						</label>
 						<span>Time format</span>
 						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.separateUserCount" id="set-input-style-separateusers" name="check" />
+						</label>
+						<span>Separate user and guest count</span>
+						<br>
 						<br>
 						<label class="set-check">
 							<input type="checkbox" ng-model="roomSettings.autoplayblocked" id="set-autplay-blocked" name="check" />
@@ -532,7 +537,10 @@
 						<i class="mdi mdi-forum"></i>
 					</div>
 					<div data-ng-click="changeTab('c', 2)" data-ng-class="{'active' : prop.c == 2}" class="tab btn-people" title="People">
-						<div class="mdi mdi-account-multiple"></div><span class="icon-info" data-ng-bind="numUsers"></span>
+						<div class="mdi mdi-account-multiple"></div>
+						<span class="icon-info" data-ng-bind="roomSettings.separateUserCount ? numLogged : numLogged + numGuests"></span>
+						<span class="icon-info" data-ng-bind="numGuests" data-ng-show="roomSettings.separateUserCount"></span>
+						<div class="mdi mdi-account-multiple-outline" data-ng-show="roomSettings.separateUserCount"></div>
 					</div>
 					<div data-ng-click="changeTab('c', 3)" data-ng-class="{'active' : prop.c == 3, next: findPosInWaitlist() == '1'}" class="tab btn-waitlist" title="DJ Queue" >
 						<div class="mdi mdi-playlist-play"></div><span class="icon-info" data-ng-bind="queueLength"></span>

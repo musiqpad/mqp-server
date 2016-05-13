@@ -30,7 +30,8 @@
 				historyList: MP.historyList,
 				stafflist: (function(){ var out = []; for (var i in MP.session.roomStaff){out.push(MP.seenUsers[MP.session.roomStaff[i].uid]);} return out; })(),
 				bannedlist: (function(){ var out = []; for (var i in MP.session.bannedUsers){out.push(MP.seenUsers[MP.session.bannedUsers[i].uid]);} return out; })(),
-				numUsers: MP.userList.users.length + MP.userList.guests,
+				numLogged: MP.userList.users.length,
+				numGuests: MP.userList.guests,
 				currentDJ: MP.session.queue.currentdj,
 				currentSong: (MP.session.queue.currentsong ? MP.session.queue.currentsong.title : 'Nobody is playing'),
 				queue: MP.session.queue,
@@ -217,7 +218,8 @@
 			userlist: [],
 			historyList: {},
 			stafflist: [],
-			numUsers: 0,
+			numLogged: 0,
+			numGuests: 0,
 			currentSong: '',
 			currentDJ: '',
 			queueList: [],
@@ -7227,6 +7229,7 @@
 						pm: true,
                 	},
                 },
+                separateUserCount: true,
 			};
 
 			$scope.changeTab = function(inProp, val){
