@@ -1,19 +1,25 @@
-# mqp-server
-[![Version npm](https://img.shields.io/npm/v/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server)[![npm Downloads](https://img.shields.io/npm/dm/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server)[![Build Status](https://travis-ci.org/musiqpad/mqp-server.svg?branch=master)](https://travis-ci.org/musiqpad/mqp-server)
+# mqp-server [![Version npm](https://img.shields.io/npm/v/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server) [![npm Downloads](https://img.shields.io/npm/dm/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server) [![Build Status](https://travis-ci.org/musiqpad/mqp-server.svg?branch=master)](https://travis-ci.org/musiqpad/mqp-server)
 
 [![NPM](https://nodei.co/npm/mqp-server.png)](https://npmjs.org/package/mqp-server)
 ## About
 
-
 The base for creating a self-hosted pad.
 
-## Deploying musiqpad manually
-1. Make sure you have installed NodeJS on the hosting computer with version 4.0.0 or later.
-2. Download all the required files. To do so clone the server github repository using your preferred git client or click the "[Download ZIP](https://github.com/musiqpad/mqp-server/archive/master.zip)" button on the repo page. ![Download Link](http://i.imgur.com/QFImdTS.png)
-3. Run `npm install` in the directory where your extracted files are located. This will install all the required node modules.
-4. Copy the `serverconfig.example.js` to create the file `serverconfig.js` and make sure this is located in the root musiqpad folder.
-5. Start the server by running `node start.js` or `npm start` file using node.
+* [musiqpad.com](https://musiqpad.com)
+* [Latest Release](https://github.com/musiqpad/mqp-server/releases/latest)
+* [Discord](https://mqp.io/discord)
+* [Feedback / Issues](https://mqp.io/feedback)
+
+## Quick Start Install
+1. Make sure you have installed [NodeJS](https://nodejs.org/en/download/) on the hosting computer with version 4.0.0 or later.
+2. Download the [latest stable version](https://github.com/musiqpad/mqp-server/releases/latest)
+3. Unzip it in the location you want to install
+4. Open a terminal and `npm install` it
+4. Copy the `serverconfig.example.js` to create the file `serverconfig.js` 
+5. Start the server by running `node start.js` or `npm start`
 6. If everything went well, there should be no error messages.
+
+You can also download the latest pre-release [here](https://github.com/musiqpad/mqp-server/releases) (rc  = release candidate, exp = experimental)
 
 ## Deploying musiqpad using NPM
 1. Make sure you have installed NodeJS on the hosting computer with version 4.0.0 or later.
