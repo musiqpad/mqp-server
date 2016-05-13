@@ -243,15 +243,10 @@ MysqlDB.prototype.putPlaylist = function(pid, data, callback) {
 		toSave.push([ pid, data.content[ind], ind ]);
 	}
 	
-	this.execute("UPDATE `playlists` SET ? WHERE ?;", [{ name: data.name, }, { id: pid, }], function(err, data) {
-	    if(err){ callback(err); return; }
-	    
-	    that.execute("DELETE FROM `media` WHERE ?; INSERT INTO `media`(??) VALUES ?;", [{ pid: pid, }, [ 'pid', 'cid', 'sort' ], toSave], function(err, data) {
+	this.execute("UPDATE `playlists` SET ? WHERE ?; DELETE FROM `media` WHERE ?; INSERT INTO `media`(??) VALUES ?;", [{ name: data.name, }, { id: pid, }, [{ pid: pid, }, [ 'pid', 'cid', 'sort' ], toSave]], function(err, data) {
             if(err){ callback(err); return; }
-            
             callback(null, data);
-        });
-	});
+	}, true);
 };
 
 //RoomDB
