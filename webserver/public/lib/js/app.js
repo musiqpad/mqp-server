@@ -7109,6 +7109,7 @@
 				if (MP.api.chat.filterTypes[type]) {
 					MP.api.chat.filterTypes[type]().hide();
 				}
+				MP.api.chat.scrollBottom();
 			};
 
 			$scope.activeFilter = 0;

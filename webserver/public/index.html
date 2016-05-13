@@ -607,6 +607,7 @@
 							<div class="more-messages-indicator hidden">
 								More messages below.
 							</div>
+							<div class="mdi mdi-account-key" style="color: rgba(154, 45, 45, 1); margin-left: 8px;" ng-show="filters[activeFilter].filterType == 'staff' && prop.ci == 3"></div>
 							<input id="msg-in" type="text" ng-class="{'msg-staffchat': filters[activeFilter].filterType == 'staff' && prop.ci == 3}" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
 						</div>
 					</div>
