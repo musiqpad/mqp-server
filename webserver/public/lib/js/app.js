@@ -95,7 +95,7 @@
 							drop: function(e, ui){
 								var pid = $(this).attr('data-pid');
 								var cid = $(ui.draggable).attr('data-cid');
-								MP.playlistAdd(pid, cid, 'top', function(err, data){
+								MP.playlistAdd(pid, cid, 'bottom', function(err, data){
 									if(err == "SongAlreadyInPlaylist"){
 										MP.makeConfirmModal({
 											content: "Song is already in your playlist, would like to move it to the top?",
@@ -6110,7 +6110,7 @@
 									var pid = $(this).attr('data-pid');
 									var cid = $(ui.draggable).attr('data-cid');
 
-									MP.playlistAdd(pid, cid, 'top', function(err, data){
+									MP.playlistAdd(pid, cid, 'bottom', function(err, data){
 										if(err == "SongAlreadyInPlaylist"){
 											MP.makeConfirmModal({
 												content: "Song is already in your playlist, would like to move it to the top?",
@@ -6472,7 +6472,7 @@
 		if(!$(e.target).hasClass('pl-grab-create')){
 			var pid = e.target.attributes['data-pid'].textContent;
 			if (MP.user && pid && id !== false) {
-				MP.playlistAdd(pid, id, (MP.user.activepl == pid ? 'bottom' : 'top'), function(err, data){
+				MP.playlistAdd(pid, id, 'bottom', function(err, data){
 					if(err == 'SongAlreadyInPlaylist'){
 						MP.makeConfirmModal({
 							content: "Song is already in your playlist, would like to move it to the top?",
@@ -6528,7 +6528,7 @@
 		if(!$(e.target).hasClass('pl-grab-create')){
 			var pid = e.target.attributes['data-pid'].textContent;
 			if (MP.user && pid && id !== false) {
-				MP.playlistAdd(pid, id, (MP.user.activepl == pid ? 'bottom' : 'top'), function(err, data){
+				MP.playlistAdd(pid, id, 'bottom', function(err, data){
 					if(err == 'SongAlreadyInPlaylist'){
 						MP.makeConfirmModal({
 							content: "Song is already in your playlist, would like to move it to the top?",
