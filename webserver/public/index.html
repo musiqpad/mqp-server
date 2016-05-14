@@ -491,7 +491,7 @@
 									</div>
 								</div>
 							</div>
-							<div class="nail" style="background-image: url('https://i.ytimg.com/vi/{{h.song.cid}}/default.jpg')"></div>
+							<div class="nail" ng-style="{'background-image':'url(https://i.ytimg.com/vi/'+'{{h.song.cid}}'+'/default.jpg)'}"></div>
 							<div class="texts">
 								<p class="text sng" title="History Song Title" data-ng-bind="h.song.title"></p>
 								<p class="text dj" title="History Song DJ" style="{{makeUsernameStyleByRole(h.user.role)}}" data-ng-bind="h.user.un"></p>
