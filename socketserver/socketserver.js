@@ -334,25 +334,26 @@ var SocketServer = function(server){
 				return;
 			}
 			
-			// Return if unauthenticated socket or banned or restricted user tries to do anything other than signup, login, or join room.
-			var restricted = false;
-			if((!socket.user || (socket.room && that.room.isUserRestricted(socket.user.uid, 'BAN')) || (restricted = (Date.now() - socket.user.created) <= config.room.signupcd) || socket.user.confirmation) && 
-				['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){
-					
-				returnObj.data = {error: 'NotLoggedIn'};
+			//Return if the user is not permitted to do anything besides what is listed below
+			if(['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){
 				
-				if (socket.user) {
-					if(socket.user.confirmation){
-						returnObj.data = {error: 'EmailNotConfirmed'};
-					} else {
-						returnObj.data = {error: 'UserBanned'};
-					}
-				} else if (restricted) {
-					returnObj.data = {error: 'UserRestricted'};
+				if(!socket.user){
+					returnObj.data = { error: 'NotLoggedIn' };
+					
+				} else if(socket.room && that.room.isUserRestricted(socket.user.uid, 'BAN')){
+					returnObj.data = { error: 'UserBanned' };
+					
+				} else if((Date.now() - socket.user.created) <= config.room.signupcd){
+					returnObj.data = { error: 'UserOnCooldown' };
+					
+				} else if(socket.user.confirmation){
+					returnObj.data = { error: 'EmailNotConfirmed' };
+					
 				}
-
-				socket.sendJSON(returnObj);
-				return;
+				if(returnObj.data){
+					socket.sendJSON(returnObj);
+					return;
+				}
 			}
 
 			switch(data.type){
@@ -1415,10 +1416,15 @@ var SocketServer = function(server){
 					}
 					
 					that.room.sendMessage(socket, data.data.message, null, null, function(cid){
-						returnObj.data = {
-							success: true,
-							cid: cid,
-						};
+						
+						if(cid)
+							returnObj.data = {
+								success: true
+							};
+						else
+							returnObj.data = {
+								error: 'UserMuted'
+							};
 					
 						socket.sendJSON(returnObj);
 					});
@@ -2659,7 +2665,6 @@ var SocketServer = function(server){
 					 		duration: ISO 8601 duration,
 					 		reason: '',
 					 		type: '',
-					 		shadow: bool,
 					 	}
 					 }
 					*/
@@ -2683,7 +2688,7 @@ var SocketServer = function(server){
 					}
 					
 					//Check source permissions
-					if (!Roles.checkPermission(socket.user.role, 'room.restrict.' + data.data.type)){
+					if (!Roles.checkPermission(socket.user.role, 'room.restrict.' + data.data.type.toLowerCase())){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
 						};
@@ -2707,7 +2712,6 @@ var SocketServer = function(server){
 						start: Date.now(),
 						reason: data.data.reason || 'No reason specified',
 						type: data.data.type,
-						shadow: data.data.shadow || false,
 						source: {
 							uid: socket.user.uid,
 							role: socket.user.role
@@ -2730,15 +2734,13 @@ var SocketServer = function(server){
 							returnObj.data = {
 								error: err
 							};
-							socket.sendJSON(returnObj);
-						}
-						else {
-							// Success
+							
+						} else {
 							returnObj.data = {
 								success: true
 							};
-							socket.sendJSON(returnObj);
 						}
+						socket.sendJSON(returnObj);
 					});
 					break;
 					
@@ -2772,7 +2774,7 @@ var SocketServer = function(server){
 					}
 					
 					//Check source permissions
-					if (!Roles.checkPermission(socket.user.role, 'room.restrict.' + data.data.type)){
+					if (!Roles.checkPermission(socket.user.role, 'room.restrict.' + data.data.type.toLowerCase())){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
 						};

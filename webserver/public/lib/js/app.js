@@ -2509,13 +2509,29 @@
 					}
 				}
 			}
-
-			socket.sendJSON({
+			
+			var obj = {
+				type: (staff ? 'staff' : '') + 'chat',
+				data: {
+					message: message.substring(0,255),
+				}
+			}
+			obj.id = MP.addCallback(obj.type, function(err, data){
+				console.log(err, data);
+				if(err){
+					var msgs = {
+						'UserMuted': 'You are muted and cannot send chat messages'
+					}
+					MP.api.chat.log(msgs[err] || ('Error while sending chat message: ' + err));
+				}
+			});
+			socket.sendJSON(obj);
+			/*socket.sendJSON({
 				type: (staff ? 'staff' : '') + 'chat',
 				data: {
 					message: message.substring(0,255)
 				}
-			});
+			});*/
 		},
 		getPrivateConversation: function(uid, callback) {
 			if (!MP.checkPerm('chat.private')) return;
@@ -4747,8 +4763,8 @@
 				USER_LEFT_QUEUE: 'userLeftQueue',
 				USER_UPDATE: 'userUpdate',
 				VOTE_UPDATE: 'voteUpdate',
-				USER_BANNED: 'userBanned',
-				USER_UNBANNED: 'userUnbanned',
+				USER_RESTRICTED: 'userRestricted',
+				USER_UNRESTRICTED: 'userUnrestricted',
 				USER_ROLE_CHANGE: 'moderateSetRole',
 				SYSTEM_MESSAGE: 'systemMessage',
 				BROADCAST_MESSAGE: 'broadcastMessage',
@@ -4898,7 +4914,7 @@
 			if ( e.data == 'h') return;
 
 			//DEBUG
-			//console.log(e.data);
+			console.log(e.data);
 			//END DEBUG
 
 			var data = null;
@@ -5194,49 +5210,48 @@
 						$('#cm-' + data.data.cid).slideUp( function(){ this.remove(); } );
 					}
 					break;
-				case API.DATA.EVENTS.USER_BANNED:
-					var user = MP.findUser(data.data.uid) || {un: 'Unknown'};
-					var banner = MP.findUser(data.data.bannedBy);
+				case API.DATA.EVENTS.USER_RESTRICTED:
+					var target = MP.findUser(data.data.uid);
+					var source = MP.findUser(data.data.source);
 
-					user.banned = true;
 
-					if (MP.session.bannedUsers.length && MP.findUser(data.data.uid)){
-						MP.session.bannedUsers.push(user);
-					} else  {
-						// Reset object since it's either already empty, or now missing a user
-						MP.session.bannedUsers = [];
+					if(data.data.type == "BAN" && target){
+						MP.session.bannedUsers.push(target);
 					}
-
+					
 					MP.applyModels();
+					
+					var verbs = {
+						BAN: 'banned',
+						MUTE: 'muted',
+						SILENT_MUTE: 'unmuted'
+					};
 
-					if (banner){
-						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was banned by ' +
-							'<span data-uid="'+ banner.uid +'" class="uname" style="' + MP.makeUsernameStyle(banner.role) + '">' + banner.un + '</span>', 'system');
-					}
+					if (source && target)
+						MP.addMessage('<span data-uid="'+ target.uid +'" class="uname" style="' + MP.makeUsernameStyle(target.role) + '">' + target.un + '</span>was ' + (verbs[data.data.type] || ('restricted (' + data.data.type + ')')) + ' by <span data-uid="'+ source.uid +'" class="uname" style="' + MP.makeUsernameStyle(source.role) + '">' + source.un + '</span>', 'system');
 					break;
-				case API.DATA.EVENTS.USER_UNBANNED:
-					var user = MP.findUser(data.data.uid) || {un: 'Unknown'};
-					var banner = MP.findUser(data.data.unbannedBy);
+				case API.DATA.EVENTS.USER_UNRESTRICTED:
+					var target = MP.findUser(data.data.uid);
+					var source = MP.findUser(data.data.source);
 
-					user.banned = false;
-
-					if (MP.session.bannedUsers.length && MP.findUser(data.data.uid)){
-						for (var i = 0; i < MP.session.bannedUsers.length; i++){
-							if (MP.session.bannedUsers[i].uid == user.uid){
+					if(data.data.type == "BAN" && target){
+						for(var i in MP.session.bannedUsers){
+							if(MP.session.bannedUsers[i].uid == data.data.uid){
 								MP.session.bannedUsers.splice(i, 1);
 								break;
 							}
 						}
-					} else {
-						// Reset object since it's either already empty, or now missing a user
-						MP.session.bannedUsers = [];
 					}
-
+					
 					MP.applyModels();
+					
+					var verbs = {
+						BAN: 'unbanned',
+						MUTE: 'unmuted'
+					};
 
-					if (banner){
-						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was unbanned by <span data-uid="'+ banner.uid +'" class="uname" style="' + MP.makeUsernameStyle(banner.role) + '">' + banner.un + '</span>', 'system');
-					}
+					if (source && target)
+						MP.addMessage('<span data-uid="'+ target.uid +'" class="uname" style="' + MP.makeUsernameStyle(target.role) + '">' + target.un + '</span>was ' + (verbs[data.data.type] || ('restricted (' + data.data.type + ')')) + ' by <span data-uid="'+ source.uid +'" class="uname" style="' + MP.makeUsernameStyle(source.role) + '">' + source.un + '</span>', 'system');
 					break;
 				case API.DATA.EVENTS.USER_ROLE_CHANGE:
 					var setter = MP.findUser(data.data.mid);

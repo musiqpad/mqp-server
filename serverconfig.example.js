@@ -131,7 +131,9 @@ config.db = {
 	'playlist.import': Ability to import playlists
 	'playlist.shuffle': Ability to shuffle playlists
 	'room.grantroles': Ability to change user roles (requires canGrantPerms property)
-	'room.banUser': Ability to ban and unban users
+	'room.restrict.ban': Ability to ban and unban users
+	'room.restrict.mute': Ability to mute and unmute users
+	'room.restrict.mute_silent': Ability to shadow mute and unmute users
 	'room.ratelimit.bypass': Will bypass ratelimit
     'room.whois': Possibility to request additional information about a user
 	
@@ -200,7 +202,9 @@ config.roles = {
 			'playlist.import',
 			'playlist.shuffle',
 			'room.grantroles',
-			'room.banUser',
+			'room.restrict.ban',
+			'room.restrict.mute',
+			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
             'room.whois',
 			'server.checkForUpdates',
@@ -245,7 +249,9 @@ config.roles = {
 			'playlist.import',
 			'playlist.shuffle',
 			'room.grantroles',
-			'room.banUser',
+			'room.restrict.ban',
+			'room.restrict.mute',
+			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
             'room.whois',
 		],
@@ -290,7 +296,9 @@ config.roles = {
 			'playlist.import',
 			'playlist.shuffle',
 			'room.grantroles',
-			'room.banUser',
+			'room.restrict.ban',
+			'room.restrict.mute',
+			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
             'room.whois',
 		],
@@ -330,7 +338,9 @@ config.roles = {
 			'playlist.import',
 			'playlist.shuffle',
 			'room.grantroles',
-			'room.banUser',
+			'room.restrict.ban',
+			'room.restrict.mute',
+			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
             'room.whois',
 		],
@@ -354,7 +364,9 @@ config.roles = {
 			'chat.send',
 			'chat.delete',
 			'chat.specialMention',
-			'room.banUser',
+			'room.restrict.ban',
+			'room.restrict.mute',
+			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
 		],
 		canGrantRoles: [],
