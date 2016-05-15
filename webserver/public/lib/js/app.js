@@ -3493,7 +3493,14 @@
 			};
 
 			obj.id = MP.addCallback(obj.type, function(err, data){
-				if (err){ if (callback) callback(err); console.log('Could not swap users in dj queue: ' + err); return;}
+				if (err) {
+					if (callback) callback(err);
+					MP.makeAlertModal({
+						content: 'Could not swap users in dj queue: ' + err,
+						dismissable: true
+					});
+					return;
+				}
 
 				if (callback) callback(err, data);
 			});

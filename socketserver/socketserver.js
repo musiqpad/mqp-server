@@ -1108,6 +1108,13 @@ var SocketServer = function(server){
 						break;
 					}
 					var res = that.room.queue.swap(user1Sock, user2Sock);
+					if(!res.data) {
+						returnObj.data = {
+							error: 'SwappingWithCurrentDJ'
+						};
+						socket.sendJSON(returnObj);
+						break;	
+					}
 					res.data.mid = socket.user.uid;
 					returnObj.data = {
 						success: res.success
