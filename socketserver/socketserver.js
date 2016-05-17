@@ -2905,6 +2905,8 @@ var SocketServer = function(server){
 			}
 		});
 	});
+	
+	ModuleManager.DispatchEvent('SERVER.START', {}});
 };
 
 SocketServer.prototype.removeSock = function(sock){
@@ -2927,6 +2929,7 @@ SocketServer.prototype.gracefulExit = function() {
 			process.exit();
 		});
 	}
+	ModuleManager.DispatchEvent('SERVER.STOP', {}});
 	setTimeout(function() {
 		process.exit();
 	}, 2000);
