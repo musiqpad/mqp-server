@@ -436,7 +436,13 @@ a {
 .modal-preview {
     margin-top: 12px;
 }
-.ban-opt {
+#UserRestrictionTypeSelector .restriction-opt.opt-reset {
+    width: 10%;
+}
+#UserRestrictionTypeSelector .restriction-opt {
+    width: 30%;
+}
+.ban-opt, .restriction-opt {
     width: 20%;
     float: left;
     text-align: center;
@@ -449,7 +455,7 @@ a {
     background: transparent;
     color: #ddd;
 }
-input.ban-opt {
+input.ban-opt, input.restriction-opt {
     outline: none;
     border: none;
     background: transparent;
@@ -458,10 +464,10 @@ input.ban-opt {
     height: 38px;
     cursor: text;
 }
-.ban-opt:hover {
+.ban-opt:hover, .restriction-opt:hover {
     background: rgba(146, 90, 255, .25);
 }
-.ban-opt.active {
+.ban-opt.active, .restriction-opt.active {
     background: rgba(244, 107, 64, .25);
 }
 input.ban-reason, input.edit-playlist-name, input.new-playlist {
