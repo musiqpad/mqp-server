@@ -70,7 +70,7 @@ ModuleManager.prototype.DispatchEvent = function(event, data) {
 //  }
 };
 
-ModuleManager.prototype.LoadModules = function(dir) {
+ModuleManager.prototype.LoadModules = function(dir, socketServer) {
   var moduleCount = 0;
 	var currentCount = 0;
   var that = this;
@@ -80,7 +80,7 @@ ModuleManager.prototype.LoadModules = function(dir) {
 			moduleCount++;
     	var name = file.replace('.js', '');
 			log.info('Loading module \'' + name + '\' (' + currentCount + ')');
-    	that.modules[name] = new (require(__dirname + dir + file))(new Module(name));
+    	that.modules[name] = new (require(__dirname + dir + file))(new Module(name, socketServer));
   	}
 	});
 	log.info('Loaded ' + moduleCount + ' Module(s)');
