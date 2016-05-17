@@ -225,7 +225,7 @@ var SocketServer = function(server){
 			}catch (e){ log.debug('Socket not active for keepalive');}
 		}
 	}, 6000);
-	ModuleManager.LoadModules('/../mp_modules/');
+	ModuleManager.LoadModules('/../mp_modules/', this);
 
 	this.wss.on("connection", function(socket){
 		var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
