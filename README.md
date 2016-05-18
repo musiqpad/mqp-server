@@ -1,4 +1,4 @@
-# mqp-server [![Version npm](https://img.shields.io/npm/v/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server) [![npm Downloads](https://img.shields.io/npm/dm/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server) [![Build Status](https://travis-ci.org/musiqpad/mqp-server.svg?branch=master)](https://travis-ci.org/musiqpad/mqp-server)
+# mqp-server [![Version npm](https://img.shields.io/npm/v/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server) [![npm Downloads](https://img.shields.io/npm/dm/mqp-server.svg?style=flat-square)](https://www.npmjs.com/package/mqp-server) [![Build Status](https://img.shields.io/travis/musiqpad/mqp-server/master.svg?style=flat-square)](https://travis-ci.org/musiqpad/mqp-server)
 
 [![NPM](https://nodei.co/npm/mqp-server.png)](https://npmjs.org/package/mqp-server)
 ## About
