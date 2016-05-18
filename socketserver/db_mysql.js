@@ -12,6 +12,7 @@ var config = require('../serverconfig.js');
 var Hash = require('./hash');
 var Mailer = require('./mailer');
 var DBUtils = require('./database_util');
+var Roles = require('./role.js');
 
 var db = null;
 var pool = null;
@@ -115,7 +116,7 @@ var MysqlDB = function(){
 					);\
 					\
 					CREATE TABLE IF NOT EXISTS `roles` (\
-                        `slug` VARCHAR(64) NOT NULL,\
+                        `slug` VARCHAR(64),\
                         `uid` INT(10) unsigned NOT NULL,\
                         `role` VARCHAR(32) NOT NULL\
                     );\
@@ -255,16 +256,42 @@ MysqlDB.prototype.getRoom = function(slug, callback) {
 
     var out = {
         roles: {},
+        globalRoles: {},
         bans: {},
         history: [],
     }
 
-    this.execute("SELECT `role`, `uid` FROM `roles` WHERE ?;", { slug: slug, }, function(err, res) {
+    var staffOverrides = {
+
+    }
+
+    this.execute("SELECT `slug`, `role`, `uid` FROM `roles` WHERE ? OR `slug` IS NULL;", { slug: slug, }, function(err, res) {
         if(err) { callback(err); return; }
 
         for(var ind in res){
+          if (!Roles.roleExists(res[ind].role)) {
+            continue;
+          }
+          var setRole = true;
+          if (staffOverrides[res[ind].uid] && staffOverrides[res[ind].uid].length > 0) {
+            var currentRole = staffOverrides[res[ind].uid];
+            var roleOrder = Roles.getOrder();
+            if (roleOrder.indexOf(res[ind].role) < roleOrder.indexOf(currentRole)) {
+              out.roles[currentRole].splice(out.roles[currentRole].indexOf(res[ind].uid), 1);
+            }
+            else {
+              setRole = false;
+            }
+          }
+          if (setRole) {
             out.roles[res[ind].role] = out.roles[res[ind].role] || [];
             out.roles[res[ind].role].push(res[ind].uid);
+            if (res[ind].slug == null) {
+              out.globalRoles[res[ind].role] = out.globalRoles[res[ind].role] || [];
+              out.globalRoles[res[ind].role].push(res[ind].uid);
+            }
+            staffOverrides[res[ind].uid] = res[ind].role;
+          }
         }
 
         that.execute("SELECT `uid`, `uid_by`, `reason`, UNIX_TIMESTAMP(`start`), UNIX_TIMESTAMP(`end`), (SELECT `role` FROM `roles` WHERE `roles`.`uid` = `bans`.`uid_by` AND ?) as `role` FROM `bans` WHERE ?;", [ { slug: slug, }, { slug: slug, } ], function(err, res) {
@@ -341,8 +368,12 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var outRoles = [], outBans = [], outHistory = [];
 
     for(var key in val.roles){
-        for(var ind in val.roles[key])
+        var globalUser = val.globalRoles[key] || [];
+        for(var ind in val.roles[key]) {
+          if (globalUser.indexOf(ind) == -1) {
             outRoles.push([ slug, val.roles[key][ind], key ]);
+          }
+        }
     }
     for(var key in val.bans){
         var obj = val.bans[key];
@@ -357,7 +388,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
 
     if(outRoles.length){
-        query += "INSERT INTO `roles`(??) VALUES ?;";
+        query += "INSERT INTO `roles`(??) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM `roles` WHERE `uid`);";
         params.push([ 'slug', 'uid', 'role' ], outRoles);
     }
     if(outBans.length){
