@@ -131,6 +131,12 @@ var MysqlDB = function(){
                         PRIMARY KEY (`id`)\
                     );\
                     \
+                    CREATE TABLE IF NOT EXISTS `history_ip` (\
+                        `uid` INTEGER UNSIGNED NOT NULL,\
+                        `address` VARCHAR(45) NOT NULL,\
+                        `time` DATETIME\
+                    );\
+                    \
 					UPDATE `users` SET `lastdj` = false;\
 				", null, function(err, res){
 					if(err) throw new Error(err);
@@ -809,6 +815,20 @@ MysqlDB.prototype.getConversations = function(uid, callback) {
 
 MysqlDB.prototype.markConversationRead = function(uid, uid2, time) {
     this.execute("UPDATE history_pm SET `unread` = 0 WHERE time < ? AND `to` = ? AND `from` = ?;", [time, uid, uid2])
+};
+
+//IpDB
+MysqlDB.prototype.logIp = function(address, uid) {
+    this.execute("INSERT INTO `history_ip` SET ?;", { address: address, uid: uid, time: new Date() });
+};
+
+MysqlDB.prototype.getIpHistory = function(uid, callback) {
+     this.execute("SELECT * FROM (SELECT `address`, `time` FROM `history_ip` WHERE ? ORDER BY `time` DESC) as `h` GROUP BY `h`.`address` ORDER BY `h`.`time` ASC;", { uid: uid }, function(err, data) {
+         if(err)
+            callback(err);
+         else
+            callback(err, data)
+     });
 };
 
 module.exports = new MysqlDB;

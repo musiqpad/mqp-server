@@ -159,6 +159,20 @@ function LevelDB(callback) {
                     throw new Error('Could not open PmDB: ' + err);
                 }
             });
+            
+    //IpDB
+    if(!this.IpDB)
+        this.IpDB = setupDB(dbdir + '/ip',
+
+            //If new DB is created
+            function(newdb) {},
+
+            //Callback
+            function(err, newdb) {
+                if (err) {
+                    throw new Error('Could not open IpDB: ' + err);
+                }
+            });
 }
 
 function setupDB(dir, setup, callback){
@@ -730,6 +744,31 @@ LevelDB.prototype.markConversationRead = function(uid, uid2, time) {
         });
         
         that.putJSON(that.PmDB, key, res);
+    });
+};
+
+//IpDB
+LevelDB.prototype.logIp = function(address, uid) {
+    var that = this;
+
+    this.getJSON(this.IpDB, uid, function(err, res){
+        var out = res || [];
+        
+        out.push({
+            address: address,
+            time: new Date(),
+        });
+        
+        that.putJSON(that.IpDB, uid, out);
+    });
+};
+
+LevelDB.prototype.getIpHistory = function(uid, callback) {
+    this.getJSON(this.IpDB, uid, function(err, data) {
+        if(err)
+            callback(err)
+        else
+            callback(null, data.sort(function(a, b){ return a.address > b.address; }).reverse().filter(function(e, i, a){ return i == 0 || a[i - 1].address != e.address; }).sort(function(a, b){ return a.time < b.time; }));
     });
 };
 
