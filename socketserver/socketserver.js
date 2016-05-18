@@ -353,8 +353,7 @@ var SocketServer = function(server){
 
 			// Return if unauthenticated socket or banned or restricted user tries to do anything other than signup, login, or join room.
 			var restricted = false;
-			//if (socket.user) { console.log(socket.user.confirmation + ' ' + (Date.now() - socket.user.created)) };
-			if((!socket.user || (socket.room && that.room.isUserBanned(socket.user.uid)) || (restricted = (Date.now() - socket.user.created) <= config.room.signupcd) || socket.user.confirmation) &&
+			if((!socket.user || (socket.room && that.room.isUserBanned(socket.user.uid)) || (restricted = (Date.now() - socket.user.created) <= config.room.signupcd) || socket.user.confirmation) && 
 				['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){
 
 				returnObj.data = {error: 'NotLoggedIn'};
@@ -1348,6 +1347,10 @@ var SocketServer = function(server){
 								that.disconnectedAuthdSockets.remove(userDisconnected.sock);
 							}
 						}
+						
+						//Log user's IP address
+						var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
+						DB.logIp(ip, user.uid);
 
 						returnObj.data = {
 							token: ( token ? token : null),
@@ -2940,6 +2943,70 @@ var SocketServer = function(server){
 						update: notifier.update,
 					};
 					socket.sendJSON(returnObj);
+					break;
+				case 'iphistory':
+					/*
+					 Expects {
+					 	type: 'iphistory',
+					 	data: {
+					 		uid: uid,
+					 		un: un
+					 	}
+					 }
+					*/
+					//Check for props
+					if (!data.data.uid == !data.data.un){
+						returnObj.data = {
+							error: 'WrongProps'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Check for permission
+					if (!Roles.checkPermission(socket.user.role, 'room.whois.iphistory')){
+						returnObj.data = {
+							error: 'InsufficientPermissions'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Callback
+					var cb = function(err, user){
+						if(err){
+							returnObj.data = {
+								error: err
+							};
+							socket.sendJSON(returnObj);
+							return;
+						} else {
+							DB.getIpHistory(user.uid, function(err, res){
+								
+								//Handle error
+								if(err || !res.length){
+									returnObj.data = {
+										error: 'IpHistoryNotFound',
+										un: user.un,
+									};
+									socket.sendJSON(returnObj);
+									return;
+								}
+								
+								//Return data
+								returnObj.data = {
+									history: res,
+									un: user.un,
+								};
+								socket.sendJSON(returnObj);
+							});
+						}
+					}
+					
+					if(data.data.un)
+						DB.getUserByName(data.data.un, { getPlaylists: false }, cb);
+					else
+						DB.getUserByUid(~~(data.data.uid), { getPlaylists: false }, cb);
 					break;
 			}
 		});
