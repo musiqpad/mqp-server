@@ -394,7 +394,7 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
     var params = [{ slug: slug, }, { slug: slug, }, { slug: slug, }];
 
     if(outRoles.length){
-        query += "INSERT INTO `roles`(??) SELECT ? WHERE NOT EXISTS (SELECT 1 FROM `roles` WHERE `uid`);";
+        query += "INSERT INTO `roles`(??) VALUES ?;";
         params.push([ 'slug', 'uid', 'role' ], outRoles);
     }
     if(outBans.length){
