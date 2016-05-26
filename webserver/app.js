@@ -12,15 +12,12 @@ var socketServer = null;
 
 if (config.certificate && config.certificate.key && config.certificate.cert){
   server = https.createServer(config.certificate, app);
-  if(config.webServer.redirectHTTP && config.webServer.redirectPort != ''){
+  if(config.webServer.redirectHTTP && config.webServer.redirectPort != '')
     server2 = http.createServer(app);
-  }
-}else{
-	server = http.createServer(app);
 }
-
-//var server = http.createServer(app);
-
+else {
+  server = http.createServer(app);
+}
 
 app.use(function(req, res, next) {
   if(!req.secure && config.webServer.redirectHTTP) {
@@ -32,9 +29,10 @@ app.use(function(req, res, next) {
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use('/pads', express.static(path.resolve(__dirname, 'public')));
 app.get('/config', function(req, res) {
-    res.send(fs.readFileSync(__dirname + '/public/lib/js/webconfig.js'));
+  res.setHeader("Content-Type", "application/javascript");
+  res.send(fs.readFileSync(__dirname + '/public/lib/js/webconfig.js'));
 });
-app.get('/api/room', function(req,res){
+app.get('/api/room', function(req, res) {
   var roomInfo = {
     "slug": config.room.slug,
     "name": config.room.name,
