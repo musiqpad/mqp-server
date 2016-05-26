@@ -10,3 +10,4 @@ socketserver/db
 serverconfig.js
 webconfig.js
 webserver/public/lib/js/webconfig.js
+log.txt

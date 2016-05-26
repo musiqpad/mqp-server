@@ -73,3 +73,28 @@ process.on('exit', socketServer.gracefulExit);
 
 //catches ctrl+c event
 process.on('SIGINT', socketServer.gracefulExit);
+
+function fileExistsSync() {
+  var exists = false;
+  try {
+    exists = fs.statSync(path);
+  } catch(err) {
+    exists = false;
+  }
+
+  return !!exists;
+}
+console.log(process.argv[2]);
+if(process.argv[2] === "--daemon") {
+  if (fileExistsSync(__dirname + '/pidfile')) {
+    try {
+      var	pid = fs.readFileSync(__dirname + '/pidfile', { encoding: 'utf-8' });
+      process.kill(pid, 0);
+      process.exit();
+    } catch (e) {
+      fs.unlinkSync(__dirname + '/pidfile');
+    }
+  }
+
+  fs.writeFile(__dirname + '/pidfile', process.pid);
+}
