@@ -34,6 +34,7 @@
     "mysql": "^2.10.2",
     "nodemailer": "^2.1.0",
     "path": "^0.12.7",
+    "prompt-sync": "^4.1.4",
     "ps-tree": "^1.0.1",
     "request": "^2.67.0",
     "update-notifier": "^0.7.0",
