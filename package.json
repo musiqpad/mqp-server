@@ -15,7 +15,11 @@
   },
   "homepage": "https://github.com/musiqpad/mqp-server#readme",
   "scripts": {
-    "start": "node ./start.js"
+    "start": "node ./mqp.js start",
+    "stop": "node ./mqp.js stop",
+    "restart": "node ./mqp.js restart",
+    "log": "node ./mqp.js log",
+    "update": "node ./mqp.js update"
   },
   "dependencies": {
     "boxen": "^0.5.1",
@@ -27,6 +31,7 @@
     "durationjs": "^1.1.1",
     "express": "^4.13.3",
     "extend": "^3.0.0",
+    "file-tail": "^0.3.0",
     "forever": "^0.15.1",
     "leveldown": "^1.4.3",
     "levelup": "^1.3.1",
