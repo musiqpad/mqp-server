@@ -1,6 +1,6 @@
 {
   "name": "mqp-server",
-  "version": "0.6.5",
+  "version": "0.6.4",
   "description": "musiqpad self-hosted server",
   "main": "server-package.js",
   "author": "musiqpad Team <support@musiqpad.com>",
@@ -22,7 +22,6 @@
     "update": "node ./mqp.js update"
   },
   "dependencies": {
-    "boxen": "^0.5.1",
     "chalk": "^1.0.0",
     "clean-css": "^3.4.9",
     "daemon": "^1.1.0",
