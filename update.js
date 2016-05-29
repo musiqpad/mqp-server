@@ -4,14 +4,14 @@ const yesno = require('yesno');
 const exec = require('child_process').exec;
 
 function download(tag) {
-  gitdl('musiqpad/mqp-server#' + tag, process.cwd() + '/test', function (err) {
+  gitdl('musiqpad/mqp-server#' + tag, process.cwd(), function (err) {
     if (err) {
       console.log(colors.red('Error: '.error) + err);
       process.exit();
     } else {
       console.log('Download finished, now (re)installing dependencies');
       console.log('This step might take some time ...');
-      exec('npm install', { cwd: (process.cwd()) + '/test' }, function (error, stdout, stderr) {
+      exec('npm install', { cwd: (process.cwd()) }, function (error, stdout, stderr) {
         if (error) {
           console.error(`exec error: ${error}`);
           return;
