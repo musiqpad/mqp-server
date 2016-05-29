@@ -58,7 +58,7 @@ function fileExistsSync() {
 
   return !!exists;
 }
-console.log(process.argv[2]);
+
 if(process.argv[2] === "--daemon") {
   if (fileExistsSync(__dirname + '/pidfile')) {
     try {

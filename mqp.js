@@ -3,11 +3,20 @@ const cproc = require('child_process');
 const fs = require('fs');
 const daemon = require('daemon');
 const path = require('path');
-const updateNotifier = require('update-notifier');
-const pkg = require('./package.json');
-const boxen = require('boxen');
 const update = require('./update');
 const tail = require('file-tail');
+const updateNotifier = require('update-notifier');
+const pkg = require('./package.json');
+
+const notifier = updateNotifier({
+  pkg,
+  updateCheckInterval: 0,
+});
+if (notifier.update) {
+  console.log('Update available ' + chalk.dim(notifier.update.current) + chalk.reset(' → ') + chalk.green(notifier.update.latest));
+} else {
+  console.log(1);
+}
 
 function getRunningPid(callback) {
   fs.readFile(__dirname + '/pidfile', {
@@ -26,33 +35,24 @@ function getRunningPid(callback) {
   });
 }
 
-function checkForUpdates() {
-  var notifier = updateNotifier({
-    pkg,
-    updateCheckInterval: 0,
-  });
-  if (notifier.update) {
-    var message = '\n' + boxen('Update available ' + chalk.dim(notifier.update.current) + chalk.reset(' → ') + chalk.green(notifier.update.latest), {
-      padding: 1,
-      margin: 1,
-      borderColor: 'yellow',
-      borderStyle: 'round',
-    });
-    console.log(message);
-  }
-}
-
 switch (process.argv[2]) {
   case 'start':
-    console.log('\nStarting musiqpad');
-    console.log('  "' + chalk.yellow.bold('npm stop') + '" to stop the musiqpad server');
-    console.log('  "' + chalk.yellow.bold('npm run log') + '" to view server output');
-    console.log('  "' + chalk.yellow.bold('npm restart') + '" to restart musiqpad');
+    getRunningPid(function (err, pid) {
+      if (!err) {
+        console.log('Musiqpad is already running!');
+      } else {
+        console.log('\nStarting musiqpad');
+        console.log('  "' + chalk.yellow.bold('npm stop') + '" to stop the musiqpad server');
+        console.log('  "' + chalk.yellow.bold('npm run log') + '" to view server output');
+        console.log('  "' + chalk.yellow.bold('npm restart') + '" to restart musiqpad');
 
-    // Spawn a new musiqpad daemon process, might need some more settings but I'm waiting for the new config storage for that.
-    daemon.daemon(__dirname + '/app.js', '--daemon', {
-      stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
+        // Spawn a new musiqpad daemon process, might need some more settings but I'm waiting for the new config storage for that.
+        daemon.daemon(__dirname + '/app.js', '--daemon', {
+          stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
+        });
+      }
     });
+
     break;
   case 'stop':
     getRunningPid(function (err, pid) {
@@ -68,8 +68,12 @@ switch (process.argv[2]) {
   case 'restart':
     getRunningPid(function (err, pid) {
       if (!err) {
-        process.kill(pid, 'SIGHUP');
-        console.log('\nRestarting musiqpad'.bold);
+        process.kill(pid, 'SIGTERM');
+        console.log('\nRestarting musiqpad');
+        daemon.daemon(__dirname + '/app.js', '--daemon', {
+          stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
+        });
+
       } else {
         console.log('musiqpad could not be restarted, as a running instance could not be found.');
       }
