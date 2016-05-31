@@ -15,7 +15,6 @@ const notifier = updateNotifier({
 if (notifier.update) {
   console.log('Update available ' + chalk.dim(notifier.update.current) + chalk.reset(' → ') + chalk.green(notifier.update.latest));
 } else {
-  console.log(1);
 }
 
 function getRunningPid(callback) {
@@ -47,7 +46,7 @@ switch (process.argv[2]) {
         console.log('  "' + chalk.yellow.bold('npm restart') + '" to restart musiqpad');
 
         // Spawn a new musiqpad daemon process, might need some more settings but I'm waiting for the new config storage for that.
-        daemon.daemon(__dirname + '/app.js', '--daemon', {
+        daemon.daemon(__dirname + '/start.js', '--daemon', {
           stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
         });
       }
@@ -70,7 +69,7 @@ switch (process.argv[2]) {
       if (!err) {
         process.kill(pid, 'SIGTERM');
         console.log('\nRestarting musiqpad');
-        daemon.daemon(__dirname + '/app.js', '--daemon', {
+        daemon.daemon(__dirname + '/start.js', '--daemon', {
           stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
         });
 
