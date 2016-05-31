@@ -6569,7 +6569,7 @@
 	$('.playlists-grab').on('click', function(e){
 		if (!MP.isLoggedIn()) return;
 
-		var id = (MP.media.media ? MP.media.media.cid : null);
+		var id = API.player.getPlayer().getVideoData()['video_id'];
 
 		if (id == null) return;
 
