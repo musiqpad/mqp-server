@@ -6,37 +6,11 @@ var log = new(require('basic-logger'))({
     prefix: "SocketServer"
 });
 var path = require('path');
-var updateNotifier = require('update-notifier');
-var pkg = require('./package.json');
-var boxen = require('boxen');
-var chalk = require('chalk');
 
 if(!config.setup){
 	log.error("Please, setup your server by editing the 'serverconfig.js' file");
 	return;
 }
-
-function checkForUpdates() {
-  var notifier = updateNotifier({
-    pkg,
-    updateCheckInterval: 0
-  });
-  if(notifier.update) {
-    var message = '\n' + boxen('Update available ' + chalk.dim(notifier.update.current) + chalk.reset(' → ') + chalk.green(notifier.update.latest), {
-      padding: 1,
-      margin: 1,
-      borderColor: 'yellow',
-      borderStyle: 'round'
-    });
-    console.log(message);
-  }
-}
-
-setInterval(function () {
-  checkForUpdates()
-}, 1000 * 60 * 60 * 2)
-
-checkForUpdates()
 
 var server = null;
 
@@ -73,3 +47,28 @@ process.on('exit', socketServer.gracefulExit);
 
 //catches ctrl+c event
 process.on('SIGINT', socketServer.gracefulExit);
+
+function fileExistsSync() {
+  var exists = false;
+  try {
+    exists = fs.statSync(path);
+  } catch(err) {
+    exists = false;
+  }
+
+  return !!exists;
+}
+
+if(process.argv[2] === "--daemon") {
+  if (fileExistsSync(__dirname + '/pidfile')) {
+    try {
+      var	pid = fs.readFileSync(__dirname + '/pidfile', { encoding: 'utf-8' });
+      process.kill(pid, 0);
+      process.exit();
+    } catch (e) {
+      fs.unlinkSync(__dirname + '/pidfile');
+    }
+  }
+
+  fs.writeFile(__dirname + '/pidfile', process.pid);
+}
