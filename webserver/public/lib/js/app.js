@@ -4540,7 +4540,8 @@
 		},
 		tour: {
 			start: function(){
-				if($('.logo-menu').css('display') == 'none') $('.btn-logo').click();
+				if(!$('.logo-menu').hasClass('logo-menu-expanded'))
+					$('.btn-logo').click();
 				delete localStorage.tour_current_step;
 				delete localStorage.tour_end;
 				var steps = [
@@ -4557,7 +4558,8 @@
 				    placement: "right",
 				    content: "Here you can browse various pads, hover over the rooms to see how many users are online and what is currently djing.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') != 'block') $('.btn-logo').click();
+				    	if(!$('.logo-menu').hasClass('logo-menu-expanded'))
+								$('.btn-logo').click();
 				    	$('.nav.logo-btn-home').click();
 				    },
 				    onShown: function() {
@@ -4569,7 +4571,8 @@
 				    placement: "right",
 				    content: "In this menu you can customize your musiqpad experience, set various settings and even design your own badge!",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') != 'block') $('.btn-logo').click();
+							if(!$('.logo-menu').hasClass('logo-menu-expanded'))
+								$('.btn-logo').click();
 				    	$('.nav.logo-btn-settings').click();
 				    }
 				  },
@@ -4578,7 +4581,8 @@
 				    placement: "right",
 				    content: "Here you can manage your music library and browse YouTube for new music.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') != 'block') $('.btn-logo').click();
+							if(!$('.logo-menu').hasClass('logo-menu-expanded'))
+								$('.btn-logo').click();
 				    	$('.nav.logo-btn-library').click();
 				    }
 				  },
@@ -4587,7 +4591,8 @@
 				    placement: "right",
 				    content: "This is the place to look for great music other users played.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') != 'block') $('.btn-logo').click();
+							if(!$('.logo-menu').hasClass('logo-menu-expanded'))
+								$('.btn-logo').click();
 				    	$('.nav.logo-btn-history').click();
 				    }
 				  },
@@ -4596,7 +4601,8 @@
 				    placement: "right",
 				    content: "By clicking this button you can bring up this tour again whenever you need it.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') != 'block') $('.btn-logo').click();
+							if(!$('.logo-menu').hasClass('logo-menu-expanded'))
+								$('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4604,7 +4610,7 @@
 				    placement: "right",
 				    content: "Clicking here will log you out of musiqpad.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') != 'block') $('.btn-logo').click();
+				    	if(!$('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4612,7 +4618,7 @@
 				    placement: "bottom",
 				    content: "Clicking here will bring up your account settings or, in case you are not logged in yet, the signup / login form.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4620,7 +4626,7 @@
 				    placement: "top",
 				    content: "If there is an active DJ, click this button in case you'd like to tell others this song is not your cup of tea.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4628,7 +4634,7 @@
 				    placement: "top",
 				    content: "Click this button to mute the current song, the volume will go back to it's original value after the song ends.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4636,15 +4642,15 @@
 				    placement: "top",
 				    content: "Clicking this button will add you to the DJ queue if you have an active playlist with at least one song.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
-				    element: ".btn-grab",
+				    element: ".ctrl .btn-grab",
 				    placement: "top",
 				    content: "Click this to add the current song to one of your playlists.",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4652,7 +4658,7 @@
 				    placement: "top",
 				    content: "Show your love to the current song to everyone by clicking this button!",
 				    onShow: function() {
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4661,7 +4667,7 @@
 				    content: "Click here to show the chat tab.",
 				    onShow: function() {
 				    	$('.btn-chat').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4670,7 +4676,7 @@
 				    content: "Click here to view online users and staff members.",
 				    onShow: function() {
 				    	$('.btn-people').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4679,7 +4685,7 @@
 				    content: "Click here to view online users.",
 				    onShow: function() {
 				    	$('.btn-people').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4688,7 +4694,7 @@
 				    content: "Click here to view all staff members.",
 				    onShow: function() {
 				    	$('.btn-staff').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4697,7 +4703,7 @@
 				    content: "Click here to view all banned users.",
 				    onShown: function() {
 				    	$('.btn-banned').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 				  {
@@ -4709,7 +4715,7 @@
 				    },
 				    onShow: function() {
 				    	$('.btn-waitlist').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  },
 			      {
@@ -4721,7 +4727,7 @@
 				    },
 				    onShow: function() {
 				    	$('.btn-banned').click();
-				    	if($('.logo-menu').css('display') == 'block') $('.btn-logo').click();
+				    	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.btn-logo').click();
 				    }
 				  }
 				];
@@ -4741,7 +4747,7 @@
 				  	$('#app-right .tray .btn-people').click();
 				  	$('.dash .tray .btn-chat').click();
 				  	$('.nav.logo-btn-library').click();
-				  	if($('.logo-menu').css('display') == 'none') $('.logo-menu').click();
+				  	if($('.logo-menu').hasClass('logo-menu-expanded')) $('.logo-menu').click();
 				  },
 				  steps: steps
 				}).init().start();
@@ -5989,7 +5995,7 @@
 
 				API.player.setMute(!settings.player.mute);
 			} else if (keyMenuBinding[e.which]) {
-				if ($('.logo-menu').css('display') == 'none') {
+				if (!$('.logo-menu').hasClass('logo-menu-expanded')) {
 					$('div.ico-logo').click();
 				}
 				else if (scope.prop.t == keyMenuBinding[e.which]) {
@@ -6823,9 +6829,7 @@
 		MP.historyList.filter = "";
 		MP.applyModels();
 
-		if($('.logo-menu').is(':animated')) return;
-
-		$('.logo-menu').slideToggle('1000');
+		$('.logo-menu').toggleClass('logo-menu-expanded');
 	});
 
 	$('.logo-btn-history').on('click', function() {
