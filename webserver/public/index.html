@@ -5,10 +5,9 @@
 		<meta name="viewport" content="width=device-width, initial-scale=0.8">
 		<meta name="theme-color" content="1C1C1F">
 		<title>musiqpad - join us!</title>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.0.0/assets/css/emojione.min.css"/>
 		<link rel="shortcut icon" type="image/png" href="/pads/lib/img/icon.png" id="dynamic-favicon"/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.0.0/assets/css/emojione.min.css"/>
 		<link href="https://cdn.musiqpad.com/css/mdi.min.css" media="all" rel="stylesheet" type="text/css" />
-		<!--<script src="//code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>-->
 		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/tour.min.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/back.css">
@@ -17,7 +16,6 @@
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/chat.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/icons.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/menus.css">
-		<!--<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/emojify.css">-->
 		<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/minicolors.css">
 	</head>
 	<body data-ng-app="musiqpad" data-ng-controller="MainController">
@@ -62,7 +60,7 @@
 								<div class="video-blocked-list">
 									<div class="yt-blocked-sng" data-cid="{{z.cid}}" data-ng-repeat="z in searchResultsBlockedVideo" title="{{z.title}}">
 										<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
-										<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+										<div class="nail" ng-style="{'background-image':'url('+'{{z.thumbnail}}'+''}"></div>
 										<div class="text" data-ng-bind="z.title"></div>
 										<div class="dur">
 											{{makeTime(z.duration)}}
@@ -90,7 +88,7 @@
 					<div class="nav logo-btn-logout" title="Logout"><div class="mdi mdi-power-settings"></div></div>
 				</div>
 				<div ng-show="prop.t == 1" class="logo-tab lobby">
-					<iframe src="https://musiqpad.com/lounge"></iframe>
+					<iframe src="https://musiqpad.com/lounge/"></iframe>
 				</div>
 				<!--<div ng-show="prop.t == 2" class="logo-tab settings">
 					<div class="settings-wrapper">
@@ -467,7 +465,7 @@
 						<div class="lib-search-list" data-ng-show="!viewedPl">
 							<div class="yt-sng" data-ng-repeat="z in searchResults" data-cid="{{z.cid}}" title="{{z.title}}">
 								<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
-								<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+								<div class="nail" ng-style="{'background-image':'url('+'{{z.thumbnail}}'+''}"></div>
 								<div class="text" data-ng-bind="z.title"></div>
 								<div class="dur">{{makeTime(z.duration)}}</div>
 							</div>
@@ -711,13 +709,11 @@
 
 		<!--<script src="../lib/js/emojify.min.js"></script>-->
 		<!--<script>emojify.setConfig({img_dir:'https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic'});</script>-->
-		<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/jquery/2.2.4/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/angularjs/1.5.5/angular.min.js"></script>
 		<script src="https://cdn.musiqpad.com/js/minicolors.js"></script>
 		<script src="https://cdn.musiqpad.com/js/angular-minicolors.js"></script>
 		<script src="https://cdn.musiqpad.com/js/jquery.caret.js"></script>
-		<script src="https://cdn.musiqpad.com/js/jquery.mobile.js"></script>
 		<script src='https://www.google.com/recaptcha/api.js'></script>
 		<script src="https://cdn.musiqpad.com/js/tour.min.js"></script>
 		<script src="https://cdn.musiqpad.com/js/sha256.js"></script>

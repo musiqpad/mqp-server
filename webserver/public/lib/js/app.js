@@ -6980,18 +6980,20 @@
 	/* Window resizing */
 	$(window).on('load', function(){
 		MP.session.oldPageTitle = document.title;
-	    var win = $(this);
-	    var settings = JSON.parse(localStorage.getItem("settings"));
+    var win = $(this);
+    var settings = JSON.parse(localStorage.getItem("settings"));
 
 		if (settings.player.stream && win.width() < 800) {
 			API.chat.log('<br>Your screen is too small to display the video, use /stream to disable it','Tips');
 		}
-
-	    if (win.width() < 1366) {
-	    	($('.playback').hasClass('fullscreen')) ? null : API.fullscreen();
-	   	}else{
-	   		(settings.player.fullscreen && !$('.playback').hasClass('fullscreen')) ? API.fullscreen() : null;
-	   	}
+	  if (win.width() < 1366) {
+	  	($('.playback').hasClass('fullscreen')) ? null : API.fullscreen();
+	  }
+		else {
+	  	(settings.player.fullscreen && !$('.playback').hasClass('fullscreen')) ? API.fullscreen() : null;
+	  }
+		$('.loader, .loading').fadeOut(1000);
+		$('.load').css('top', '-100%');
 	});
 	$(window).on('resize', function(){
 		$('.user-menu').hide();
@@ -7606,12 +7608,8 @@
 						},
 						events: {
 							'onReady': function(){
-								setTimeout(function(){
-									 $('.loader, .loading').fadeOut(1000);
-									 $('.load').slideToggle(1000);
-									 if (playerSettings.stream && player.getPlayerState() == -1)
-									 	MP.videoNotAvailable();
-								},2 * 1000);
+								 if (playerSettings.stream && player.getPlayerState() == -1)
+								 	MP.videoNotAvailable();
 								clearInterval(interval);
 								API.player.getPlayer = function(){
 									return player;

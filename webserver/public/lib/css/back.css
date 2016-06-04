@@ -226,6 +226,7 @@ a {
     height: 100%;
     z-index: 1000;
     background: #0a0a0a;
+    transition: top cubic-bezier(0.4, 0, 0.2, 1) 1600ms;
 }
 .load.active {
     transition-property: all;
