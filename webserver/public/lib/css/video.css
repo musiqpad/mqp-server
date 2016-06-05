@@ -8,7 +8,7 @@
     height: calc(100% - 41px);
 }
 .playback {
-    transition: all .4s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    transition: all .4s cubic-bezier(0.45, 0.05, 0.55, 0.95), border-color 1ms;
     position:absolute;
     margin: 0 auto;
     width: 854px;

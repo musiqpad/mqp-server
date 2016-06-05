@@ -24,6 +24,7 @@
   "dependencies": {
     "chalk": "^1.0.0",
     "clean-css": "^3.4.9",
+    "compression": "^1.6.2",
     "daemon": "^1.1.0",
     "deasync": "^0.1.4",
     "download-git-repo": "^0.1.2",

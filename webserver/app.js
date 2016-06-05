@@ -1,4 +1,5 @@
 var express = require('express');
+var compression = require('compression');
 var path = require('path');
 var http = require('http');
 var https = require('https');
@@ -19,12 +20,15 @@ else {
   server = http.createServer(app);
 }
 
-app.use(function(req, res, next) {
-  if(!req.secure && config.webServer.redirectHTTP) {
-	  return res.redirect(['https://', req.hostname, ":", config.webServer.port || process.env.PORT, req.url].join(''));
-  }
-  next();
-});
+app.use(compression());
+
+if(config.webServer.redirectHTTP)
+  app.use(function(req, res, next) {
+    if(!req.secure) {
+  	  return res.redirect(['https://', req.hostname, ":", config.webServer.port || process.env.PORT, req.url].join(''));
+    }
+    next();
+  });
 
 app.use(express.static(path.resolve(__dirname, 'public')));
 app.use('/pads', express.static(path.resolve(__dirname, 'public')));
