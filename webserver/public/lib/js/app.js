@@ -1068,7 +1068,7 @@
 					MP.restrictUser(uid, duration, type, reason, callback);
 					return true;
 				},
-				unbanUser: function(uid, type, callback){
+				unrestrictUser: function(uid, type, callback){
 					if (typeof callback != 'function') callback = function(){};
 
 					if (!MP.user){
@@ -1085,7 +1085,28 @@
 						return false;
 					}
 
-					MP.unrestrictUser(uid, callback);
+					MP.unrestrictUser(uid, type, callback);
+					return true;
+				},
+				getUserRestrictions: function(uid, callback){
+					if (typeof callback != 'function') callback = function(){};
+					
+					if (!MP.user){
+						callback('notLoggedIn');
+						return false;
+					}
+					
+					//if (!MP.checkPerm('room.restrict')){
+					//	callback('InsufficientPermissions');
+					//	return false;
+					//}
+					
+					if (!uid){
+						callback('invalidUid');
+						return false;
+					}
+
+					MP.getUserRestrictions(uid, callback);
 					return true;
 				}
 			},
@@ -3709,7 +3730,11 @@
 			return true;
 		},
 		restrictUser: function(uid, duration, type, reason, callback){
-			if (!MP.checkPerm('room.restrict.' + type.toLowerCase())) return;
+			if(!type || !uid || !duration)
+				return false;
+			
+			if (!MP.checkPerm('room.restrict.' + type.toLowerCase()))
+				return false;
 
 			var obj = {
 				type: 'restrictUser',
@@ -3730,7 +3755,11 @@
 			socket.sendJSON(obj);
 		},
 		unrestrictUser: function(uid, type, callback){
-			if (!MP.checkPerm('room.restrict.' + type.toLowerCase())) return;
+			if(!type || !uid)
+				return false;
+			
+			if (!MP.checkPerm('room.restrict.' + type.toLowerCase()))
+				return false;
 
 			var obj = {
 				type: 'unrestrictUser',
@@ -3748,6 +3777,24 @@
 
 			socket.sendJSON(obj);
 		},
+		getUserRestrictions: function(uid, callback){
+			//if (!MP.checkPerm('room.restrict')) return;
+			
+			var obj = {
+				type: 'getUserRestrictions',
+				data: {
+					uid: uid
+				}
+			};
+			
+			obj.id = MP.addCallback(obj.type, function(err, data){
+				if (err){ if (callback) callback(err); console.log('Could not get user restrictions: ' + err); return;}
+
+				if (callback) callback(err, data);
+			});
+
+			socket.sendJSON(obj);
+		},
 		showRestrictionModal: function(uid){
 			/*if (MP.checkPerm('room.restrict.ban') || !MP.seenUsers[uid]){
 				MP.makeAlertModal({
@@ -3756,167 +3803,161 @@
 						});
 				return;
 			}*/
-			MP.makeCustomModal({
-				content: '<div>\
-						<h3>You are about to change the restrictions for <span id="BanUserModalUser" style="'+ MP.makeUsernameStyle(MP.seenUsers[uid].role) +'" data-uid="' + uid + '">' + MP.seenUsers[uid].un + '</span></h3>\
-						<div class="restriction-selector control-group">\
-							<hr>\
-							<h4>Current Active Restrictions</h4>\
-							<div id="CurrentRestrictionList">\
-								<table style="width:100%">\
-									<tr>\
-										<th style="width:33%">Type</th>\
-										<th style="width:33%">Length</th>\
-										<th style="width:33%">Reason</th>\
-									</tr>\
-								</table>\
-							</div>\
-							<hr>\
-    						<h4>Add New Restriction</h4>\
-    						<div id="UserRestrictionTypeSelector" class="modal-options">\
-								<div class="restriction-opt">Mute</div>\
-								<div class="restriction-opt">Silent Mute</div>\
-								<div class="restriction-opt">Ban</div>\
-								<div class="restriction-opt opt-reset" title="Clear Values">X</div>\
-							</div>\
-  						</div>\
-  						<br/>\
-  						<div id="UserRestrictionModalDuration" class="restriction-options modal-options" style="display: none;">\
-							<div class="ban-opt" data-val="PT15M">Quarter</div>\
-							<div class="ban-opt" data-val="PT1H">Hour</div>\
-							<div class="ban-opt" data-val="P1DT">Day</div>\
-							<div class="ban-opt" data-val="P100YT">Perma</div>\
-							<input class="ban-opt" placeholder="(Days?)"></input>\
-						</div>\
-						<input class="restriction-options ban-reason" style="display: none;" type="text" placeholder="Reason for punishment..." id="BanUserModalReason" />\
-					</div>',
-				dismissable: false,
-				buttons: [
-					{
-						icon: 'mdi-close',
-						classes: 'modal-no',
-						handler: function(e){
-							$('.modal-bg').remove();
-						}
-					},
-					{
-						icon: 'mdi-check',
-						classes: 'modal-yes',
-						handler: function(e){
-							
-						}
-					}
-				],
-				callback: function(){
-					var $banOpts = $('#UserRestrictionModalDuration .ban-opt');
-					var $restrictOpts = $('#UserRestrictionTypeSelector .restriction-opt');
-
-					$banOpts.on('click', function(){
-						if ($(this).hasClass('active')) return;
-
-						$banOpts.removeClass('active');
-
-						$(this).addClass('active');
-					});
-					
-					$restrictOpts.on('click', function(){
-						if ($(this).hasClass('active') || $(this).hasClass('opt-reset')) return;
-
-						$restrictOpts.removeClass('active');
-
-						$(this).addClass('active');
-						
-						$('.restriction-options').show();
-						$banOpts.removeClass('active');
-						$('.ban-reason').val('');
-					});
-					$('#UserRestrictionTypeSelector .restriction-opt.opt-reset').click(function() {
-						$restrictOpts.removeClass('active');
-						$banOpts.removeClass('active');
-						$('.ban-reason').val('');
-						$('.restriction-options').hide();
-					});
+			
+			MP.api.room.getUserRestrictions(uid, function(err, data){
+				if (err){
+					console.log(err);
+					return;
 				}
+
+				var resdatadom = '';
+				var resnames = {
+					BAN: 'Ban',
+					MUTE: 'Mute',
+					SILENT_MUTE: 'Silent mute'
+				};
+				
+				for(var type in data.restrictions){
+					resdatadom += '\
+					<tr>\
+						<td style="width:31.6%">' + resnames[type] + '</td>\
+						<td style="width:31.6%">' + (new Date(data.restrictions[type].end)).toUTCString() + '</td>\
+						<td style="width:31.6%">' + data.restrictions[type].reason + '</td>\
+						<td class="mdi mdi-close res-remove" data-val="' + type + '"></td>\
+					</tr>\
+					';
+				}
+				
+				MP.makeCustomModal({
+					content: '<div>\
+							<h3>You are about to change the restrictions for <span id="BanUserModalUser" style="'+ MP.makeUsernameStyle(MP.seenUsers[uid].role) +'" data-uid="' + uid + '">' + MP.seenUsers[uid].un + '</span></h3>\
+							<div class="restriction-selector control-group">\
+								<hr>\
+								<h4>Active Restrictions</h4>\
+								<div id="CurrentRestrictionList">\
+									<table style="width:100%">\
+										<tr>\
+											<th style="width:31.6%">Type</th>\
+											<th style="width:31.6%">End</th>\
+											<th style="width:31.6%">Reason</th>\
+											<th style="width:5%"></th>\
+										</tr>\
+										' + resdatadom + '\
+									</table>\
+								</div>\
+								<hr>\
+	    						<h4>New Restriction</h4>\
+	    						<div id="UserRestrictionTypeSelector" style="" class="modal-options">\
+									<div class="restriction-opt opt-mute" data-val="MUTE">Mute</div>\
+									<div class="restriction-opt opt-smute" data-val="SILENT_MUTE">Silent Mute</div>\
+									<div class="restriction-opt opt-ban" data-val="BAN">Ban</div>\
+								</div>\
+	  						</div>\
+	  						<br/>\
+	  						<div id="UserRestrictionModalDuration" class="restriction-options modal-options" style="display: none;">\
+								<div class="restriction-opt" data-val="PT15M">Quarter</div>\
+								<div class="restriction-opt" data-val="PT1H">Hour</div>\
+								<div class="restriction-opt" data-val="P1DT">Day</div>\
+								<div class="restriction-opt" data-val="P100YT">Perma</div>\
+								<input class="restriction-opt" placeholder="(Days?)"></input>\
+							</div>\
+							<input class="restriction-options restype-reason" style="display: none;" type="text" placeholder="Reason for punishment..." id="RestrictUserModalReason" />\
+							<br>\
+							<div class="modal-ctrl restriction-options" style="width: 50%;display: none;" id="restriction-opt-add">Add</div>\
+						</div>',
+					dismissable: true,
+					buttons: [
+						{
+							icon: 'mdi-close',
+							classes: 'modal-no',
+							handler: function(e){
+								$('.modal-bg').remove();
+							}
+						},
+					],
+					callback: function(){
+						var $banOpts = $('#UserRestrictionModalDuration .restriction-opt');
+						var $restrictOpts = $('#UserRestrictionTypeSelector .restriction-opt');
+	
+						$banOpts.on('click', function(){
+							if ($(this).hasClass('active')) return;
+	
+							$banOpts.removeClass('active');
+	
+							$(this).addClass('active');
+						});
+						
+						$restrictOpts.on('click', function(){
+							if ($(this).hasClass('active')) return;
+	
+							$restrictOpts.removeClass('active');
+	
+							$(this).addClass('active');
+							
+							$('.restriction-options').show();
+							$banOpts.removeClass('active');
+							$('.restype-reason').val('');
+						});
+						
+						$('#CurrentRestrictionList .res-remove').on('click', function(){
+							var that = this;
+							
+							MP.api.room.unrestrictUser(uid, $(that).attr('data-val'), function(err, data){
+								if(err)
+									MP.makeAlertModal({ content: "Could not remove restriction: " + err });
+								else
+									$(that).parent().remove();
+							});
+						});
+						
+						$('#restriction-opt-add').on('click', function() {
+							var restype = $('#UserRestrictionTypeSelector .restriction-opt.active').attr('data-val');
+							var resdur = $('#UserRestrictionModalDuration .restriction-opt.active');
+							var resreason = $('#RestrictUserModalReason').val();
+							
+							if(resdur.attr('data-val')){
+								resdur = resdur.attr('data-val');
+							} else {
+								resdur = ~~resdur.val();
+								if(!resdur){
+									MP.makeAlertModal({ content: "Duration is not a number" });
+									return;
+								}
+								resdur = 'P' + resdur + 'DT';
+							}
+
+							MP.api.room.restrictUser(uid, resdur, restype, resreason, function(err, data){
+								if(err){
+									MP.makeAlertModal({ content: 'Error while adding a restriction: ' + err });
+								} else {
+									$banOpts.removeClass('active');
+									$restrictOpts.removeClass('active');
+									$('.restype-reason').val('');
+									$('.restriction-options').hide();
+									$('#CurrentRestrictionList table').append('\
+									<tr>\
+										<td style="width:31.6%">' + resnames[restype] + '</td>\
+										<td style="width:31.6%">' + (new Date(data.end)).toUTCString() + '</td>\
+										<td style="width:31.6%">' + (resreason || 'No reason specified') + '</td>\
+										<td class="mdi mdi-close res-remove" data-val="' + restype + '"></td>\
+									</tr>');
+									
+									$('#CurrentRestrictionList .res-remove:last').on('click', function(){
+										var that = this;
+										
+										MP.api.room.unrestrictUser(uid, $(that).attr('data-val'), function(err, data){
+											if(err)
+												MP.makeAlertModal({ content: "Could not remove restriction: " + err });
+											else
+												$(that).parent().remove();
+										});
+									});
+								}
+							});
+						});
+					}
+				});
 			});
-			//MP.makeCustomModal({
-			//	content: '<div>\
-			//		<h3>You are about to BAN <span id="BanUserModalUser" style="'+ MP.makeUsernameStyle(MP.seenUsers[uid].role) +'" data-uid="' + uid + '">' + MP.seenUsers[uid].un + '</span> for </h3>\
-			//		<div id="BanUserModalDuration" class="modal-options">\
-			//			<div class="ban-opt" data-val="PT15M">Quarter</div>\
-			//			<div class="ban-opt" data-val="PT1H">Hour</div>\
-			//			<div class="ban-opt" data-val="P1DT">Day</div>\
-			//			<div class="ban-opt" data-val="P100YT">Perma</div>\
-			//			<input class="ban-opt" placeholder="(Days?)"></input>\
-			//		</div>\
-			//		<input class="ban-reason" type="text" placeholder="Reason for punishment..." id="BanUserModalReason" />\
-			//	</div>',
-			//	dismissable: false,
-			//	buttons: [
-			//		{
-			//			icon: 'mdi-close',
-			//			classes: 'modal-no',
-			//			handler: function(e){
-			//				$('.modal-bg').remove();
-			//			}
-			//		},
-			//		{
-			//			icon: 'mdi-check',
-			//			classes: 'modal-yes',
-			//			handler: function(e){
-			//				var duration = $('#BanUserModalDuration .ban-opt.active');
-			//				var uid = $('#BanUserModalUser').attr('data-uid');
-
-			//				if (!duration.length) return;
-
-			//				if (duration.is('input')){
-			//					duration = parseFloat(duration.val());
-			//					var remaining = null;
-			//					var durs = {
-			//						H: 60*60,
-			//						M: 60,
-			//						S: 1
-			//					};
-
-			//					if (isNaN(duration)) return;
-
-			//					var out = 'P' + Math.floor(duration) + 'DT';
-			//					remaining = (duration % 1) * 24 * 60 * 60;
-
-			//					for (var i in durs){
-			//						var result = Math.floor(remaining / durs[i]);
-
-			//						out += (result + i);
-
-			//						remaining = remaining - (durs[i]*result);
-			//					}
-
-			//					duration = out;
-			//				} else if (duration.is('div')){
-			//					duration = duration.attr('data-val');
-			//				}
-			//				MP.banUser(uid, duration, $('#BanUserModalReason').val(), function(err, data){
-			//					if (err){
-			//						alert(err);
-			//						return;
-			//					}
-
-			//					$('.modal-bg').remove();
-			//				});
-			//			}
-			//		}
-			//	],
-			//	callback: function(){
-			//		var $banOpts = $('#BanUserModalDuration .ban-opt');
-
-			//		$banOpts.on('click', function(){
-			//			if ($(this).hasClass('active')) return;
-
-			//			$banOpts.removeClass('active');
-
-			//			$(this).addClass('active');
-			//		});
-			//	}
-			//});
 		},
 		showRoleModal: function(uid){
 			if (!MP.checkPerm('room.grantroles') || !MP.seenUsers[uid] || !MP.getRole(MP.user.role).canGrantRoles) return;
@@ -4165,6 +4206,7 @@
 			/* opts available:
 				content: content in the modal,
 				callback: function(result (bool)),
+				hoverOver: Allows the modal to hover over existing modals without removing the background modal
 			*/
 
 			var opts = inOpts || {};
@@ -4175,7 +4217,12 @@
 					{
 						icon: 'mdi-close',
 						handler: function(){
-							$('.modal-bg').remove();
+							if (opts.hoverOver) { 
+								$(this).find('.modeal-bg').remove();
+							}
+							else {
+								$('.modal-bg').remove();
+							}
 							if (opts.callback) opts.callback(false);
 						},
 						classes: 'modal-no'
@@ -4183,7 +4230,12 @@
 					{
 						icon: 'mdi-check',
 						handler: function(){
-							$('.modal-bg').remove();
+							if (opts.hoverOver) { 
+								$(this).find('.modeal-bg').remove();
+							}
+							else {
+								$('.modal-bg').remove();
+							}
 							if (opts.callback) opts.callback(true);
 						},
 						classes: 'modal-yes'
@@ -4381,6 +4433,7 @@
 			getBannedUsers: MP.api.room.getBannedUsers,
 			restrictUser: MP.api.room.restrictUser,
 			unrestrictUser: MP.api.room.unrestrictUser,
+			getUserRestrictions: MP.api.room.getUserRestrictions,
 			whois: function(data, callback){
                 if(!MP.checkPerm('room.whois')) return false;
 
@@ -4797,7 +4850,7 @@
 				}
 			},
 			USER: {
-				BAN: {
+				RESTRICT: {
 					MIN5:   { text: '5 minutes',  duration: 'PT5M'   },
 					MIN30:  { text: '30 minutes', duration: 'PT30M'  },
 					HOUR:   { text: '1 hour',     duration: 'PT1H'   },
@@ -5305,7 +5358,7 @@
 					var verbs = {
 						BAN: 'banned',
 						MUTE: 'muted',
-						SILENT_MUTE: 'unmuted'
+						SILENT_MUTE: 'muted (silent)'
 					};
 
 					if (source && target)
@@ -5328,11 +5381,12 @@
 					
 					var verbs = {
 						BAN: 'unbanned',
-						MUTE: 'unmuted'
+						MUTE: 'unmuted',
+						SILENT_MUTE: 'unmuted (silent)',
 					};
 
 					if (source && target)
-						MP.addMessage('<span data-uid="'+ target.uid +'" class="uname" style="' + MP.makeUsernameStyle(target.role) + '">' + target.un + '</span>was ' + (verbs[data.data.type] || ('restricted (' + data.data.type + ')')) + ' by <span data-uid="'+ source.uid +'" class="uname" style="' + MP.makeUsernameStyle(source.role) + '">' + source.un + '</span>', 'system');
+						MP.addMessage('<span data-uid="'+ target.uid +'" class="uname" style="' + MP.makeUsernameStyle(target.role) + '">' + target.un + '</span>was ' + (verbs[data.data.type] || ('unrestricted (' + data.data.type + ')')) + ' by <span data-uid="'+ source.uid +'" class="uname" style="' + MP.makeUsernameStyle(source.role) + '">' + source.un + '</span>', 'system');
 					break;
 				case API.DATA.EVENTS.USER_ROLE_CHANGE:
 					var setter = MP.findUser(data.data.mid);

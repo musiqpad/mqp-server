@@ -436,11 +436,8 @@ a {
 .modal-preview {
     margin-top: 12px;
 }
-#UserRestrictionTypeSelector .restriction-opt.opt-reset {
-    width: 10%;
-}
 #UserRestrictionTypeSelector .restriction-opt {
-    width: 30%;
+    width: 33.33%;
 }
 .ban-opt, .restriction-opt {
     width: 20%;
@@ -504,6 +501,29 @@ input.ban-reason, input.edit-playlist-name, input.new-playlist {
     margin: 8px 5px 5px;
 }
 .user-menu .modal-ctrl:hover {
+    background: rgba(146, 90, 255, .25);
+}
+.res-remove {
+    border: 1px solid #444A59;
+    background: #282C35;
+    cursor: pointer;
+}
+.res-remove:hover {
+    background: rgba(146, 90, 255, .25);
+}
+input.restriction-options.restype-reason {
+    width: calc(100% - 20px);
+    margin: 15px 0;
+    border: 1px solid #444A59;
+    background: #282C35;
+}
+.modal-ctrl.restriction-options {
+    width: 50%;
+    margin: 0 25%;
+    border: 1px solid #444A59;
+    background: #282C35;
+}
+.modal-ctrl.restriction-options:hover {
     background: rgba(146, 90, 255, .25);
 }
 .popover {

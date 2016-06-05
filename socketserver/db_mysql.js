@@ -128,7 +128,7 @@ var MysqlDB = function(){
                         `reason` VARCHAR(256) NULL,\
                         `start` DATETIME,\
                         `end` DATETIME,\
-                        `type` VARCHAR(10),\
+                        `type` VARCHAR(16),\
                         PRIMARY KEY (`id`)\
                     );\
                     \

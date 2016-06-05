@@ -2737,13 +2737,45 @@ var SocketServer = function(server){
 							
 						} else {
 							returnObj.data = {
-								success: true
+								success: true,
+								end: restrictObj.end,
 							};
 						}
 						socket.sendJSON(returnObj);
 					});
 					break;
+				case 'getUserRestrictions':
+					/*
+					 Expects {
+					 	type: 'getUserRestrictions',
+					 	data: {
+					 		uid: uid,
+					 	}
+					 }
+					*/
 					
+					//Check for required parameters
+					if (isNaN(data.data.uid)){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					var arr = Roles.getRole(socket.user.role).permissions
+						.filter(function(e){
+							return e.indexOf("room.restrict") != -1;
+						})
+						.map(function(e){
+							return e.slice(14).toUpperCase();
+						});
+					
+					returnObj.data = {
+						restrictions: that.room.getRestrictions(arr, data.data.uid)
+					}
+					socket.sendJSON(returnObj);
+					break;
 				case 'unrestrictUser':
 					/*
 					 Expects {

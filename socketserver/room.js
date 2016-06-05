@@ -221,7 +221,10 @@ Room.prototype.restrictUser = function(restrictObj, callback){
 	var that = this;
 	
 	if(this.restrictiontypes.indexOf(restrictObj.type) == -1)
-		callback("InvalidRestrictionType");
+	{
+		if (callback) callback("InvalidRestrictionType");
+		return;
+	}
 	
 	DB.getUserByUid(restrictObj.uid, function(err, user) {
 		if (err) {
@@ -256,7 +259,7 @@ Room.prototype.restrictUser = function(restrictObj, callback){
 				source: restrictObj.source.uid,
 			}
 		}, function(obj){
-			return restrictObj.type != 'SILENT_MUTE' || obj.hasPermission('room.restrict.silent_mute');
+			return restrictObj.type != 'SILENT_MUTE' || (obj.user && Roles.checkPermission(obj.user.role, 'room.restrict.silent_mute'));
 		});
 
 		var userSock = that.findSocketByUid(restrictObj.uid);
@@ -277,6 +280,17 @@ Room.prototype.restrictUser = function(restrictObj, callback){
 	});
 };
 
+Room.prototype.getRestrictions = function(arr, uid){
+	var out = {};
+	
+	for(var key in this.data.restrictions[uid]){
+		if(key.indexOf(arr))
+			out[key] = this.data.restrictions[uid][key];
+	}
+	
+	return out;
+};
+
 Room.prototype.unrestrictUser = function(uid, type, sock){
 	if (this.data.restrictions[uid][type]){
 		delete this.data.restrictions[uid][type];
@@ -289,7 +303,10 @@ Room.prototype.unrestrictUser = function(uid, type, sock){
 				type: type,
 				source: (sock ? sock.user.data.uid : null) 
 			}
+		}, function(obj){
+			return type != 'SILENT_MUTE' || (obj.user && Roles.checkPermission(obj.user.role, 'room.restrict.silent_mute'));
 		});
+
 		return true;
 	}
 	return false;
