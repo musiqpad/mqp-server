@@ -7608,8 +7608,11 @@
 						},
 						events: {
 							'onReady': function(){
-								 if (playerSettings.stream && player.getPlayerState() == -1)
-								 	MP.videoNotAvailable();
+								if (playerSettings.stream && player.getPlayerState() == -1)
+									MP.videoNotAvailable();
+								setTimeout(function () {
+									$(window).load();
+								}, 1000);
 								clearInterval(interval);
 								API.player.getPlayer = function(){
 									return player;
