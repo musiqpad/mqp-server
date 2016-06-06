@@ -129,7 +129,7 @@
     border-top:1px solid #444A59;
     background: #1C1C1F;
 }
-.controls .ctrl {
+.controls .ctrl, .controls .ctrl-alt {
     font-size: 16px;
     line-height: 40px;
     vertical-align: middle;
@@ -157,6 +157,12 @@
 .btn-snooze:not(.active):hover {
     background: rgba(146, 90, 255, .25);
 }
+.ctrl-alt.btn-snooze {
+    color: #F46B40;
+}
+.ctrl-alt.btn-snooze:not(.active):hover {
+    background: rgba(244, 107, 64, .25);
+}
 .btn-join {
     color: #F46B40;
 }
@@ -167,6 +173,16 @@
     background: #F46B40;
     color: #1C1C1F;
 }
+.ctrl-alt.btn-join {
+    color: #91c5a9;
+}
+.ctrl-alt.btn-join:not(.active):hover {
+    background: rgba(145, 197, 169, .25);
+}
+.ctrl-alt.btn-join.active {
+    background: #91c5a9;
+    color: #1C1C1F;
+}
 .btn-grab {
     color: #925AFF;
     position: relative;
@@ -174,6 +190,10 @@
 .btn-grab.active, .btn-snooze.active {
     color: #1C1C1F;
     background: #925AFF;
+}
+.ctrl-alt.btn-snooze.active {
+    color: #1C1C1F;
+    background: #F46B40;
 }
 .btn-grab:not(.active):hover {
     background: rgba(146, 90, 255, .25);
@@ -251,7 +271,7 @@
 .btn-hd.active, .btn-lastdj.active {
     color: #A77DC2;
 }
-.ctrl .info {
+.ctrl .info, .ctrl-alt .info {
     font-size: 12px;
     font-weight: bold;
     margin: 0 3px;

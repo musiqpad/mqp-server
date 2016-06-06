@@ -7282,6 +7282,7 @@
                 	},
                 },
                 separateUserCount: true,
+                altControls: false,
 			};
 
 			$scope.changeTab = function(inProp, val){
