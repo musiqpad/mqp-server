@@ -6978,7 +6978,7 @@
 	});
 
 	/* Window resizing */
-	$(window).on('load', function(){
+	$(window).one('load', function(){
 		MP.session.oldPageTitle = document.title;
     var win = $(this);
     var settings = JSON.parse(localStorage.getItem("settings"));
@@ -6993,8 +6993,9 @@
 	  	(settings.player.fullscreen && !$('.playback').hasClass('fullscreen')) ? API.fullscreen() : null;
 	  }
 		$('.loader, .loading').fadeOut(1000);
-		$('.load').css('top', '-100%');
+		$('.load').css('transform', 'translateY(-100%)');
 	});
+	
 	$(window).on('resize', function(){
 		$('.user-menu').hide();
 	    var win = $(this);
