@@ -4,12 +4,13 @@ node_js:
 - '5'
 - '5.1'
 - '4'
-- '4.2'
 - '4.1'
-- '4.0'
 
 env:
   - CXX=g++-4.8
+cache:
+  directories:
+    - node_modules
 
 addons:
   apt:

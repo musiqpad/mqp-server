@@ -16,132 +16,235 @@ var expires = 1000 * 60 * 60 * 24 * config.loginExpire;
 var usernames = [];
 var db = null;
 var poolqueue = [];
+var ready = false;
+
+var playlistscol = null;
+var roomcol = null;
+var tokenscol = null;
+var userscol = null;
+var chatcol = null;
+var pmscol = null;
+var ipcol = null;
 
 function dbQueue(callback) {
-    if (!db) {
-        return poolqueue.push(callback);
-    }
-    
-    if (!callback) {
+    if (callback === true) {
         while (poolqueue.length > 0)
             (poolqueue.shift())();
         
+        ready = true;
         return;
     }
     
+    if (!ready) {
+        return poolqueue.push(callback);
+    }
+
     callback();
+}
+
+function createCollectionsIfNoExist(callback) {
+    var step = 0;
+    var total = 7;
+    
+    db.collection('playlists', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('playlists', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the playlists collection');
+	            
+	            playlistscol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            playlistscol = col;
+            if (++step == total) callback();
+        }
+        
+    });
+    
+    db.collection('room', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('room', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the room collection');
+	            
+	            roomcol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            roomcol = col;
+            if (++step == total) callback();
+        }
+        
+    });
+    
+    db.collection('tokens', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('tokens', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the tokens collection');
+	            
+	            tokenscol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            tokenscol = col;
+            if (++step == total) callback();
+        }
+        
+    });
+    
+    db.collection('users', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('users', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the users collection');
+	            
+	            userscol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            userscol = col;
+            if (++step == total) callback();
+        }
+        
+    });
+    
+    db.collection('chat', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('chat', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the chat collection');
+	            
+	            chatcol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            chatcol = col;
+            if (++step == total) callback();
+        }
+    });
+    
+    db.collection('pms', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('pms', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the pms collection');
+	            
+	            pmscol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            pmscol = col;
+            if (++step == total) callback();
+        }
+    });
+    
+    db.collection('ip', {strict:true}, function(err, col) {
+        if (err) {
+            db.createCollection('ip', function(errc, result) {
+	            if (errc)
+	                throw new Error('Failed to create the ip collection');
+	            
+	            ipcol = result;
+	            if (++step == total) callback();
+	        });
+        } else {
+            ipcol = col;
+            if (++step == total) callback();
+        }
+    });
+}
+
+function initCollections(callback) {
+    var step = 0;
+    var total = 4;
+    
+    //Playlists
+	playlistscol.findOne({_id: 'PIDCOUNTER'}, function(err, pidobj) {
+		if (err) {
+			throw new Error('Cannot get PIDCOUNTER from playlists');
+	        }
+
+		if (!pidobj) {
+			playlistscol.insert({_id: "PIDCOUNTER", seq: 1}, function(error, data) {
+				if (error) {
+		               		throw new Error('Cannot set PIDCOUNTER to playlists');
+		                }
+		                if (++step == total) callback();
+			});
+		} else {
+		    if (++step == total) callback();
+		}
+	});
+	
+	//Users
+	userscol.findOne({_id: 'UIDCOUNTER'}, function(err, pidobj) {
+		if (err) {
+	            throw new Error('Cannot get UIDCOUNTER from users');
+	        }
+
+		if (!pidobj) {
+			userscol.insert({_id: "UIDCOUNTER", seq: 1}, function(error, data) {
+				if (error) {
+		                    throw new Error('Cannot set UIDCOUNTER to users');
+		                }
+		                if (++step == total) callback();
+			});
+		} else {
+		    if (++step == total) callback();
+		}
+	});
+	
+	//Chat
+	chatcol.findOne({_id: 'CIDCOUNTER'}, function(err, pidobj) {
+		if (err) {
+	        	throw new Error('Cannot get CIDCOUNTER from chat');
+	        }
+		if (!pidobj) {
+			chatcol.insert({_id: "CIDCOUNTER", seq: 1}, function(error, data) {
+				if (error) {
+		                    throw new Error('Cannot set CIDCOUNTER to chat');
+		                }
+		                if (++step == total) callback();
+			});
+		} else {
+		    if (++step == total) callback();
+		}
+	});
+	
+	//PMs
+	pmscol.findOne({_id: 'PMIDCOUNTER'}, function(err, pidobj) {
+		if (err) {
+	            throw new Error('Cannot get PMIDCOUNTER from pms');
+	        }
+		if (!pidobj) {
+			pmscol.insert({_id: "PMIDCOUNTER", seq: 1}, function(error, data) {
+				if (error) {
+		                    throw new Error('Cannot set PMIDCOUNTER to pms');
+		                }
+		                if (++step == total) callback();
+			});
+		} else {
+		    if (++step == total) callback();
+		}
+	});
 }
 
 function MongoDB(cb) {
 	var dburl = 'mongodb://' + config.db.mongoUser + ':' + config.db.mongoPassword + '@' + config.db.mongoHost + ':27017/' + config.db.mongoDatabase;
-    var step = 0;
-    var total = 4;
-    
+
 	mongodb.connect(dburl, function(err, database) {
 		if (err) {
 			throw new Error('Could not connect to database: ' + err);
 		}
 		
-		//Playlis
-		database.collection('playlists').findOne({_id: 'PIDCOUNTER'}, function(err, pidobj) {
-			if (err) {
-                throw new Error('Cannot get PIDCOUNTER from playlists');
-            }
-
-			if (!pidobj) {
-				database.collection('playlists').insert({_id: "PIDCOUNTER", seq: 1}, function(error, data) {
-					if (error) {
-                        throw new Error('Cannot set PIDCOUNTER to playlists');
-                    }
-                    step++;
-                    if (step == total){
-                        db = database;
-                        dbQueue();
-                    }
-				});
-			} else {
-			    step++;
-		        if (step == total){
-                    db = database;
-                    dbQueue();
-                }
-			}
-		});
+		db = database;
 		
-		//Users
-		database.collection('users').findOne({_id: 'UIDCOUNTER'}, function(err, pidobj) {
-			if (err) {
-                throw new Error('Cannot get UIDCOUNTER from users');
-            }
-
-			if (!pidobj) {
-				database.collection('users').insert({_id: "UIDCOUNTER", seq: 1}, function(error, data) {
-					if (error) {
-                        throw new Error('Cannot set UIDCOUNTER to users');
-                    }
-                    step++;
-                    if (step == total){
-                        db = database;
-                        dbQueue();
-                    }
-				});
-			} else {
-			    step++;
-			    if (step == total){
-                    db = database;
-                    dbQueue();
-                }
-			}
-		});
-		
-		//Chat
-		database.collection('chat').findOne({_id: 'CIDCOUNTER'}, function(err, pidobj) {
-			if (err) {
-                throw new Error('Cannot get CIDCOUNTER from chat');
-            }
-			if (!pidobj) {
-				database.collection('chat').insert({_id: "CIDCOUNTER", seq: 1}, function(error, data) {
-					if (error) {
-                        throw new Error('Cannot set CIDCOUNTER to chat');
-                    }
-                    step++;
-			        if (step == total){
-                        db = database;
-                        dbQueue();
-                    }
-				});
-			} else {
-			    step++;
-			    if (step == total){
-                    db = database;
-                    dbQueue();
-                }
-			}
-		});
-		
-		//PMs
-		database.collection('pms').findOne({_id: 'PMIDCOUNTER'}, function(err, pidobj) {
-			if (err) {
-                throw new Error('Cannot get PMIDCOUNTER from pms');
-            }
-			if (!pidobj) {
-				database.collection('pms').insert({_id: "PMIDCOUNTER", seq: 1}, function(error, data) {
-					if (error) {
-                        throw new Error('Cannot set PMIDCOUNTER to pms');
-                    }
-                    step++;
-			        if (step == total){
-                        db = database;
-                        dbQueue();
-                    }
-				});
-			} else {
-			    step++;
-			    if (step == total){
-                    db = database;
-                    dbQueue();
-                }
-			}
+		createCollectionsIfNoExist(function() {
+		    initCollections(function() {
+    		    dbQueue(true);
+		    });
 		});
 	});
 }
@@ -160,7 +263,7 @@ MongoDB.prototype.getPlaylist = function(pid, callback) {
     var Playlist = require('./playlist');
     
     dbQueue(function(){
-    	db.collection('playlists').findOne({_id: pid}, {_id: 0}, function(err, data) {
+    	playlistscol.findOne({_id: pid}, {_id: 0}, function(err, data) {
             if (err || !data) {
             	callback('PlaylistNotFound');
             	return;
@@ -192,7 +295,7 @@ MongoDB.prototype.createPlaylist = function(owner, name, callback) {
     	    var updatedPlObj = pl.makeDbObj();
     	    updatedPlObj._id = currentPID;
     	    
-    	    db.collection('playlists').insert(updatedPlObj, function(error, data) {
+    	    playlistscol.insert(updatedPlObj, function(error, data) {
     	    	callback(error, pl);
     	    });
         });
@@ -201,7 +304,7 @@ MongoDB.prototype.createPlaylist = function(owner, name, callback) {
 
 MongoDB.prototype.deletePlaylist = function(pid, callback) {
 	dbQueue(function(){
-	    db.collection('playlists').remove({_id: pid}, callback);
+	    playlistscol.remove({_id: pid}, callback);
 	});
 };
 
@@ -213,7 +316,7 @@ MongoDB.prototype.putPlaylist = function(pid, data, callback) {
     newData._id = pid;
     
     dbQueue(function(){
-        db.collection('playlists').updateOne({_id: pid}, newData, {upsert:true, w: 1}, function(error, res) {
+        playlistscol.updateOne({_id: pid}, newData, {upsert:true, w: 1}, function(error, res) {
         	callback(data);
         });
     });
@@ -222,7 +325,7 @@ MongoDB.prototype.putPlaylist = function(pid, data, callback) {
 //RoomDB
 MongoDB.prototype.getRoom = function(slug, callback) {
     dbQueue(function(){
-	    db.collection('room').findOne({slug: slug}, {_id: 0}, callback);
+	    roomcol.findOne({slug: slug}, {_id: 0}, callback);
     });
     return this;
 };
@@ -233,7 +336,7 @@ MongoDB.prototype.setRoom = function(slug, val, callback) {
         util._extend(newData, val);
     
         newData.slug = slug;
-    	db.collection('room').updateOne({slug: slug}, newData, {upsert:true, w: 1}, function(error, data) {
+    	roomcol.updateOne({slug: slug}, newData, {upsert:true, w: 1}, function(error, data) {
         	if (callback) callback(error, data);
         });
     });
@@ -243,7 +346,7 @@ MongoDB.prototype.setRoom = function(slug, val, callback) {
 //TokenDB
 MongoDB.prototype.deleteToken = function(tok) {
 	 dbQueue(function(){
-	     db.collection('tokens').remove({tok: tok}, function(){});
+	     tokenscol.remove({tok: tok}, function(){});
 	 });
 };
 
@@ -251,7 +354,7 @@ MongoDB.prototype.createToken = function(email) {
     var tok = DBUtils.makePass(email, Date.now());
 
     dbQueue(function(){
-    	db.collection('tokens').insert({
+    	tokenscol.insert({
     		tok: tok,
             email: email,
             time: Date.now(),
@@ -265,7 +368,7 @@ MongoDB.prototype.isTokenValid = function(tok, callback) {
     var that = this;
 
     dbQueue(function(){
-    	db.collection('tokens').findOne({tok: tok}, function(err, data) {
+    	tokenscol.findOne({tok: tok}, function(err, data) {
     		if (err || data == null) {
                 callback('InvalidToken');
                 return;
@@ -348,7 +451,7 @@ MongoDB.prototype.createUser = function(obj, callback) {
         
                 var tok = that.createToken(inData.email);
                 
-                db.collection('users').insert(updatedUserObj, function(error, data) {
+                userscol.insert(updatedUserObj, function(error, data) {
         			if (error) {
                         callback(error);
                         return;
@@ -392,7 +495,7 @@ MongoDB.prototype.loginUser = function(obj, callback) {
         if (inData.email && inData.pw) {
             inData.email = inData.email.toLowerCase();
             
-            db.collection('users').findOne({email: inData.email}, {_id: 0}, function(err, data) {
+            userscol.findOne({email: inData.email}, {_id: 0}, function(err, data) {
                 if (err) {
                     callback(err);
                     return;
@@ -422,7 +525,7 @@ MongoDB.prototype.loginUser = function(obj, callback) {
                     return;
                 }
     
-                db.collection('users').findOne({email: email}, {_id: 0}, function(err, data) {
+                userscol.findOne({email: email}, {_id: 0}, function(err, data) {
                     if (err) {
                         callback(err);
                         return;
@@ -454,7 +557,7 @@ MongoDB.prototype.putUser = function(email, data, callback) {
     newData.email = email;
     
     dbQueue(function(){
-        db.collection('users').updateOne({email: email}, newData, {upsert: true, w: 1}, callback);
+        userscol.updateOne({email: email}, newData, {upsert: true, w: 1}, callback);
     });
 };
 
@@ -462,7 +565,7 @@ MongoDB.prototype.getUser = function(email, callback){
 	var User = require('./user');
 
     dbQueue(function(){
-        db.collection('users').findOne({email: email}, {_id: 0}, function(err, data) {
+        userscol.findOne({email: email}, {_id: 0}, function(err, data) {
     		if (err) {
                 callback(err);
                 return;
@@ -490,7 +593,7 @@ MongoDB.prototype.deleteUser = function(email, callback) {
     	that.getUser(email, function(err, user){
     		if (err){ if (callback) callback(err); return; }
     		
-    		db.collection('users').remove({email: email}, function(error, data){
+    		userscol.remove({email: email}, function(error, data){
     		    callback(error || null, error ? false : true);
     		});
     	});
@@ -523,7 +626,7 @@ MongoDB.prototype.getUserByUid = function(uid, opts, callback) {
     var len = 0;
 
     dbQueue(function(){
-        db.collection('users').find({_id: { $in: uid}}, {_id: 0}).toArray(function(err, data) {
+        userscol.find({_id: { $in: uid}}, {_id: 0}).toArray(function(err, data) {
             if(err || !data || data.length == 0){
                 callback('SomeUsersNotFound', out);
                 return;
@@ -558,7 +661,7 @@ MongoDB.prototype.getUserByName = function(name, opts, callback) {
     }
     
     dbQueue(function(){
-        db.collection('users').findOne({un: name}, {_id: 0}, function(err, userobj) {
+        userscol.findOne({un: name}, {_id: 0}, function(err, userobj) {
             if(err || !userobj){
                 if (callback) callback('UserNotFound');
                 return;
@@ -575,7 +678,7 @@ MongoDB.prototype.getUserByName = function(name, opts, callback) {
 
 MongoDB.prototype.userEmailExists = function(key, callback) {
     dbQueue(function(){
-        db.collection('users').findOne({email: key}, {_id: 0}, function(err, data) {
+        userscol.findOne({email: key}, {_id: 0}, function(err, data) {
             if (callback) callback(err, data ? true : false);
         });
     });
@@ -585,7 +688,7 @@ MongoDB.prototype.userEmailExists = function(key, callback) {
 MongoDB.prototype.logChat = function(uid, msg, special, callback) {
     dbQueue(function(){
         getNextSequence('chat', 'CIDCOUNTER', function(currentCID) {
-            db.collection('chat').insert({_id: currentCID, uid: uid, msg: msg, special: special}, function(error, data) {
+            chatcol.insert({_id: currentCID, uid: uid, msg: msg, special: special}, function(error, data) {
     			if (callback) callback(error, currentCID);
     		});
         });
@@ -596,7 +699,7 @@ MongoDB.prototype.logChat = function(uid, msg, special, callback) {
 MongoDB.prototype.logPM = function(from, to, msg, callback) {
     dbQueue(function(){
         getNextSequence('pms', 'PMIDCOUNTER', function(currentCID) {
-            db.collection('pms').insert({_id: currentCID, msg: msg, from: from, to: to, time: new Date(), unread: true }, function(error, data) {
+            pmscol.insert({_id: currentCID, msg: msg, from: from, to: to, time: new Date(), unread: true }, function(error, data) {
                 if (error) log.error("Error logging chat message");
         		if (callback) callback(error, currentCID);
         	});
@@ -606,7 +709,7 @@ MongoDB.prototype.logPM = function(from, to, msg, callback) {
 
 MongoDB.prototype.getConversation = function(from, to, callback) {
     dbQueue(function(){
-        db.collection('pms').find({ $or: [ {from: from, to: to}, {from: to, to: from}] }, {_id: 0}).toArray(function(err, data) {
+        pmscol.find({ $or: [ {from: from, to: to}, {from: to, to: from}] }, {_id: 0}).toArray(function(err, data) {
             if(err){
                 callback(err);
             } else {
@@ -624,7 +727,7 @@ MongoDB.prototype.getConversations = function(uid, callback) {
     var that = this;
     
     dbQueue(function(){
-        db.collection('pms').find({ $or: [ {from: uid}, {to: uid}] }, {_id: 0}).toArray(function(err, data) {
+        pmscol.find({ $or: [ {from: uid}, {to: uid}] }, {_id: 0}).toArray(function(err, data) {
             if(err){
                 callback(err);
             } else {
@@ -671,7 +774,29 @@ MongoDB.prototype.getConversations = function(uid, callback) {
 
 MongoDB.prototype.markConversationRead = function(uid, uid2, time) {
     dbQueue(function(){
-        db.collection('pms').updateMany({to: uid, from: uid2, time: {$lt: new Date(time)}}, {$set: {unread: false}}, function(){});
+        pmscol.updateMany({to: uid, from: uid2, time: {$lt: new Date(time)}}, {$set: {unread: false}}, function(){});
+    });
+};
+
+//IpDB
+MongoDB.prototype.logIp = function(address, uid) {
+    dbQueue(function(){
+        ipcol.insert({
+            uid: uid,
+            address: address,
+            time: new Date()
+        });
+    });
+};
+
+MongoDB.prototype.getIpHistory = function(uid, callback) {
+     dbQueue(function(){
+        ipcol.find({uid: uid}, {_id: 0, uid: 0}).toArray(function(err, data) {
+            if(err)
+                callback(err);
+            else
+                callback(null, data.sort(function(a, b){ return a.address > b.address; }).reverse().filter(function(e, i, a){ return i == 0 || a[i - 1].address != e.address; }).sort(function(a, b){ return a.time < b.time; }));
+        });
     });
 };
 

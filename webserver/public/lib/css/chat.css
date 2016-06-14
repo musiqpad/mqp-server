@@ -15,6 +15,7 @@
     border-top:1px solid #444A59;
     width: 100%;
     height: 40px;
+    background-color: rgb(28, 28, 31);
 }
 #msg-in, #pm-msg-in {
     background: #1C1C1F;
@@ -22,6 +23,10 @@
     width: calc(100% - 20px);
     word-break: break-word;
     word-wrap: break-word;
+}
+#msg-in.msg-staffchat {
+    background-color: rgba(0, 0, 0, 0);
+    width: calc(100% - 57px);
 }
 #app-right .tray {
     position:absolute;
@@ -355,12 +360,12 @@
     border-top: 1px solid #444A59;
 	padding: 5px 0;
 }
-.tab.btn-mentions {
+.tab.btn-mentions, .tab-menu.btn-mentions {
     flex: 0.5;
     -webkit-flex: 0.5;
     -ms-flex: 0.5;
 }
-.tab.btn-mentions .icon-info {
+.tab.btn-mentions .icon-info, .tab-menu.btn-mentions .icon-info {
     font-size: 16px;
     border-radius: 16px;
     padding-bottom: 4px;
@@ -383,7 +388,7 @@
   margin: 0;
 }
 
-@keyframes flash-background {  
+@keyframes flash-background {
     from { background: rgba(244, 107, 64, .25); }
     to { background: default; }
 }

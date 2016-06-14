@@ -19,7 +19,7 @@ var defaultDBObj = function(){
 
 var Room = function(socketServer, options){
 	var that = this;
-    
+
 	this.roomInfo = extend(true, {
 		name: "",  				             // Room name
 		slug: "",  				             // Room name shorthand (no spaces, alphanumeric with dashes)
@@ -30,7 +30,7 @@ var Room = function(socketServer, options){
 		bannedCanSeeChat: true,	             // Whether banned users can see the chat
 		roomOwnerUN: null,		             // Username of the room owner to use with lobby API
 	}, options);
-	
+
 	this.socketServer = socketServer;
 	this.queue = new DJQueue( this );
 	this.attendeeList = [];
@@ -48,7 +48,7 @@ var Room = function(socketServer, options){
 	DB.getRoom(this.roomInfo.slug, function(err, data){
 		// Just in case the slug doesn't exist yet
 		data = data || {};
-		
+
 		// If the slug doesn't exist, make owner will make the slug
 		if (err && !err.notFound){
 			console.log(err);
@@ -56,7 +56,7 @@ var Room = function(socketServer, options){
 		}
 		
 		extend(true, that.data, data);
-		
+
 		that.makeOwner();
 	});
 };
@@ -75,26 +75,29 @@ Room.prototype.getRoomMeta = function(){
 
 Room.prototype.makeOwner = function(){
 	if (!config.room.ownerEmail) return;
-	
+
 	var that = this;
-	
+
 	DB.getUser(this.roomInfo.ownerEmail, function(err, data){
-		if (err) { console.log('Cannot make room owner: ' + err); return; }
+		if (err == 'UserNotFound') { console.log('Owner does not exist yet.'); that.data.roles.owner = []; return; }
+		if (err) { console.log('Cannot make Room Owner: ' + err); return; }
 
 		if (typeof data.uid !== 'number') { console.log('Cannot make room owner: UserUIDError'); return; }
-		
+
 		log.info('Granting ' + data.un + ' (' + data.uid + ') Owner permissions');
-		
+
 		// Remove user from other roles to avoid interesting bugs
 		for (var i in that.data.roles){
 			var ind = that.data.roles[i].indexOf(data.uid);
 			if ( ind > -1 ) that.data.roles[i].splice(ind, 1);
 		}
-		
+
 		// Only one owner, set entire array to one UID and set owner username for API
 		that.data.roles.owner = [ data.uid ];
 		that.data.roomOwnerUN = data.un;
 		that.roomInfo.roomOwnerUN = data.un;
+		data.role = that.findRole(data.uid);
+		that.sendUserUpdate(data);
 		that.save();
 	});
 };
@@ -104,21 +107,22 @@ Room.prototype.addUser = function( sock ){
 	var userSend = null;
 	var numGuests = 0;
 	sock.room = this.roomInfo.slug;
-	
+
 	if (sock.user){
+		this.checkMakeOwner();
 		sock.user.data.role = this.findRole(sock.user.data.uid);
 		userSend = sock.user.getClientObj();
-	
+
 		for (var i = 0; i < this.attendeeList.length; i++){
 			var sockObj = this.attendeeList[i];
-			
+
 			if (!sockObj.user){
 				numGuests++;
 				continue;
 			}
-			
+
 			if (sockObj == sock) continue;
-			
+
 			if (sockObj.user && sock.user && sockObj.user.data.uid == sock.user.data.uid){
 				this.removeUser(sockObj);
 				sockObj.close(1000, JSON.stringify({
@@ -129,13 +133,13 @@ Room.prototype.addUser = function( sock ){
 	}else{
 		for (var i = 0; i < this.attendeeList.length; i++){
 			var sockObj = this.attendeeList[i];
-			
+
 			if (!sockObj.user){
 				numGuests++;
 			}
 		}
 	}
-	
+
 	//TODO: Find and add role key to user object from room db
 
 	this.sendAll({
@@ -148,23 +152,24 @@ Room.prototype.addUser = function( sock ){
 	function(sockObj){
 		return sockObj != sock;
 	});
-		
+
 };
 
 Room.prototype.replaceUser = function( sock_old, sock_new ){
 	if (!sock_old || !sock_old.user || !sock_new || !sock_new.user || sock_old.user.data.uid != sock_new.user.data.uid)	return false;
 	var ind = this.attendeeList.indexOf(sock_old);
-	
+	this.checkMakeOwner();
+
 	if (ind == -1 )	return false;
-	
+
 	sock_new.room = this.roomInfo.slug;
-	
+
 	sock_new.user.data.role = this.findRole(sock_old.user.data.uid);
 
 	this.attendeeList[ind] = sock_new;
-	
+
 	this.queue.replaceSocket(sock_old, sock_new);
-	
+
 	return true;
 };
 
@@ -174,18 +179,18 @@ Room.prototype.removeUser = function( sock ){
 
 	if (ind > -1) {
 		sock.room = null;
-		
+
 		var userSend = null;
-		
+
 		this.queue.remove( sock );
-	
+
 		if (sock.user) {
 			userSend = sock.user.getClientObj();
 			sock.user.data.role = null;
 		}
-		
+
 		this.attendeeList.splice( ind, 1 );
-		
+
 		this.sendAll({
 			type: 'userLeft',
 			data: {
@@ -237,7 +242,7 @@ Room.prototype.restrictUser = function(restrictObj, callback){
 			if (callback) callback('UserAlreadyRestricted');
 			return;
 		}
-		
+
 		user.role = that.findRole(user.uid);
 		
 		if (!Roles.checkCanGrant(restrictObj.source.role, [user.role])) {
@@ -250,7 +255,7 @@ Room.prototype.restrictUser = function(restrictObj, callback){
 		that.data.restrictions[restrictObj.uid] = that.data.restrictions[restrictObj.uid] || {};
 		that.data.restrictions[restrictObj.uid][restrictObj.type] = restrictObj;
 		that.save();
-		
+
 		that.sendAll({
 			type: 'userRestricted',
 			data: {
@@ -295,7 +300,7 @@ Room.prototype.unrestrictUser = function(uid, type, sock){
 	if (this.data.restrictions[uid][type]){
 		delete this.data.restrictions[uid][type];
 		this.save();
-		
+
 		this.sendAll({
 			type: 'userUnrestricted',
 			data: {
@@ -327,44 +332,44 @@ Room.prototype.isUserRestricted = function(uid, type){
 
 Room.prototype.setRole = function(user, role){
 	if (!user) return false;
-	
+
 	if (!role) role = 'default';
-	
+
 	role = role.toLowerCase();
-	
+
 	if (Roles.roleExists(role)){
 		if (typeof this.data.roles[role] === 'undefined') this.data.roles[role] = [];
-		
+
 		var userSock = this.findSocketByUid(user.uid);
 
 		// Remove user from other role
 		this.removeRole(user);
-		
+
 		if (role != 'default')
 			this.data.roles[role].push(user.uid);
-		
+
 		user.role = role;
 
 		
 		// Save the changes
 		this.save();
-		
+
 		if (userSock){
 			// We can't assign this user object to the socket because it lacks playlists
 			userSock.user.data.role = role;
 		}
-		
+
 		this.sendUserUpdate(user);
-		
+
 		return true;
 	}
-	
+
 	return false;
 };
 
 Room.prototype.removeRole = function(user){
 	if (!user) return;
-	
+
 	for (var i in this.data.roles){
 		var ind = this.data.roles[i].indexOf(user.uid);
 		if ( ind > -1){
@@ -375,14 +380,14 @@ Room.prototype.removeRole = function(user){
 
 Room.prototype.findRole = function(uid){
 	if (!uid) return 'default';
-	
+
 	for (var i in this.data.roles){
 		var ind = this.data.roles[i].indexOf(uid);
 		if ( ind > -1 && Roles.roleExists(i) ){
 			return i;
 		}
 	}
-	
+
 	return 'default';
 };
 
@@ -390,10 +395,10 @@ Room.prototype.findSocketByUid = function( uid ){
 
 	for (var i in this.attendeeList){
 		if (!this.attendeeList[i].user) continue;
-		
+
 		if (this.attendeeList[i].user.data.uid == uid) return this.attendeeList[i];
 	}
-	
+
 	return null;
 };
 
@@ -411,19 +416,19 @@ Room.prototype.getBannedUsers = function(callback){
 		if (this.isUserRestricted(i, 'BAN'))
 			rawBanned.push(i);
 	}
-	
+
 	if (!rawBanned.length){
 		callback('NoBans');
 		return;
 	}
-	
+
 	DB.getUserByUid(rawBanned, {getPlaylists: false}, function (err, users) {
 		for (var j in users){
 			var usr = users[j].getClientObj();
 			usr.role = that.findRole(usr.uid);
 			banned.push(usr);
 		}
-		
+
 		callback(err, banned);
 	});
 };
@@ -432,7 +437,7 @@ Room.prototype.getRoomStaff = function(callback){
 	var staff = [];
 	var rawStaff = [];
 	var that = this;
-	
+
 	for (var i in this.data.roles){
 		if (Roles.getStaffRoles().indexOf(i) > -1) {
 			rawStaff = rawStaff.concat(this.data.roles[i]);
@@ -443,14 +448,14 @@ Room.prototype.getRoomStaff = function(callback){
 		callback('NoStaff');
 		return;
 	}
-	
+
 	DB.getUserByUid(rawStaff, { getPlaylists: false }, function (err, users) {
 		for (var j in users){
 			var usr = users[j].getClientObj();
 			usr.role = that.findRole(usr.uid);
 			staff.push(usr);
 		}
-		
+
 		callback(err, staff);
 	});
 };
@@ -465,7 +470,7 @@ Room.prototype.sendBroadcastMessage = function(message) {
 
 Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 	var that = this;
-	
+
 	message = message.substring(0,255).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 	callback = callback || function(){};
@@ -529,17 +534,17 @@ Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 Room.prototype.makePrevChatObj = function(){
 	var uids = [];
 	var temp = extend(true, [], this.lastChat);
-	
+
 	for (var i = 0; i < temp.length; i++){
 		var ind = uids.indexOf(temp[i].user.uid);
 		if ( ind == -1 ){
 			uids.push( temp[i].user.uid );
 			continue;
 		}
-		
+
 		temp[i].user = { uid: temp[i].user.uid };
 	}
-	
+
 	return temp;
 };
 
@@ -550,7 +555,7 @@ Room.prototype.deleteChat = function(cid, uid){
 			break;
 		}
 	}
-	
+
 	this.sendAll({
 		type: 'deleteChat',
 		data: {
@@ -566,14 +571,14 @@ Room.prototype.sendAll = function (message, condition){
 		var obj = this.attendeeList[i];
 
 		if (obj.readyState != ws.OPEN || !condition(obj)) continue;
-		
+
 		obj.sendJSON(message);
 	}
 };
 
 Room.prototype.sendUserUpdate = function(user){
 	if (!user) return;
-	
+
 	this.sendAll({
 		type: 'userUpdate',
 		data: {
@@ -588,17 +593,17 @@ Room.prototype.getUsersObj = function(){
 		users: {}
 	};
 	var guestCounter = 0;
-	
+
 	for (var i = 0; i < this.attendeeList.length; i++){
 		var obj = this.attendeeList[i];
 		if (!obj.user){
 			temp.guests++;
 			continue;
 		}
-		
+
 		temp.users[ obj.user.uid ] = obj.user.getClientObj();
 	}
-	
+
 	return temp;
 };
 
@@ -612,7 +617,7 @@ Room.prototype.addToHistory = function(historyObj) {
 		while(this.data.history.length >= config.room.history.limit_save) {
 			this.data.history.shift();
 		}
-	
+
 	//Add to history and save
 	this.data.history.push(historyObj);
 	this.save();
@@ -662,16 +667,16 @@ Room.prototype.updateLobbyServer = function(song, dj, callback) {
 		postReq.end();
 	}
 	catch (e) {
-		
+
 	}
-	
+
 	this.createApiTimeout();
 };
 
 Room.prototype.createApiTimeout = function() {
 	var that = this;
 	clearTimeout(this.apiUpdateTimeout);
-	
+
 	this.apiUpdateTimeout = setTimeout(function() {
 		if (that.queue.currentsong && that.queue.currentdj) {
 			that.updateLobbyServer(that.queue.currentsong, that.queue.currentdj ? that.queue.currentdj.user.getClientObj() : null);
@@ -696,5 +701,11 @@ Room.prototype.makeDbObject = function(){
 Room.prototype.save = function(){
 	DB.setRoom(this.roomInfo.slug, this.makeDbObject());
 };
+
+Room.prototype.checkMakeOwner = function() {
+	if (this.data.roles.owner && this.data.roles.owner.length == 0) {
+		this.makeOwner();
+	}
+}
 
 module.exports = Room;

@@ -136,6 +136,7 @@ config.db = {
 	'room.restrict.mute_silent': Ability to shadow mute and unmute users
 	'room.ratelimit.bypass': Will bypass ratelimit
     'room.whois': Possibility to request additional information about a user
+    'room.whois.iphistory': Possibility to request all IP addresses that the user logged from since account creation
 	
 	NOTE: Changing the PROPERTY NAME will break role assignments.  Title can be changed
 	without breaking things, but property name must stay the same.
@@ -207,6 +208,7 @@ config.roles = {
 			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
             'room.whois',
+            'room.whois.iphistory',
 			'server.checkForUpdates',
 		],
 		canGrantRoles: [
@@ -301,6 +303,7 @@ config.roles = {
 			'room.restrict.mute_silent',
 			'room.ratelimit.bypass',
             'room.whois',
+            'room.whois.iphistory',
 		],
 		canGrantRoles: [
 			'supervisor',

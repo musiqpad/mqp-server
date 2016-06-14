@@ -174,7 +174,6 @@ a {
     background: #1C1C1F;
     border: 1px solid #444A59;
     bottom: 0;
-    height: 312px;
     width: 320px;
 }
 #recaptcha {
@@ -226,6 +225,7 @@ a {
     height: 100%;
     z-index: 1000;
     background: #0a0a0a;
+    transition: transform cubic-bezier(0.4, 0, 0.2, 1) 1600ms;
 }
 .load.active {
     transition-property: all;

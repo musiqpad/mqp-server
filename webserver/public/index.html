@@ -5,11 +5,9 @@
 		<meta name="viewport" content="width=device-width, initial-scale=0.8">
 		<meta name="theme-color" content="1C1C1F">
 		<title>musiqpad - join us!</title>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.0.0/assets/css/emojione.min.css"/>
 		<link rel="shortcut icon" type="image/png" href="/pads/lib/img/icon.png" id="dynamic-favicon"/>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.0.0/assets/css/emojione.min.css"/>
 		<link href="https://cdn.musiqpad.com/css/mdi.min.css" media="all" rel="stylesheet" type="text/css" />
-		<!--<script src="//code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>-->
-		<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
 		<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/tour.min.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/back.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/dash.css">
@@ -17,7 +15,6 @@
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/chat.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/icons.css">
 		<link rel="stylesheet" type="text/css" href="/pads/lib/css/menus.css">
-		<!--<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/emojify.css">-->
 		<link rel="stylesheet" type="text/css" href="https://cdn.musiqpad.com/css/minicolors.css">
 	</head>
 	<body data-ng-app="musiqpad" data-ng-controller="MainController">
@@ -62,7 +59,7 @@
 								<div class="video-blocked-list">
 									<div class="yt-blocked-sng" data-cid="{{z.cid}}" data-ng-repeat="z in searchResultsBlockedVideo" title="{{z.title}}">
 										<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
-										<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+										<div class="nail" ng-style="{'background-image':'url('+'{{z.thumbnail}}'+''}"></div>
 										<div class="text" data-ng-bind="z.title"></div>
 										<div class="dur">
 											{{makeTime(z.duration)}}
@@ -90,7 +87,7 @@
 					<div class="nav logo-btn-logout" title="Logout"><div class="mdi mdi-power-settings"></div></div>
 				</div>
 				<div ng-show="prop.t == 1" class="logo-tab lobby">
-					<iframe src="https://musiqpad.com/lounge"></iframe>
+					<iframe src="https://musiqpad.com/lounge/"></iframe>
 				</div>
 				<!--<div ng-show="prop.t == 2" class="logo-tab settings">
 					<div class="settings-wrapper">
@@ -198,6 +195,16 @@
 							<input type="checkbox" ng-model="roomSettings.chatTimestampFormat" ng-true-value="'12hr'" ng-false-value="'24hr'" id="set-input-style-timestamp" name="check" />
 						</label>
 						<span>Time format</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.separateUserCount" id="set-input-style-separateusers" name="check" />
+						</label>
+						<span>Separate user and guest count</span>
+						<br>
+						<label class="set-check">
+							<input type="checkbox" ng-model="roomSettings.altControls" id="set-input-altcontrols" name="check" />
+						</label>
+						<span>Alternative controls</span>
 						<br>
 						<br>
 						<label class="set-check">
@@ -462,7 +469,7 @@
 						<div class="lib-search-list" data-ng-show="!viewedPl">
 							<div class="yt-sng" data-ng-repeat="z in searchResults" data-cid="{{z.cid}}" title="{{z.title}}">
 								<!--<div class="nav"><div class="mdi mdi-plus-circle"></div></div>-->
-								<div class="nail" style="background-image: url('{{z.thumbnail}}')"></div>
+								<div class="nail" ng-style="{'background-image':'url('+'{{z.thumbnail}}'+''}"></div>
 								<div class="text" data-ng-bind="z.title"></div>
 								<div class="dur">{{makeTime(z.duration)}}</div>
 							</div>
@@ -486,7 +493,7 @@
 									</div>
 								</div>
 							</div>
-							<div class="nail" style="background-image: url('https://i.ytimg.com/vi/{{h.song.cid}}/default.jpg')"></div>
+							<div class="nail" ng-style="{'background-image':'url(https://i.ytimg.com/vi/'+'{{h.song.cid}}'+'/default.jpg)'}"></div>
 							<div class="texts">
 								<p class="text sng" title="History Song Title" data-ng-bind="h.song.title"></p>
 								<p class="text dj" title="History Song DJ" style="{{makeUsernameStyleByRole(h.user.role)}}" data-ng-bind="h.user.un"></p>
@@ -532,7 +539,10 @@
 						<i class="mdi mdi-forum"></i>
 					</div>
 					<div data-ng-click="changeTab('c', 2)" data-ng-class="{'active' : prop.c == 2}" class="tab btn-people" title="People">
-						<div class="mdi mdi-account-multiple"></div><span class="icon-info" data-ng-bind="numUsers"></span>
+						<div class="mdi mdi-account-multiple"></div>
+						<span class="icon-info" data-ng-bind="roomSettings.separateUserCount ? numLogged : numLogged + numGuests"></span>
+						<span class="icon-info" data-ng-bind="numGuests" data-ng-show="roomSettings.separateUserCount"></span>
+						<div class="mdi mdi-account-multiple-outline" data-ng-show="roomSettings.separateUserCount"></div>
 					</div>
 					<div data-ng-click="changeTab('c', 3)" data-ng-class="{'active' : prop.c == 3, next: findPosInWaitlist() == '1'}" class="tab btn-waitlist" title="DJ Queue" >
 						<div class="mdi mdi-playlist-play"></div><span class="icon-info" data-ng-bind="queueLength"></span>
@@ -563,7 +573,7 @@
 					<div class="bottom">
 						<div class="song-progress" style="width: {{songProgress * 100}}%; background-color: {{vote}};"></div>
 					</div>
-					<div class="controls">
+					<div class="controls" data-ng-show="!roomSettings.altControls">
 						<div class="ctrl btn-downvote" title="Dislike"><div class="mdi mdi-thumb-down"></div><span class="info dislikes" data-ng-bind="queue.votes.dislike || 0"></span></div>
 						<div class="ctrl btn-snooze" data-ng-class="{'active' : snooze}" title="Snooze"><div class="mdi mdi-block-helper"></div></div>
 						<!--<div class="ctrl btn-join" title="Join DJ Queue" ng-class="{hidden: findPosInWaitlist() != -1}"><div class="material-icons">play_circle_outline</div><span class="position">JOIN</span></div>
@@ -584,6 +594,25 @@
 						</div>
 						<div class="ctrl btn-upvote" title="Like"><div class="mdi mdi-thumb-up"></div><span class="info likes" data-ng-bind="queue.votes.like || 0"></span></div>
 					</div>
+					<div class="controls" data-ng-show="roomSettings.altControls">
+						<div class="ctrl btn-upvote" title="Like"><div class="mdi mdi-thumb-up"></div><span class="info likes" data-ng-bind="queue.votes.like || 0"></span></div>
+						<div class="ctrl btn-downvote" title="Dislike"><div class="mdi mdi-thumb-down"></div><span class="info dislikes" data-ng-bind="queue.votes.dislike || 0"></span></div>
+						<div class="ctrl-alt btn-join" data-ng-class="{'active' : (isLoggedIn && findPosInWaitlist() == 0)}" title="{{(isLoggedIn ? (findPosInWaitlist() == -1 ? 'Join' : 'Leave') + ' DJ Queue' : 'SIGN UP TO DJ!')}}">
+							<div class="mdi" data-ng-class="{'mdi-play-circle-outline': (isLoggedIn && findPosInWaitlist() == -1), 'mdi-stop':(isLoggedIn && findPosInWaitlist() != -1)}"></div>
+							<span class="info position" data-ng-bind="(isLoggedIn ? ((findPosInWaitlist() > -1 && findPosInWaitlist() != 0) ? '#' + findPosInWaitlist() : (findPosInWaitlist() == 0 ? 'DJ' : 'JOIN')) : 'SIGN UP TO DJ!')"></span>
+						</div>
+						<div class="ctrl btn-grab" title="Grab Song">
+							<div class="mdi mdi-plus-circle-outline"></div>
+							<span class="info grabs" data-ng-bind="queue.votes.grab || 0"></span>
+							<div class="popup playlists-grab">
+								<div class="pl-grab-create">Create a playlist</div>
+								<div class="pl-grab" data-ng-repeat="x in playlists | orderByPlaylist:'name'" data-pid="{{x.id}}">
+									{{x.name}}
+								</div>
+							</div>
+						</div>
+						<div class="ctrl-alt btn-snooze" data-ng-class="{'active' : snooze}" title="Snooze"><div class="mdi mdi-block-helper"></div></div>
+					</div>
 				</div>
 			</div>
 			<div id="app-right">
@@ -591,7 +620,13 @@
 					<div class="tray">
 						<div data-ng-click="prop.ci = 1; filterChat()" data-ng-class="{'active' : prop.ci == 1}" class="tab btn-mainchat" title="Chat"><div class="mdi mdi-message"></div></div>
 						<div data-ng-click="pmFuncs.changeToPMTab()" data-ng-class="{'active' : prop.ci == 2}" class="tab btn-pm" title="Private Messages" data-ng-show="isLoggedIn && checkPerm('chat.private')"><div class="mdi mdi-message-text"></div><span class="icon-info" data-ng-show="getPMUnread() > 0" data-ng-bind="getPMUnread()"></span></div>
-						<div data-ng-click="prop.ci = 3; filterChat('mentions')" data-ng-class="{'active' : prop.ci == 3}" class="tab btn-mentions" title="Mentions" data-ng-show="isLoggedIn"><span class="icon-info">@</span></div>
+						<div data-ng-click="prop.ci = 3; filterChat(filters[activeFilter].filterType)" data-ng-class="{'active' : prop.ci == 3}" class="tab-menu btn-mentions btn-{{filters[activeFilter].filterType}}" title="{{filters[activeFilter].name}}" data-ng-show="isLoggedIn">
+							<div class="{{filters[activeFilter].classes}}"><span class="icon-info" data-ng-show="filters[activeFilter].text && filters[activeFilter].text != ''" data-ng-bind="filters[activeFilter].text"></span></div>
+							<div class="chat-filter-menu">
+								<div data-ng-repeat="filter in filters" data-ng-show="filter.show()" data-ng-click="setFilter(filter.index)" data-ng-class="{'active' : prop.ci == 3 && activeFilter == filter.index}" class="tab btn-{{filter.filterType}}" title="{{filter.name}}" data-ng-show="isLoggedIn"><div class="{{filter.classes}}"><span class="icon-info" data-ng-show="filter.text && filter.text != ''" data-ng-bind="filter.text"></span></div></div>
+								<!--<div data-ng-click="prop.ci = 4; filterChat('staff')" data-ng-class="{'active' : prop.ci == 4, 'hidden' : prop.ci > 3}" class="tab btn-mentions" title="Mentions" data-ng-show="isLoggedIn"><span class="icon-info">@</span></div>-->
+							</div>
+						</div>
 					</div>
 					<div data-ng-show="(prop.ci == 1 || prop.ci == 3)" id="chat-container">
 						<div id="chat">
@@ -601,7 +636,8 @@
 							<div class="more-messages-indicator hidden">
 								More messages below.
 							</div>
-							<input id="msg-in" type="text" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
+							<div class="mdi mdi-account-key" style="color: rgba(154, 45, 45, 1); margin-left: 8px;" ng-show="filters[activeFilter].filterType == 'staff' && prop.ci == 3"></div>
+							<input id="msg-in" type="text" ng-class="{'msg-staffchat': filters[activeFilter].filterType == 'staff' && prop.ci == 3}" maxlength="255" placeholder="Type message and hit enter" autocomplete="off" data-ng-show="isLoggedIn"></input>
 						</div>
 					</div>
 					<div data-ng-show="(prop.ci == 2 && isLoggedIn)" id="pm-container">
@@ -617,7 +653,7 @@
 												<span class="pm-info ng-binding" data-ng-bind="(pmFuncs.getPMGroupInfo(pmgroup).lastPM.from == user.uid ? user.un : pmgroup.user.un)"></span>
 												<span class="umsg" ng-bind-html="emojiReplace(pmFuncs.getPMGroupInfo(pmgroup).lastPM.message) | to_trusted"></span>
 											</div>
-										</div>									
+										</div>
 								</div>
 						</div>
 						<div class="btn btn-inner-pm btn-new-pm">New Message</div>
@@ -696,13 +732,12 @@
 
 		<!--<script src="../lib/js/emojify.min.js"></script>-->
 		<!--<script>emojify.setConfig({img_dir:'https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic'});</script>-->
-		<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-		<script src="//code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-		<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/jquery/2.2.4/jquery.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/jquery.ui/1.11.4/jquery-ui.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/angularjs/1.5.5/angular.min.js"></script>
 		<script src="https://cdn.musiqpad.com/js/minicolors.js"></script>
 		<script src="https://cdn.musiqpad.com/js/angular-minicolors.js"></script>
 		<script src="https://cdn.musiqpad.com/js/jquery.caret.js"></script>
-		<script src="https://cdn.musiqpad.com/js/jquery.mobile.js"></script>
 		<script src='https://www.google.com/recaptcha/api.js'></script>
 		<script src="https://cdn.musiqpad.com/js/tour.min.js"></script>
 		<script src="https://cdn.musiqpad.com/js/sha256.js"></script>

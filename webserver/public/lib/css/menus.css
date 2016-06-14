@@ -4,13 +4,15 @@
 
 .logo-menu {
 	position: absolute;
-	z-index: 16;
-	top:41px;
-	left:0;
+	z-index: 15;
+	top: calc(-100vh + 82px);
 	width: calc(100% - 401px);
 	height: calc(100% - 41px);
-	display: none;
 	background: rgba(10,10,10,0.9);
+	transition: transform cubic-bezier(0.63, 0.03, 0.26, 0.96) 500ms;
+}
+.logo-menu-expanded {
+  transform: translateY(100%);
 }
 .logo-dash {
 	position: absolute;
@@ -51,7 +53,7 @@
 }
 .settings {
 	width: calc(100% - 51px);
-	height: 100%;
+  height: calc(100% - 10px);
 	margin: 10px;
 }
 .settings section {

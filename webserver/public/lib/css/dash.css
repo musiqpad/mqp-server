@@ -117,7 +117,20 @@
     border-bottom: 3px solid #A77DC2;
     background: rgba(167,125,194,0.2);
 }
-.tab {
+.chat-filter-menu {
+    display: none;
+    background: rgba(10, 10, 10, 0.9);
+    border-right: 1px solid #444A59;
+    border-bottom: 1px solid #444A59;
+    border-left: 1px solid #444A59;
+}
+.tab-menu .tab {
+    border-top: 1px solid #444A59;
+}
+.tab-menu:hover .chat-filter-menu {
+    display: block;
+}
+.tab, .tab-menu {
     font-size: 16px;
     line-height: 40px;
     vertical-align: middle;
@@ -127,15 +140,15 @@
     color: #94959A;
     flex: 1;
     -webkit-flex: 1; /* Safari 6.1+ */
-    -ms-flex: 1; /* IE 10 */ 
+    -ms-flex: 1; /* IE 10 */
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     -webkit-box-sizing: border-box;
 }
-.tab.short {
+.tab.short, .tab-menu.short {
     flex: .5;
     -webkit-flex: .5; /* Safari 6.1+ */
-    -ms-flex: .5; /* IE 10 */ 
+    -ms-flex: .5; /* IE 10 */
 }
 .settings-tray {
     position:absolute;
@@ -275,7 +288,7 @@
 .btn-video {
     display:none;
 }
-.tab {
+.tab, .tab-menu {
     width: calc(25% - 1px);
 }
 }
