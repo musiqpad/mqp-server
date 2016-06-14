@@ -350,25 +350,27 @@ var SocketServer = function(server){
 				}));
 				return;
 			}
-
-			// Return if unauthenticated socket or banned or restricted user tries to do anything other than signup, login, or join room.
-			var restricted = false;
-			if((!socket.user || (socket.room && that.room.isUserBanned(socket.user.uid)) || (restricted = (Date.now() - socket.user.created) <= config.room.signupcd) || socket.user.confirmation) && 
-				['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){
-
-				returnObj.data = {error: 'NotLoggedIn'};
-				if (socket.user) {
-					if(socket.user.confirmation){
-						returnObj.data = {error: 'EmailNotConfirmed'};
-					} else {
-						returnObj.data = {error: 'UserBanned'};
-					}
-				} else if (restricted) {
-					returnObj.data = {error: 'UserRestricted'};
+			
+			//Return if the user is not permitted to do anything besides what is listed below
+			if(['signup', 'login', 'joinRoom', 'getUsers', 'getHistory', 'getStaff', 'getBannedUsers', 'confirmation', 'recovery'].indexOf(data.type) == -1){
+				
+				if(!socket.user){
+					returnObj.data = { error: 'NotLoggedIn' };
+					
+				} else if(socket.room && that.room.isUserRestricted(socket.user.uid, 'BAN')){
+					returnObj.data = { error: 'UserBanned' };
+					
+				} else if((Date.now() - socket.user.created) <= config.room.signupcd){
+					returnObj.data = { error: 'UserOnCooldown' };
+					
+				} else if(socket.user.confirmation){
+					returnObj.data = { error: 'EmailNotConfirmed' };
+					
 				}
-
-				socket.sendJSON(returnObj);
-				return;
+				if(returnObj.data){
+					socket.sendJSON(returnObj);
+					return;
+				}
 			}
 
 			switch(data.type){
@@ -604,7 +606,6 @@ var SocketServer = function(server){
 					}
 
 					that.room.getBannedUsers(function(err, bans){
-						console.log(err);
 						returnObj.data = bans || [];
 						socket.sendJSON(returnObj);
 					});
@@ -1443,11 +1444,16 @@ var SocketServer = function(server){
 					}
 
 					that.room.sendMessage(socket, data.data.message, null, null, function(cid){
-						returnObj.data = {
-							success: true,
-							cid: cid,
-						};
-
+						
+						if(cid)
+							returnObj.data = {
+								success: true
+							};
+						else
+							returnObj.data = {
+								error: 'UserMuted'
+							};
+					
 						socket.sendJSON(returnObj);
 					});
 					break;
@@ -2677,18 +2683,30 @@ var SocketServer = function(server){
 
 					that.room.deleteChat(cid, socket.user.uid);
 					break;
-
-				case 'banUser':
+					
+				case 'restrictUser':
 					/*
 					 Expects {
-					 	type: 'banUser',
+					 	type: 'restrictUser',
 					 	data: {
 					 		uid: uid,
 					 		duration: ISO 8601 duration,
-					 		reason: ''
+					 		reason: '',
+					 		type: '',
 					 	}
 					 }
 					*/
+					
+					//Check for required parameters
+					if (!data.data.type || isNaN(data.data.uid)){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Check if source user is logged in
 					if (!socket.room) {
 						returnObj.data = {
 							error: 'NotInPad'
@@ -2696,13 +2714,17 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					if (!Roles.checkPermission(socket.user.role, 'room.banUser')){
+					
+					//Check source permissions
+					if (!Roles.checkPermission(socket.user.role, 'room.restrict.' + data.data.type.toLowerCase())){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
 						};
 						socket.sendJSON(returnObj);
 						break;
 					}
+
+					//Check UID validity
 					var uid = parseInt(data.data.uid);
 					if (isNaN(uid)){
 						returnObj.data = {
@@ -2711,54 +2733,98 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-
-					var banObj = {
+					
+					var restrictObj = {
 						uid: uid,
 						end: null,
 						start: Date.now(),
 						reason: data.data.reason || 'No reason specified',
-						bannedBy: {
+						type: data.data.type,
+						source: {
 							uid: socket.user.uid,
 							role: socket.user.role
 						}
 					};
 
 					try{
-						banObj.end = (Date.now() + (new Duration(data.data.duration.toString().toUpperCase())).inSeconds() * 1000);
+						restrictObj.end = (Date.now() + (new Duration(data.data.duration.toString().toUpperCase())).inSeconds() * 1000);
 					} catch(e) {
 						returnObj.data = {
-							error: 'InvalidBanType',
+							error: 'InvalidRestrictionEnd',
 							text: e.message,
 						};
 						socket.sendJSON(returnObj);
 						break;
 					}
-
-					that.room.banUser(banObj, function(err){
+					
+					that.room.restrictUser(restrictObj, function(err){
 						if (err) {
 							returnObj.data = {
 								error: err
 							};
-							socket.sendJSON(returnObj);
-						}
-						else {
-							// Success
+							
+						} else {
 							returnObj.data = {
-								success: true
+								success: true,
+								end: restrictObj.end,
 							};
-							socket.sendJSON(returnObj);
 						}
+						socket.sendJSON(returnObj);
 					});
 					break;
-				case 'unbanUser':
+				case 'getUserRestrictions':
 					/*
 					 Expects {
-					 	type: 'unbanUser',
+					 	type: 'getUserRestrictions',
 					 	data: {
-					 		uid: uid
+					 		uid: uid,
 					 	}
 					 }
 					*/
+					
+					//Check for required parameters
+					if (isNaN(data.data.uid)){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					var arr = Roles.getRole(socket.user.role).permissions
+						.filter(function(e){
+							return e.indexOf("room.restrict") != -1;
+						})
+						.map(function(e){
+							return e.slice(14).toUpperCase();
+						});
+					
+					returnObj.data = {
+						restrictions: that.room.getRestrictions(arr, data.data.uid)
+					}
+					socket.sendJSON(returnObj);
+					break;
+				case 'unrestrictUser':
+					/*
+					 Expects {
+					 	type: 'unrestrictUser',
+					 	data: {
+					 		uid: uid,
+					 		type: ''
+					 	}
+					 }
+					*/
+					
+					//Check for required parameters
+					if (!data.data.type || isNaN(data.data.uid)){
+						returnObj.data = {
+							error: 'PropsMissing'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+					
+					//Check if source user is logged in
 					if (!socket.room) {
 						returnObj.data = {
 							error: 'NotInPad'
@@ -2766,13 +2832,17 @@ var SocketServer = function(server){
 						socket.sendJSON(returnObj);
 						break;
 					}
-					if (!Roles.checkPermission(socket.user.role, 'room.banUser')){
+					
+					//Check source permissions
+					if (!Roles.checkPermission(socket.user.role, 'room.restrict.' + data.data.type.toLowerCase())){
 						returnObj.data = {
 							error: 'InsufficientPermissions'
 						};
 						socket.sendJSON(returnObj);
 						break;
 					}
+					
+					//Check UID validity
 					var uid = parseInt(data.data.uid);
 					if (isNaN(uid)){
 						returnObj.data = {
@@ -2783,7 +2853,7 @@ var SocketServer = function(server){
 					}
 
 					returnObj.data = {
-						success: that.room.unbanUser(uid, socket)
+						success: that.room.unrestrictUser(uid, data.data.type, socket)
 					};
 					socket.sendJSON(returnObj);
 

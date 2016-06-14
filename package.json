@@ -22,6 +22,7 @@
     "update": "node ./mqp.js update"
   },
   "dependencies": {
+    "basic-logger": "^0.4.4",
     "chalk": "^1.0.0",
     "clean-css": "^3.4.9",
     "compression": "^1.6.2",

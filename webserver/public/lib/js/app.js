@@ -1045,7 +1045,7 @@
 					if (typeof callback != 'function') return MP.session.bannedUsers;
 					MP.getBannedUsers(callback);
 				},
-				banUser: function(uid, duration, reason, callback){
+				restrictUser: function(uid, duration, type, reason, callback){
 					if (typeof reason == 'function'){
 						callback = reason;
 						reason = '';
@@ -1059,7 +1059,7 @@
 						return false;
 					}
 
-					if (!MP.checkPerm('room.banUser')){
+					if (!MP.checkPerm('room.restrict.' + type.toLowerCase())){
 						callback('InsufficientPermissions');
 						return false;
 					}
@@ -1074,10 +1074,10 @@
 						callback('userNotFound');
 						return false;
 					}
-					MP.banUser(uid, duration, reason, callback);
+					MP.restrictUser(uid, duration, type, reason, callback);
 					return true;
 				},
-				unbanUser: function(uid, callback){
+				unrestrictUser: function(uid, type, callback){
 					if (typeof callback != 'function') callback = function(){};
 
 					if (!MP.user){
@@ -1085,7 +1085,7 @@
 						return false;
 					}
 
-					if (!MP.checkPerm('room.banUser')){
+					if (!MP.checkPerm('room.restrict.' + type.toLowerCase())){
 						callback('InsufficientPermissions');
 						return false;
 					}
@@ -1094,7 +1094,28 @@
 						return false;
 					}
 
-					MP.unbanUser(uid, callback);
+					MP.unrestrictUser(uid, type, callback);
+					return true;
+				},
+				getUserRestrictions: function(uid, callback){
+					if (typeof callback != 'function') callback = function(){};
+					
+					if (!MP.user){
+						callback('notLoggedIn');
+						return false;
+					}
+					
+					//if (!MP.checkPerm('room.restrict')){
+					//	callback('InsufficientPermissions');
+					//	return false;
+					//}
+					
+					if (!uid){
+						callback('invalidUid');
+						return false;
+					}
+
+					MP.getUserRestrictions(uid, callback);
 					return true;
 				},
 				whois: function(data, callback){
@@ -1410,6 +1431,7 @@
 				makeCustomModal: function(opts){MP.makeCustomModal(opts);},
 				showBanModal: function(uid){MP.showBanModal(uid);},
 				showRoleModal: function(uid){MP.showRoleModal(uid);},
+				showRestrictionModal: function(uid){MP.showRestrictionModal(uid);},
 				objectToArray: function(obj){
 					if (typeof obj != 'object' || obj == null)	return [];
 					var arr = [];
@@ -1743,12 +1765,8 @@
 			var badge = $.extend(MP.copyObject(opts.user.badge || {}), { outline: ((MP.getRole(opts.user.role) || {}).style || {}).color || 'white'});
 
 			if(!opts.mdi && badge.top && badge.bottom && badge.outline){
-				if(opts.user.banned){
-					var icon = 'account-remove';
-					opts.style = { color: '#C8303E', };
-				} else {
-					var icon = (MP.getRole(opts.user.role) || {}).badge;
-				}
+				var icon = (MP.getRole(opts.user.role) || {}).badge;
+				
 				if(icon){
 					return '<div class="mdi mdi-' + icon + ' bdg-icon ' + (opts.class || '') + '" style="color: ' + badge.outline + '"></div>';
 				} else {
@@ -2315,7 +2333,7 @@
 			ban: {
 				description: 'Ban a user',
 				staff: true,
-                permission: 'room.banUser',
+                permission: 'room.restrict.ban',
 				exec: function(arr){
 					arr.shift();
 
@@ -2503,7 +2521,6 @@
 											Role: " + data.role + "<br>\
 											Badge: " + data.badge.top + " | " + data.badge.bottom + "<br>\
 											# of playlists: " + data.playlists + "<br>\
-											Banned: " + (data.banned ? "true" : "false") + "<br>\
 											Online: " + (data.online ? "true (" + data.ip + ")" : "false") + "<br\
 											Uptime: " + (t - (t %= 86400000)) / 86400000 + "d " +  (t - (t %= 3600000)) / 3600000 + "h " +
 											(t - (t %= 60000)) / 60000 + "m " +  (t - (t %= 1000)) / 1000 + "s<br>\
@@ -2584,13 +2601,29 @@
 					}
 				}
 			}
-
-			socket.sendJSON({
+			
+			var obj = {
+				type: (staff ? 'staff' : '') + 'chat',
+				data: {
+					message: message.substring(0,255),
+				}
+			}
+			obj.id = MP.addCallback(obj.type, function(err, data){
+				console.log(err, data);
+				if(err){
+					var msgs = {
+						'UserMuted': 'You are muted and cannot send chat messages'
+					}
+					MP.api.chat.log(msgs[err] || ('Error while sending chat message: ' + err));
+				}
+			});
+			socket.sendJSON(obj);
+			/*socket.sendJSON({
 				type: (staff ? 'staff' : '') + 'chat',
 				data: {
 					message: message.substring(0,255)
 				}
-			});
+			});*/
 		},
 		getPrivateConversation: function(uid, callback) {
 			if (!MP.checkPerm('chat.private')) return;
@@ -3778,124 +3811,234 @@
 
 			return true;
 		},
-		banUser: function(uid, duration, reason, callback){
-			if (!MP.checkPerm('room.banUser')) return;
+		restrictUser: function(uid, duration, type, reason, callback){
+			if(!type || !uid || !duration)
+				return false;
+			
+			if (!MP.checkPerm('room.restrict.' + type.toLowerCase()))
+				return false;
 
 			var obj = {
-				type: 'banUser',
+				type: 'restrictUser',
 				data: {
 					uid: uid,
 					duration: duration,
-					reason: reason.substr(0,50)
+					reason: reason.substr(0,50),
+					type: type,
 				}
 			};
 
 			obj.id = MP.addCallback(obj.type, function(err, data){
-				if (err){ if (callback) callback(err); console.log('Could not ban user: ' + err); return;}
+				if (err){ if (callback) callback(err); console.log('Could not restrict user: ' + err); return;}
 
 				if (callback) callback(err, data);
 			});
 
 			socket.sendJSON(obj);
 		},
-		unbanUser: function(uid, callback){
-			if (!MP.checkPerm('room.banUser')) return;
+		unrestrictUser: function(uid, type, callback){
+			if(!type || !uid)
+				return false;
+			
+			if (!MP.checkPerm('room.restrict.' + type.toLowerCase()))
+				return false;
 
 			var obj = {
-				type: 'unbanUser',
+				type: 'unrestrictUser',
+				data: {
+					uid: uid,
+					type: type,
+				}
+			};
+
+			obj.id = MP.addCallback(obj.type, function(err, data){
+				if (err){ if (callback) callback(err); console.log('Could not unrestrict user: ' + err); return;}
+
+				if (callback) callback(err, data);
+			});
+
+			socket.sendJSON(obj);
+		},
+		getUserRestrictions: function(uid, callback){
+			//if (!MP.checkPerm('room.restrict')) return;
+			
+			var obj = {
+				type: 'getUserRestrictions',
 				data: {
 					uid: uid
 				}
 			};
-
+			
 			obj.id = MP.addCallback(obj.type, function(err, data){
-				if (err){ if (callback) callback(err); console.log('Could not unban user: ' + err); return;}
+				if (err){ if (callback) callback(err); console.log('Could not get user restrictions: ' + err); return;}
 
 				if (callback) callback(err, data);
 			});
 
 			socket.sendJSON(obj);
 		},
-		showBanModal: function(uid){
-			if (!MP.checkPerm('room.banUser') || !MP.seenUsers[uid]) return;
-			MP.makeCustomModal({
-				content: '<div>\
-					<h3>You are about to BAN <span id="BanUserModalUser" style="'+ MP.makeUsernameStyle(MP.seenUsers[uid].role) +'" data-uid="' + uid + '">' + MP.seenUsers[uid].un + '</span> for </h3>\
-					<div id="BanUserModalDuration" class="modal-options">\
-						<div class="ban-opt" data-val="PT15M">Quarter</div>\
-						<div class="ban-opt" data-val="PT1H">Hour</div>\
-						<div class="ban-opt" data-val="P1DT">Day</div>\
-						<div class="ban-opt" data-val="P100YT">Perma</div>\
-						<input class="ban-opt" placeholder="(Days?)"></input>\
-					</div>\
-					<input class="ban-reason" type="text" placeholder="Reason for punishment..." id="BanUserModalReason" />\
-				</div>',
-				dismissable: false,
-				buttons: [
-					{
-						icon: 'mdi-close',
-						classes: 'modal-no',
-						handler: function(e){
-							$('.modal-bg').remove();
-						}
-					},
-					{
-						icon: 'mdi-check',
-						classes: 'modal-yes',
-						handler: function(e){
-							var duration = $('#BanUserModalDuration .ban-opt.active');
-							var uid = $('#BanUserModalUser').attr('data-uid');
+		showRestrictionModal: function(uid){
+			/*if (MP.checkPerm('room.restrict.ban') || !MP.seenUsers[uid]){
+				MP.makeAlertModal({
+							content: !MP.seenUsers[uid] ? 'The user is not online.' : 'You do not have permission to do that.',
+							dismissable: false
+						});
+				return;
+			}*/
+			
+			MP.api.room.getUserRestrictions(uid, function(err, data){
+				if (err){
+					console.log(err);
+					return;
+				}
 
-							if (!duration.length) return;
-
-							if (duration.is('input')){
-								duration = parseFloat(duration.val());
-								var remaining = null;
-								var durs = {
-									H: 60*60,
-									M: 60,
-									S: 1
-								};
-
-								if (isNaN(duration)) return;
-
-								var out = 'P' + Math.floor(duration) + 'DT';
-								remaining = (duration % 1) * 24 * 60 * 60;
-
-								for (var i in durs){
-									var result = Math.floor(remaining / durs[i]);
-
-									out += (result + i);
-
-									remaining = remaining - (durs[i]*result);
-								}
-
-								duration = out;
-							} else if (duration.is('div')){
-								duration = duration.attr('data-val');
+				var resdatadom = '';
+				var resnames = {
+					BAN: 'Ban',
+					MUTE: 'Mute',
+					SILENT_MUTE: 'Silent mute'
+				};
+				
+				for(var type in data.restrictions){
+					resdatadom += '\
+					<tr>\
+						<td style="width:31.6%">' + resnames[type] + '</td>\
+						<td style="width:31.6%">' + (new Date(data.restrictions[type].end)).toUTCString() + '</td>\
+						<td style="width:31.6%">' + data.restrictions[type].reason + '</td>\
+						<td class="mdi mdi-close res-remove" data-val="' + type + '"></td>\
+					</tr>\
+					';
+				}
+				
+				MP.makeCustomModal({
+					content: '<div>\
+							<h3>You are about to change the restrictions for <span id="BanUserModalUser" style="'+ MP.makeUsernameStyle(MP.seenUsers[uid].role) +'" data-uid="' + uid + '">' + MP.seenUsers[uid].un + '</span></h3>\
+							<div class="restriction-selector control-group">\
+								<hr>\
+								<h4>Active Restrictions</h4>\
+								<div id="CurrentRestrictionList">\
+									<table style="width:100%">\
+										<tr>\
+											<th style="width:31.6%">Type</th>\
+											<th style="width:31.6%">End</th>\
+											<th style="width:31.6%">Reason</th>\
+											<th style="width:5%"></th>\
+										</tr>\
+										' + resdatadom + '\
+									</table>\
+								</div>\
+								<hr>\
+	    						<h4>New Restriction</h4>\
+	    						<div id="UserRestrictionTypeSelector" style="" class="modal-options">\
+									<div class="restriction-opt opt-mute" data-val="MUTE">Mute</div>\
+									<div class="restriction-opt opt-smute" data-val="SILENT_MUTE">Silent Mute</div>\
+									<div class="restriction-opt opt-ban" data-val="BAN">Ban</div>\
+								</div>\
+	  						</div>\
+	  						<br/>\
+	  						<div id="UserRestrictionModalDuration" class="restriction-options modal-options" style="display: none;">\
+								<div class="restriction-opt" data-val="PT15M">Quarter</div>\
+								<div class="restriction-opt" data-val="PT1H">Hour</div>\
+								<div class="restriction-opt" data-val="P1DT">Day</div>\
+								<div class="restriction-opt" data-val="P100YT">Perma</div>\
+								<input class="restriction-opt" placeholder="(Days?)"></input>\
+							</div>\
+							<input class="restriction-options restype-reason" style="display: none;" type="text" placeholder="Reason for punishment..." id="RestrictUserModalReason" />\
+							<br>\
+							<div class="modal-ctrl restriction-options" style="width: 50%;display: none;" id="restriction-opt-add">Add</div>\
+						</div>',
+					dismissable: true,
+					buttons: [
+						{
+							icon: 'mdi-close',
+							classes: 'modal-no',
+							handler: function(e){
+								$('.modal-bg').remove();
 							}
-							MP.banUser(uid, duration, $('#BanUserModalReason').val(), function(err, data){
-								if (err){
-									alert(err);
+						},
+					],
+					callback: function(){
+						var $banOpts = $('#UserRestrictionModalDuration .restriction-opt');
+						var $restrictOpts = $('#UserRestrictionTypeSelector .restriction-opt');
+	
+						$banOpts.on('click', function(){
+							if ($(this).hasClass('active')) return;
+	
+							$banOpts.removeClass('active');
+	
+							$(this).addClass('active');
+						});
+						
+						$restrictOpts.on('click', function(){
+							if ($(this).hasClass('active')) return;
+	
+							$restrictOpts.removeClass('active');
+	
+							$(this).addClass('active');
+							
+							$('.restriction-options').show();
+							$banOpts.removeClass('active');
+							$('.restype-reason').val('');
+						});
+						
+						$('#CurrentRestrictionList .res-remove').on('click', function(){
+							var that = this;
+							
+							MP.api.room.unrestrictUser(uid, $(that).attr('data-val'), function(err, data){
+								if(err)
+									MP.makeAlertModal({ content: "Could not remove restriction: " + err });
+								else
+									$(that).parent().remove();
+							});
+						});
+						
+						$('#restriction-opt-add').on('click', function() {
+							var restype = $('#UserRestrictionTypeSelector .restriction-opt.active').attr('data-val');
+							var resdur = $('#UserRestrictionModalDuration .restriction-opt.active');
+							var resreason = $('#RestrictUserModalReason').val();
+							
+							if(resdur.attr('data-val')){
+								resdur = resdur.attr('data-val');
+							} else {
+								resdur = ~~resdur.val();
+								if(!resdur){
+									MP.makeAlertModal({ content: "Duration is not a number" });
 									return;
 								}
+								resdur = 'P' + resdur + 'DT';
+							}
 
-								$('.modal-bg').remove();
+							MP.api.room.restrictUser(uid, resdur, restype, resreason, function(err, data){
+								if(err){
+									MP.makeAlertModal({ content: 'Error while adding a restriction: ' + err });
+								} else {
+									$banOpts.removeClass('active');
+									$restrictOpts.removeClass('active');
+									$('.restype-reason').val('');
+									$('.restriction-options').hide();
+									$('#CurrentRestrictionList table').append('\
+									<tr>\
+										<td style="width:31.6%">' + resnames[restype] + '</td>\
+										<td style="width:31.6%">' + (new Date(data.end)).toUTCString() + '</td>\
+										<td style="width:31.6%">' + (resreason || 'No reason specified') + '</td>\
+										<td class="mdi mdi-close res-remove" data-val="' + restype + '"></td>\
+									</tr>');
+									
+									$('#CurrentRestrictionList .res-remove:last').on('click', function(){
+										var that = this;
+										
+										MP.api.room.unrestrictUser(uid, $(that).attr('data-val'), function(err, data){
+											if(err)
+												MP.makeAlertModal({ content: "Could not remove restriction: " + err });
+											else
+												$(that).parent().remove();
+										});
+									});
+								}
 							});
-						}
+						});
 					}
-				],
-				callback: function(){
-					var $banOpts = $('#BanUserModalDuration .ban-opt');
-
-					$banOpts.on('click', function(){
-						if ($(this).hasClass('active')) return;
-
-						$banOpts.removeClass('active');
-
-						$(this).addClass('active');
-					});
-				}
+				});
 			});
 		},
 		showRoleModal: function(uid){
@@ -4112,10 +4255,9 @@
 					'</div>\
 					<div class="modal-controls" data-uid="'+ user.uid +'">' +
 						(!MP.user || MP.user.uid == user.uid ? '':
-							( (MP.checkPerm('room.banUser') && !MP.canGrantRole(MP.user.role, user)) ? ( !user.banned ? '<div class="modal-ctrl ban" title="Ban user"><i class="mdi mdi-account-remove"></i></div>' :
-								'<div class="modal-ctrl unban" title="Unban user"><i class="mdi mdi-account-check"></i></div>') : '' )+
-							'<div class="modal-ctrl mute" title="Mute user"><i class="mdi mdi-account-alert"></i></div>' +
-							( MP.canGrantRole(user.role) ? '<div class="modal-ctrl set-role" title="Set role"><i class="mdi mdi-account-key"></i></div>' : '')
+							(((MP.checkPerm('room.restrict.mute') || MP.checkPerm('room.restrict.ban') || MP.checkPerm('room.restrict.silent_mute')) && !MP.canGrantRole(MP.user.role, user)) ? '<div class="modal-ctrl restrict" title="Manage restrictions"><i class="mdi mdi-account-remove"></i></div>' : '' )
+							+ '<div class="modal-ctrl mute" title="Block user"><i class="mdi mdi-account-alert"></i></div>'
+							+ ( MP.canGrantRole(user.role) ? '<div class="modal-ctrl set-role" title="Set role"><i class="mdi mdi-account-key"></i></div>' : '')
 						) +
 						(MP.checkPerm('djqueue.move') ? (MP.isOnWaitlist(user.uid) ? '<div class="modal-ctrl remove-dj" title="Remove DJ"><i class="mdi mdi-account-minus"></i></div>' :
 							'<div class="modal-ctrl add-dj" title="Add DJ"><i class="mdi mdi-account-plus"></i></div>') : '') +
@@ -4146,6 +4288,7 @@
 			/* opts available:
 				content: content in the modal,
 				callback: function(result (bool)),
+				hoverOver: Allows the modal to hover over existing modals without removing the background modal
 			*/
 
 			var opts = inOpts || {};
@@ -4156,7 +4299,12 @@
 					{
 						icon: 'mdi-close',
 						handler: function(){
-							$('.modal-bg').remove();
+							if (opts.hoverOver) { 
+								$(this).find('.modeal-bg').remove();
+							}
+							else {
+								$('.modal-bg').remove();
+							}
 							if (opts.callback) opts.callback(false);
 						},
 						classes: 'modal-no'
@@ -4164,7 +4312,12 @@
 					{
 						icon: 'mdi-check',
 						handler: function(){
-							$('.modal-bg').remove();
+							if (opts.hoverOver) { 
+								$(this).find('.modeal-bg').remove();
+							}
+							else {
+								$('.modal-bg').remove();
+							}
 							if (opts.callback) opts.callback(true);
 						},
 						classes: 'modal-yes'
@@ -4360,9 +4513,26 @@
 			setRole: MP.api.room.setRole,
 			getStaff: MP.api.room.getStaff,
 			getBannedUsers: MP.api.room.getBannedUsers,
-			banUser: MP.api.room.banUser,
-			unbanUser: MP.api.room.unbanUser,
-			whois: MP.api.room.whois,
+			restrictUser: MP.api.room.restrictUser,
+			unrestrictUser: MP.api.room.unrestrictUser,
+			getUserRestrictions: MP.api.room.getUserRestrictions,
+			whois: function(data, callback){
+                if(!MP.checkPerm('room.whois')) return false;
+
+				var obj = {
+					type: 'whois',
+					data: (Number.isNaN(data) || !Number.isInteger(Number(data))) ?
+						{ un: (((data || "")[0] == '@' ? data.slice(1) : data) || MP.user.un) }
+							:
+						{ uid: data }
+				}
+
+				obj.id = MP.addCallback(obj.type, function(err, data){ callback(err, err ? null : data.user); });
+
+				socket.sendJSON(obj);
+
+				return true;
+			},
 			iphistory: MP.api.room.iphistory
 		},
 		chat: {
@@ -4419,6 +4589,7 @@
 			makeCustomModal: MP.api.util.makeCustomModal,
 			showBanModal: MP.api.util.showBanModal,
 			showRoleModal: MP.api.util.showRoleModal,
+			showRestrictionModal: MP.api.util.showRestrictionModal,
 			objectToArray: MP.api.util.objectToArray,
 			timeConvert: MP.api.util.timeConvert,
 			youtube_parser: MP.api.util.youtube_parser,
@@ -4768,7 +4939,7 @@
 				}
 			},
 			USER: {
-				BAN: {
+				RESTRICT: {
 					MIN5:   { text: '5 minutes',  duration: 'PT5M'   },
 					MIN30:  { text: '30 minutes', duration: 'PT30M'  },
 					HOUR:   { text: '1 hour',     duration: 'PT1H'   },
@@ -4820,8 +4991,8 @@
 				USER_LEFT_QUEUE: 'userLeftQueue',
 				USER_UPDATE: 'userUpdate',
 				VOTE_UPDATE: 'voteUpdate',
-				USER_BANNED: 'userBanned',
-				USER_UNBANNED: 'userUnbanned',
+				USER_RESTRICTED: 'userRestricted',
+				USER_UNRESTRICTED: 'userUnrestricted',
 				USER_ROLE_CHANGE: 'moderateSetRole',
 				SYSTEM_MESSAGE: 'systemMessage',
 				BROADCAST_MESSAGE: 'broadcastMessage',
@@ -4937,7 +5108,7 @@
 						break;
 					case 'banned':
 						MP.makeAlertModal({
-							content: 'You have been banned until ' + (new Date(data.data.banEnd)).toString() + '<br>Reason: ' + data.data.reason + '<br><b>You now have the permissions of a Guest</b>',
+							content: 'You have been banned until ' + (new Date(data.data.end)).toString() + '<br>Reason: ' + data.data.reason + '<br><b>You now have the permissions of a Guest</b>',
 							dismissable: false,
 							onDismiss: function(){
 								document.location.reload();
@@ -4971,7 +5142,7 @@
 			if ( e.data == 'h') return;
 
 			//DEBUG
-			//console.log(e.data);
+			console.log(e.data);
 			//END DEBUG
 
 			var data = null;
@@ -5003,21 +5174,19 @@
 						MP.seenUsers[ user.uid ] = user;
 						if (MP.userList.users.indexOf(user.uid) == -1){
 							MP.userList.users.push(user.uid);
-							if (!user.banned) {
-
-								//Chat
-								if(settings.roomSettings.notifications.chat.join)
-									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'system');
-
-								//Desktop
-								if(settings.roomSettings.notifications.desktop.join){
-									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " joined");
-								}
-
-								//Sound
-								if(settings.roomSettings.notifications.sound.join){
-									mentionSound.play();
-								}
+							
+							//Chat
+							if(settings.roomSettings.notifications.chat.join)
+								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>joined', 'system');
+							
+							//Desktop
+							if(settings.roomSettings.notifications.desktop.join){
+								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " joined");
+							}
+							
+							//Sound
+							if(settings.roomSettings.notifications.sound.join){
+								mentionSound.play();
 							}
 						}
 						console.log( 'User joined: ' + data.data.user.uid + ': ' + data.data.user.un);
@@ -5035,21 +5204,18 @@
 						var ind = MP.userList.users.indexOf(user.uid);
 						if (ind != -1){
 							MP.userList.users.splice( ind, 1);
-							if (!user.banned) {
-
-								//Chat
-								if(settings.roomSettings.notifications.chat.leave)
-									MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'system');
-
-								//Desktop
-								if(settings.roomSettings.notifications.desktop.leave){
-									MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " left");
-								}
-
-								//Sound
-								if(settings.roomSettings.notifications.sound.leave){
-									mentionSound.play();
-								}
+							//Chat
+							if(settings.roomSettings.notifications.chat.leave)
+								MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>left', 'system');
+							
+							//Desktop
+							if(settings.roomSettings.notifications.desktop.leave){
+								MP.api.util.desktopnotif.showNotification("musiqpad", "@" + user.un + " left");
+							}
+							
+							//Sound
+							if(settings.roomSettings.notifications.sound.leave){
+								mentionSound.play();
 							}
 						}
 
@@ -5267,49 +5433,49 @@
 						$('#cm-' + data.data.cid).slideUp( function(){ this.remove(); } );
 					}
 					break;
-				case API.DATA.EVENTS.USER_BANNED:
-					var user = MP.findUser(data.data.uid) || {un: 'Unknown'};
-					var banner = MP.findUser(data.data.bannedBy);
+				case API.DATA.EVENTS.USER_RESTRICTED:
+					var target = MP.findUser(data.data.uid);
+					var source = MP.findUser(data.data.source);
 
-					user.banned = true;
 
-					if (MP.session.bannedUsers.length && MP.findUser(data.data.uid)){
-						MP.session.bannedUsers.push(user);
-					} else  {
-						// Reset object since it's either already empty, or now missing a user
-						MP.session.bannedUsers = [];
+					if(data.data.type == "BAN" && target){
+						MP.session.bannedUsers.push(target);
 					}
-
+					
 					MP.applyModels();
+					
+					var verbs = {
+						BAN: 'banned',
+						MUTE: 'muted',
+						SILENT_MUTE: 'muted (silent)'
+					};
 
-					if (banner){
-						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was banned by ' +
-							'<span data-uid="'+ banner.uid +'" class="uname" style="' + MP.makeUsernameStyle(banner.role) + '">' + banner.un + '</span>', 'system');
-					}
+					if (source && target)
+						MP.addMessage('<span data-uid="'+ target.uid +'" class="uname" style="' + MP.makeUsernameStyle(target.role) + '">' + target.un + '</span>was ' + (verbs[data.data.type] || ('restricted (' + data.data.type + ')')) + ' by <span data-uid="'+ source.uid +'" class="uname" style="' + MP.makeUsernameStyle(source.role) + '">' + source.un + '</span>', 'system');
 					break;
-				case API.DATA.EVENTS.USER_UNBANNED:
-					var user = MP.findUser(data.data.uid) || {un: 'Unknown'};
-					var banner = MP.findUser(data.data.unbannedBy);
+				case API.DATA.EVENTS.USER_UNRESTRICTED:
+					var target = MP.findUser(data.data.uid);
+					var source = MP.findUser(data.data.source);
 
-					user.banned = false;
-
-					if (MP.session.bannedUsers.length && MP.findUser(data.data.uid)){
-						for (var i = 0; i < MP.session.bannedUsers.length; i++){
-							if (MP.session.bannedUsers[i].uid == user.uid){
+					if(data.data.type == "BAN" && target){
+						for(var i in MP.session.bannedUsers){
+							if(MP.session.bannedUsers[i].uid == data.data.uid){
 								MP.session.bannedUsers.splice(i, 1);
 								break;
 							}
 						}
-					} else {
-						// Reset object since it's either already empty, or now missing a user
-						MP.session.bannedUsers = [];
 					}
-
+					
 					MP.applyModels();
+					
+					var verbs = {
+						BAN: 'unbanned',
+						MUTE: 'unmuted',
+						SILENT_MUTE: 'unmuted (silent)',
+					};
 
-					if (banner){
-						MP.addMessage('<span data-uid="'+ user.uid +'" class="uname" style="' + MP.makeUsernameStyle(user.role) + '">' + user.un + '</span>was unbanned by <span data-uid="'+ banner.uid +'" class="uname" style="' + MP.makeUsernameStyle(banner.role) + '">' + banner.un + '</span>', 'system');
-					}
+					if (source && target)
+						MP.addMessage('<span data-uid="'+ target.uid +'" class="uname" style="' + MP.makeUsernameStyle(target.role) + '">' + target.un + '</span>was ' + (verbs[data.data.type] || ('unrestricted (' + data.data.type + ')')) + ' by <span data-uid="'+ source.uid +'" class="uname" style="' + MP.makeUsernameStyle(source.role) + '">' + source.un + '</span>', 'system');
 					break;
 				case API.DATA.EVENTS.USER_ROLE_CHANGE:
 					var setter = MP.findUser(data.data.mid);
@@ -6029,14 +6195,11 @@
 			var $this = $(this);
 			MP.showUserMenu(user,$this);
 		})
-		.on('click','.user-menu .ban',function(){
-			MP.showBanModal(parseInt($(this).parent().attr('data-uid')));
-		})
-		.on('click','.user-menu .unban',function(){
-			MP.unbanUser(parseInt($(this).parent().attr('data-uid')));
+		.on('click','.user-menu .restrict',function(){
+			MP.showRestrictionModal(parseInt($(this).parent().attr('data-uid')));
 		})
 		.on('click','.user-menu .mute',function(){
-			MP.showMuteModal(parseInt($(this).parent().attr('data-uid')));
+			MP.showBlockModal(parseInt($(this).parent().attr('data-uid')));
 		})
 		.on('click','.user-menu .set-role',function(){
 			MP.showRoleModal(parseInt($(this).parent().attr('data-uid')));

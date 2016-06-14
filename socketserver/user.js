@@ -9,7 +9,6 @@ var defaultObj = function(){
 		un: "",
 		pw: "", // MD5(SHA256(pass) + SALT)
 		role: null,
-		banned: null,
 		activepl: null,
 		created: 0,
 		playlists: [],
@@ -45,7 +44,6 @@ var fieldsNotSent = [
 // These fields (key from defaultObj) are not saved in the db
 var fieldsNotSaved = [
 	'role',
-	'banned',
 	'playlistCache',
 	'temp_uptime',
 ];
@@ -255,16 +253,6 @@ Object.defineProperty( User.prototype, 'role', {
 	},
 	set: function(val) {
 		this.data.role = val;
-		// We do NOT want to save this value
-	}
-});
-
-Object.defineProperty( User.prototype, 'banned', {
-	get: function() {
-		return this.data.banned;
-	},
-	set: function(val) {
-		this.data.banned = val;
 		// We do NOT want to save this value
 	}
 });

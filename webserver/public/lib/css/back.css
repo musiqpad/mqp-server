@@ -436,7 +436,10 @@ a {
 .modal-preview {
     margin-top: 12px;
 }
-.ban-opt {
+#UserRestrictionTypeSelector .restriction-opt {
+    width: 33.33%;
+}
+.ban-opt, .restriction-opt {
     width: 20%;
     float: left;
     text-align: center;
@@ -449,7 +452,7 @@ a {
     background: transparent;
     color: #ddd;
 }
-input.ban-opt {
+input.ban-opt, input.restriction-opt {
     outline: none;
     border: none;
     background: transparent;
@@ -458,10 +461,10 @@ input.ban-opt {
     height: 38px;
     cursor: text;
 }
-.ban-opt:hover {
+.ban-opt:hover, .restriction-opt:hover {
     background: rgba(146, 90, 255, .25);
 }
-.ban-opt.active {
+.ban-opt.active, .restriction-opt.active {
     background: rgba(244, 107, 64, .25);
 }
 input.ban-reason, input.edit-playlist-name, input.new-playlist {
@@ -498,6 +501,29 @@ input.ban-reason, input.edit-playlist-name, input.new-playlist {
     margin: 8px 5px 5px;
 }
 .user-menu .modal-ctrl:hover {
+    background: rgba(146, 90, 255, .25);
+}
+.res-remove {
+    border: 1px solid #444A59;
+    background: #282C35;
+    cursor: pointer;
+}
+.res-remove:hover {
+    background: rgba(146, 90, 255, .25);
+}
+input.restriction-options.restype-reason {
+    width: calc(100% - 20px);
+    margin: 15px 0;
+    border: 1px solid #444A59;
+    background: #282C35;
+}
+.modal-ctrl.restriction-options {
+    width: 50%;
+    margin: 0 25%;
+    border: 1px solid #444A59;
+    background: #282C35;
+}
+.modal-ctrl.restriction-options:hover {
     background: rgba(146, 90, 255, .25);
 }
 .popover {

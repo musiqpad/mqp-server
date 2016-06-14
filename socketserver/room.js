@@ -10,8 +10,8 @@ var DB = require('./database');
 
 var defaultDBObj = function(){
 	return {
-		roles: {},
-		bans: {}, // Uses UID as key, object containing reason and end time as value.
+		roles: {}, 
+		restrictions: {}, // Uses UID as key, object containing reason and end time as value.
 		history: []
 	};
 };
@@ -38,14 +38,23 @@ var Room = function(socketServer, options){
 	this.apiUpdateTimeout = null;
 	this.lastChat = [];
 	this.createApiTimeout();
+	
+	this.restrictiontypes = [
+		'BAN',
+		'MUTE',
+		'SILENT_MUTE'
+		];
 
 	DB.getRoom(this.roomInfo.slug, function(err, data){
 		// Just in case the slug doesn't exist yet
 		data = data || {};
 
 		// If the slug doesn't exist, make owner will make the slug
-		if (err && !err.notFound){console.log(err); return;}
-
+		if (err && !err.notFound){
+			console.log(err);
+			return;
+		}
+		
 		extend(true, that.data, data);
 
 		that.makeOwner();
@@ -88,7 +97,6 @@ Room.prototype.makeOwner = function(){
 		that.data.roomOwnerUN = data.un;
 		that.roomInfo.roomOwnerUN = data.un;
 		data.role = that.findRole(data.uid);
-		data.banned = that.isUserBanned(data.uid);
 		that.sendUserUpdate(data);
 		that.save();
 	});
@@ -103,7 +111,6 @@ Room.prototype.addUser = function( sock ){
 	if (sock.user){
 		this.checkMakeOwner();
 		sock.user.data.role = this.findRole(sock.user.data.uid);
-		sock.user.data.banned = this.isUserBanned(sock.user.data.uid);
 		userSend = sock.user.getClientObj();
 
 		for (var i = 0; i < this.attendeeList.length; i++){
@@ -158,7 +165,6 @@ Room.prototype.replaceUser = function( sock_old, sock_new ){
 	sock_new.room = this.roomInfo.slug;
 
 	sock_new.user.data.role = this.findRole(sock_old.user.data.uid);
-	sock_new.user.data.banned = this.isUserBanned(sock_old.user.data.uid);
 
 	this.attendeeList[ind] = sock_new;
 
@@ -181,7 +187,6 @@ Room.prototype.removeUser = function( sock ){
 		if (sock.user) {
 			userSend = sock.user.getClientObj();
 			sock.user.data.role = null;
-			sock.user.data.banned = null;
 		}
 
 		this.attendeeList.splice( ind, 1 );
@@ -202,15 +207,16 @@ Room.prototype.removeUser = function( sock ){
 	}
 };
 
-Room.prototype.banUser = function(banObj, callback){
+Room.prototype.restrictUser = function(restrictObj, callback){
 	/*
 	 Expects {
-	 	banObj: {
+	 	restrictObj: {
 	 		uid: uid,
 	 		end: int,
 	 		start: int,
 	 		reason: '',
-	 		bannedBy: {
+	 		type: '',
+	 		source: {
 				uid: uid,
 				role: role
 			}
@@ -218,47 +224,59 @@ Room.prototype.banUser = function(banObj, callback){
 	 }
 	*/
 	var that = this;
-	DB.getUserByUid(banObj.uid, function(err, user) {
+	
+	if(this.restrictiontypes.indexOf(restrictObj.type) == -1)
+	{
+		if (callback) callback("InvalidRestrictionType");
+		return;
+	}
+	
+	DB.getUserByUid(restrictObj.uid, function(err, user) {
 		if (err) {
-			if (callback) callback(err);
+			if (callback)
+				callback(err);
 			return;
 		}
-
-		if (that.isUserBanned(banObj.uid)){
-			if (callback) callback('UserAlreadyBanned');
+		
+		if (that.isUserRestricted(restrictObj.uid, restrictObj.type)){
+			if (callback) callback('UserAlreadyRestricted');
 			return;
 		}
 
 		user.role = that.findRole(user.uid);
-
-		if (!Roles.checkCanGrant(banObj.bannedBy.role, [user.role])) {
-			if (callback) callback('UserCannotBeBanned');
+		
+		if (!Roles.checkCanGrant(restrictObj.source.role, [user.role])) {
+			if (callback) callback('UserCannotBeRestricted');
 			return;
 		}
-
-		banObj.reason = banObj.reason.substr(0, 50);
-
-		that.data.bans[banObj.uid] = banObj;
+		
+		restrictObj.reason = restrictObj.reason.substr(0, 50);
+		
+		that.data.restrictions[restrictObj.uid] = that.data.restrictions[restrictObj.uid] || {};
+		that.data.restrictions[restrictObj.uid][restrictObj.type] = restrictObj;
 		that.save();
 
 		that.sendAll({
-			type: 'userBanned',
+			type: 'userRestricted',
 			data: {
-				uid: banObj.uid,
-				bannedBy: banObj.bannedBy.uid
+				uid: restrictObj.uid,
+				type: restrictObj.type,
+				source: restrictObj.source.uid,
 			}
+		}, function(obj){
+			return restrictObj.type != 'SILENT_MUTE' || (obj.user && Roles.checkPermission(obj.user.role, 'room.restrict.silent_mute'));
 		});
 
-		var userSock = that.findSocketByUid(banObj.uid);
+		var userSock = that.findSocketByUid(restrictObj.uid);
 
 		//Check if user is online
-		if (userSock){
+		if (userSock && restrictObj.type == 'BAN'){
 			that.removeUser(userSock);
 			userSock.close(1000, JSON.stringify({
 				type: 'banned',
 				data: {
-					banEnd: banObj.end,
-					reason: banObj.reason
+					end: restrictObj.end,
+					reason: restrictObj.reason
 				}
 			}));
 		}
@@ -267,35 +285,42 @@ Room.prototype.banUser = function(banObj, callback){
 	});
 };
 
-Room.prototype.unbanUser = function(uid, sock){
-	if (this.data.bans[uid]){
-		delete this.data.bans[uid];
+Room.prototype.getRestrictions = function(arr, uid){
+	var out = {};
+	
+	for(var key in this.data.restrictions[uid]){
+		if(key.indexOf(arr))
+			out[key] = this.data.restrictions[uid][key];
+	}
+	
+	return out;
+};
+
+Room.prototype.unrestrictUser = function(uid, type, sock){
+	if (this.data.restrictions[uid][type]){
+		delete this.data.restrictions[uid][type];
 		this.save();
 
 		this.sendAll({
-			type: 'userUnbanned',
+			type: 'userUnrestricted',
 			data: {
 				uid: uid,
-				unbannedBy: (sock ? sock.user.data.uid : null)
+				type: type,
+				source: (sock ? sock.user.data.uid : null) 
 			}
+		}, function(obj){
+			return type != 'SILENT_MUTE' || (obj.user && Roles.checkPermission(obj.user.role, 'room.restrict.silent_mute'));
 		});
-
-		var userSock = this.findSocketByUid(uid);
-
-		//Check if user is online
-		if (userSock){
-			userSock.sendJSON({type:'unbanned'});
-		}
 
 		return true;
 	}
 	return false;
 };
 
-Room.prototype.isUserBanned = function(uid){
-	if (this.data.bans[uid]) {
-		if (this.data.bans[uid].end < new Date(Date.now())) {
-			this.unbanUser(uid);
+Room.prototype.isUserRestricted = function(uid, type){
+	if ((this.data.restrictions[uid] || {})[type]) {
+		if (this.data.restrictions[uid][type].end < new Date(Date.now())) {
+			this.unrestrictUser(uid, type);
 			return false;
 		}
 		else {
@@ -316,7 +341,6 @@ Room.prototype.setRole = function(user, role){
 		if (typeof this.data.roles[role] === 'undefined') this.data.roles[role] = [];
 
 		var userSock = this.findSocketByUid(user.uid);
-		var isBanned = this.isUserBanned(user.uid);
 
 		// Remove user from other role
 		this.removeRole(user);
@@ -325,16 +349,14 @@ Room.prototype.setRole = function(user, role){
 			this.data.roles[role].push(user.uid);
 
 		user.role = role;
-		user.banned = isBanned;
 
-
+		
 		// Save the changes
 		this.save();
 
 		if (userSock){
 			// We can't assign this user object to the socket because it lacks playlists
 			userSock.user.data.role = role;
-			userSock.user.data.banned = isBanned;
 		}
 
 		this.sendUserUpdate(user);
@@ -388,11 +410,11 @@ Room.prototype.getBannedUsers = function(callback){
 	var banned = [];
 	var rawBanned = [];
 	var that = this;
-
-	for (var i in this.data.bans){
+	
+	for (var i in this.data.restrictions){
 		// This will unban appropriately when the list is viewed.
-		if (this.isUserBanned(this.data.bans[i].uid))
-			rawBanned.push(this.data.bans[i].uid);
+		if (this.isUserRestricted(i, 'BAN'))
+			rawBanned.push(i);
 	}
 
 	if (!rawBanned.length){
@@ -404,7 +426,6 @@ Room.prototype.getBannedUsers = function(callback){
 		for (var j in users){
 			var usr = users[j].getClientObj();
 			usr.role = that.findRole(usr.uid);
-			usr.banned = that.isUserBanned(usr.uid);
 			banned.push(usr);
 		}
 
@@ -432,7 +453,6 @@ Room.prototype.getRoomStaff = function(callback){
 		for (var j in users){
 			var usr = users[j].getClientObj();
 			usr.role = that.findRole(usr.uid);
-			usr.banned = that.isUserBanned(usr.uid);
 			staff.push(usr);
 		}
 
@@ -454,43 +474,61 @@ Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 	message = message.substring(0,255).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 	callback = callback || function(){};
-
-	DB.logChat(sock.user.uid, message, specdata, function(err, cid){
-		that.sendAll({
-			type: 'chat',
-			data: {
-				uid: sock.user.uid, // Will always be present. Unauthd can't send messages
-				message: message,
-				time: Date.now(),
-				cid: cid,
-				special: specdata
-			}
-		}, function(obj){
-			// Guests can't see chat with config variable set
-			if (!that.roomInfo.guestCanSeeChat && !obj.user) return false;
-
-			// Banned users can't see chat with config variable set
-			if (!that.roomInfo.bannedCanSeeChat && obj.user && that.isUserBanned(obj.user.uid)) return false;
-
-			// Check for extensive function
-			if("function" === typeof ext) if(!ext(obj)) return false;
-
-			return true;
-		});
-
-		//Save last X messages to show newly connected users
-		if(!specdata){
-			that.lastChat.push({
-				user: sock.user.getClientObj(),
-				message: message,
-				time: Date.now(),
-				cid: cid,
+	
+	if(this.isUserRestricted(sock.user.uid, 'SILENT_MUTE')){
+		DB.logChat(sock.user.uid, message, 'res:mute_s', function(err, cid){
+			sock.sendJSON({
+				type: 'chat',
+				data: {
+					uid: sock.user.uid,
+					message: message,
+					time: Date.now(),
+					cid: cid,
+					special: specdata,
+				}
 			});
-			if(that.lastChat.length > config.room.lastmsglimit) that.lastChat.shift();
-		}
-
-		callback(cid);
-	});
+			callback(cid);
+		});
+	} else if(this.isUserRestricted(sock.user.uid, 'MUTE')){
+		callback(null);
+	} else {
+		DB.logChat(sock.user.uid, message, specdata, function(err, cid){
+			that.sendAll({
+				type: 'chat',
+				data: {
+					uid: sock.user.uid, // Will always be present. Unauthd can't send messages
+					message: message,
+					time: Date.now(),
+					cid: cid,
+					special: specdata
+				}
+			}, function(obj){
+				// Guests can't see chat with config variable set
+				if (!that.roomInfo.guestCanSeeChat && !obj.user) return false;
+				
+				// Banned users can't see chat with config variable set
+				if (!that.roomInfo.bannedCanSeeChat && obj.user && that.isUserRestricted(obj.user.uid, 'BAN')) return false;
+				
+				// Check for extensive function
+				if("function" === typeof ext) if(!ext(obj)) return false;
+				
+				return true;
+			});
+			
+			//Save last X messages to show newly connected users
+			if(!specdata){
+				that.lastChat.push({
+					user: sock.user.getClientObj(),
+					message: message,
+					time: Date.now(),
+					cid: cid,
+				});
+				if(that.lastChat.length > config.room.lastmsglimit) that.lastChat.shift();
+			}
+		
+			callback(cid);
+		});
+	}
 };
 
 Room.prototype.makePrevChatObj = function(){
