@@ -667,7 +667,7 @@ var SocketServer = function(server){
 						roles: Roles.makeClientObj(),
 						roleOrder: Roles.getOrder(),
 						staffRoles: Roles.getStaffRoles(),
-						lastChat: that.room.makePrevChatObj(),
+						lastChat: ((!socket.user && !config.room.guestCanSeeChat) || (that.room.isUserRestricted((socket.user || {}).uid, 'BAN') && !config.room.bannedCanSeeChat)) ? [] : that.room.makePrevChatObj(),
 						time: new Date().getTime(),
 						captchakey: config.apis.reCaptcha.key,
 						allowemojis: config.room.allowemojis,
