@@ -308,8 +308,6 @@ var SocketServer = function(server){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 
 			log.debug(ip + " sent: " + data);
-			if(socket.user)
-				socket.user.blocked.push("a");
 
 			try {
 				data = JSON.parse(data);
