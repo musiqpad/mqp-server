@@ -139,6 +139,12 @@ var MysqlDB = function(){
                         `time` DATETIME\
                     );\
                     \
+          CREATE TABLE IF NOT EXISTS `user_blocks` (\
+            `from` INTEGER UNSINGED NOT NULL,\
+            `to` INTEGER UNSIGNED NOT NULL,\
+            PRIMARY KEY(`from`, `to`)\
+            );\
+          \
 					UPDATE `users` SET `lastdj` = false;\
 				", null, function(err, res){
 					if(err) throw new Error(err);

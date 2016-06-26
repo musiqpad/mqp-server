@@ -308,6 +308,8 @@ var SocketServer = function(server){
 			var ip = (socket.upgradeReq.headers['x-forwarded-for'] || socket.upgradeReq.connection.remoteAddress);
 
 			log.debug(ip + " sent: " + data);
+			if(socket.user)
+				socket.user.blocked.push("a");
 
 			try {
 				data = JSON.parse(data);
@@ -3077,6 +3079,74 @@ var SocketServer = function(server){
 						DB.getUserByName(data.data.un, { getPlaylists: false }, cb);
 					else
 						DB.getUserByUid(~~(data.data.uid), { getPlaylists: false }, cb);
+					break;
+				case 'blockUser':
+					/*
+					 Expects {
+						 type: 'blockUser',
+						 data: {
+							 uid: uid,
+						 }
+					 }
+				 	*/
+
+					//Check for props
+					if (!(data.data.uid = +data.data.uid)){
+						returnObj.data = {
+							error: 'WrongProps'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+
+					//Add blocked user
+					socket.user.addBlockedUser(data.data.uid, function(err) {
+						if(err) {
+							returnObj.data = {
+								error: err
+							}
+						} else {
+							returnObj.data = {
+								success: true
+							}
+						}
+
+						socket.sendJSON(returnObj);
+					});
+					break;
+				case 'unblockUser':
+					/*
+					 Expects {
+						 type: 'unblockUser',
+						 data: {
+							 uid: uid,
+						 }
+					 }
+				 	*/
+
+					//Check for props
+					if (!(data.data.uid = +data.data.uid)){
+						returnObj.data = {
+							error: 'WrongProps'
+						};
+						socket.sendJSON(returnObj);
+						break;
+					}
+
+					//Remove blocked user
+					socket.user.removeBlockedUser(data.data.uid, function(err) {
+						if(err) {
+							returnObj.data = {
+								error: err
+							}
+						} else {
+							returnObj.data = {
+								success: true
+							}
+						}
+
+						socket.sendJSON(returnObj);
+					});
 					break;
 			}
 		});
