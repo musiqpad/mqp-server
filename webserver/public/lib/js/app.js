@@ -2602,6 +2602,38 @@
 					});
 				},
 			},
+
+			block: {
+				description: 'Blocks or unblocks a user, blocking will remove any further messages from him',
+				exec: function(arr){
+					arr.shift();
+
+					if (arr.length != 1 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@' || (arr[1] = +arr[1])){
+						return API.chat.log('<br>Try /block @username', 'Block a user');
+					}
+
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
+
+					if (!user)
+						return API.chat.log('User ' + arr[0] + ' is not in the pad', 'Block or unblock a user');
+
+					if(MP.api.user.isBlocked(user.uid)) {
+						MP.api.user.unblock(user.uid, function(err) {
+							if(err)
+								return API.chat.log('Could not unblock user ' + arr[0]);
+
+							API.chat.log('User ' + arr[0] + ' successfully unblocked');
+						})
+					} else {
+						MP.api.user.block(user.uid, function(err) {
+							if(err)
+								return API.chat.log('Could not block user ' + arr[0]);
+
+							API.chat.log('User ' + arr[0] + ' successfully blocked');
+						})
+					}
+				},
+			},
 		},
 		sendMessage: function(message, staff){
 			staff = staff || false;
