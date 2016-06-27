@@ -3089,7 +3089,7 @@ var SocketServer = function(server){
 				 	*/
 
 					//Check for props
-					if (!(data.data.uid = +data.data.uid)){
+					if (!(data.data.uid = +data.data.uid) || uid < 0){
 						returnObj.data = {
 							error: 'WrongProps'
 						};
