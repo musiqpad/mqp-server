@@ -139,6 +139,12 @@ var MysqlDB = function(){
                         `time` DATETIME\
                     );\
                     \
+          CREATE TABLE IF NOT EXISTS `user_blocks` (\
+            `from` INTEGER UNSIGNED NOT NULL,\
+            `to` INTEGER UNSIGNED NOT NULL,\
+            PRIMARY KEY(`from`, `to`)\
+            );\
+          \
 					UPDATE `users` SET `lastdj` = false;\
 				", null, function(err, res){
 					if(err) throw new Error(err);
@@ -476,12 +482,16 @@ MysqlDB.prototype.getUserNoLogin = function(uid, callback){
             un: res.un,
             uid: res.id,
             salt: res.salt,
+            blocked: [],
         }
 
-        that.execute("SELECT `id` FROM `playlists` WHERE `owner` = ?;", [ uid ], function(err, res) {
+        that.execute("SELECT `id` FROM `playlists` WHERE ?; SELECT `to` FROM `user_blocks` WHERE ?", [ { owner: uid, }, { from: uid,} ], function(err, res) {
 
-            for(var ind in res)
-                data.playlists.push(res[ind].id);
+            for(var ind in res[0])
+                data.playlists.push(res[0][ind].id);
+
+            for(var ind in res[1])
+                data.blocked.push(res[1][ind].to);
 
             callback(null, data);
         });
@@ -634,10 +644,14 @@ MysqlDB.prototype.loginUser = function(obj, callback) {
 };
 
 MysqlDB.prototype.putUser = function(email, data, callback) {
+    var that = this;
+
     callback = callback || function(){};
 
     var newData = {};
     util._extend(newData, data);
+
+    var blocked = newData.blocked.map(function(x) { return [data.uid, x]; });
 
     newData.badge_bottom = newData.badge.bottom;
     newData.badge_top = newData.badge.top;
@@ -649,9 +663,17 @@ MysqlDB.prototype.putUser = function(email, data, callback) {
     delete newData.uid;
     delete newData.badge;
     delete newData.playlists;
-    this.execute("INSERT INTO `users`(??) VALUES(?) ON DUPLICATE KEY UPDATE ?;", [ Object.keys(newData), _.values(newData), newData ], function(err, res) {
-        if(err) callback(err);
-        else callback(null, res.insertId);
+    delete newData.blocked;
+
+    this.execute("INSERT INTO `users`(??) VALUES(?) ON DUPLICATE KEY UPDATE ?; DELETE FROM `user_blocks` WHERE ?;", [ Object.keys(newData), _.values(newData), newData, { from: data.uid } ], function(err, res) {
+        if(err)
+            callback(err);
+        else
+            callback(null, res.insertId);
+
+        if(blocked.length) {
+            that.execute("INSERT INTO `user_blocks`(??) VALUES ?;", [ [ 'from', 'to' ], blocked ]);
+        }
     });
 };
 

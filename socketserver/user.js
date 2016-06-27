@@ -23,6 +23,7 @@ var defaultObj = function(){
 		temp_uptime: Date.now(),
 		lastdj: false,
 		salt: '',
+		blocked: [],
 	};
 };
 
@@ -39,6 +40,7 @@ var fieldsNotSent = [
 	'created',
 	'lastdj',
 	'salt',
+	'blocked',
 ];
 
 // These fields (key from defaultObj) are not saved in the db
@@ -179,6 +181,35 @@ User.prototype.removePlaylist = function (pid, callback) {
 	
 	callback('PlaylistNotFound');
 };
+
+User.prototype.addBlockedUser = function(uid, callback) {
+	var index = this.data.blocked.indexOf(uid);
+
+	if(index != -1) {
+		callback('UserAlreadyBlocked');
+
+	} else if(this.data.uid == uid) {
+		callback('CannotBlockSelf');
+
+	} else {
+		this.data.blocked.push(uid);
+		this.updateUser();
+		callback(null, true);
+	}
+};
+
+User.prototype.removeBlockedUser = function(uid, callback) {
+	var index = this.data.blocked.indexOf(uid);
+
+	if(index == -1) {
+		callback('UserNotBlocked');
+
+	} else {
+		this.data.blocked.splice(index, 1);
+		this.updateUser();
+		callback(null, true);
+	}
+}
 
 /**
  * getClientObj() Returns public information to be sent to clients
@@ -357,6 +388,16 @@ Object.defineProperty( User.prototype, 'salt', {
 	},
 	set: function(val) {
 		this.data.salt = val;
+		this.updateUser();
+	}
+});
+
+Object.defineProperty( User.prototype, 'blocked', {
+	get: function() {
+		return this.data.blocked;
+	},
+	set: function(val) {
+		this.data.blocked = val;
 		this.updateUser();
 	}
 });

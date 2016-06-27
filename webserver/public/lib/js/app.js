@@ -261,6 +261,7 @@
 			historylimit: 50,
 			lastdj: false,
 			description: '',
+			blockedusers: [],
 		},
 		isOnWaitlist: function(uid){
 			if (MP.session.queue.currentdj && MP.session.queue.currentdj.uid == uid) return true;
@@ -1580,6 +1581,54 @@
 				$('#creds-back').hide();
 				$('.dash, #app-left, #app-right').show();
 			},
+			user: {
+				isBlocked: function(uid) {
+					return MP.session.blockedusers.indexOf(uid) != -1;
+				},
+				block: function(uid, callback) {
+					if(!(uid = +uid))
+						return false
+
+					var obj = {
+						type: 'blockUser',
+						data: {
+							uid: uid
+						}
+					}
+
+					obj.id = MP.addCallback(obj.type, function(err, data) {
+						MP.session.blockedusers.push(uid);
+
+						if(callback)
+							callback(err, data);
+					});
+
+					socket.sendJSON(obj);
+				},
+				unblock: function(uid, callback) {
+					if(!(uid = +uid))
+						return false
+
+					var obj = {
+						type: 'unblockUser',
+						data: {
+							uid: uid
+						}
+					}
+
+					obj.id = MP.addCallback(obj.type, function(err, data) {
+						var index = MP.session.blockedusers.indexOf(uid);
+
+						if(index != -1)
+							MP.session.blockedusers.splice(index, 1);
+
+						if(callback)
+							callback(err, data);
+					});
+
+					socket.sendJSON(obj);
+				}
+			},
 		},
 		mediaPreview : {
 			isOpened: function(){return MP.session.mediaPreview.player != null;},
@@ -1922,6 +1971,9 @@
 					return;
 				}
 				var user = data.user || MP.findUser(data.uid);
+
+				if(MP.api.user.isBlocked(user.uid))
+					return;
 
 				var queue_pos = MP.findPosInWaitlist();
 				var mention = '';
@@ -2548,6 +2600,38 @@
 							MP.api.chat.log(data.un + "<br>" + data.history.map(function(e){ return e.address + ": " + e.time.slice(0, 19).replace('T', ' '); }).join('<br>'));
 						}
 					});
+				},
+			},
+
+			block: {
+				description: 'Blocks or unblocks a user, blocking will remove any further messages from him',
+				exec: function(arr){
+					arr.shift();
+
+					if (arr.length != 1 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@' || (arr[1] = +arr[1])){
+						return API.chat.log('<br>Try /block @username', 'Block a user');
+					}
+
+					var user = MP.api.room.getUserByName(arr[0].substring(1));
+
+					if (!user)
+						return API.chat.log('User ' + arr[0] + ' is not in the pad', 'Block or unblock a user');
+
+					if(MP.api.user.isBlocked(user.uid)) {
+						MP.api.user.unblock(user.uid, function(err) {
+							if(err)
+								return API.chat.log('Could not unblock user ' + arr[0]);
+
+							API.chat.log('User ' + arr[0] + ' successfully unblocked');
+						})
+					} else {
+						MP.api.user.block(user.uid, function(err) {
+							if(err)
+								return API.chat.log('Could not block user ' + arr[0]);
+
+							API.chat.log('User ' + arr[0] + ' successfully blocked');
+						})
+					}
 				},
 			},
 		},
@@ -4256,7 +4340,7 @@
 					<div class="modal-controls" data-uid="'+ user.uid +'">' +
 						(!MP.user || MP.user.uid == user.uid ? '':
 							(((MP.checkPerm('room.restrict.mute') || MP.checkPerm('room.restrict.ban') || MP.checkPerm('room.restrict.silent_mute')) && !MP.canGrantRole(MP.user.role, user)) ? '<div class="modal-ctrl restrict" title="Manage restrictions"><i class="mdi mdi-account-remove"></i></div>' : '' )
-							+ '<div class="modal-ctrl mute" title="Block user"><i class="mdi mdi-account-alert"></i></div>'
+							+ '<div class="modal-ctrl mute" title="' + (MP.api.user.isBlocked(user.uid) ? 'Unblock user' : 'Block user') + '"><i class="mdi mdi-comment-' + (MP.api.user.isBlocked(user.uid) ? 'check' : 'remove') + '-outline"></i></div>'
 							+ ( MP.canGrantRole(user.role) ? '<div class="modal-ctrl set-role" title="Set role"><i class="mdi mdi-account-key"></i></div>' : '')
 						) +
 						(MP.checkPerm('djqueue.move') ? (MP.isOnWaitlist(user.uid) ? '<div class="modal-ctrl remove-dj" title="Remove DJ"><i class="mdi mdi-account-minus"></i></div>' :
@@ -4924,6 +5008,11 @@
 				}).init().start();
 			}
 		},
+		user: {
+			isBlocked: MP.api.user.isBlocked,
+			block: MP.api.user.block,
+			unblock: MP.api.user.unblock,
+		},
 		DATA: {
 			PLAYER: {
 				QUALITY: {
@@ -5032,6 +5121,7 @@
 		if (MP.userList.guests > 0 ) MP.userList.guests--;
 
 		MP.seenUsers[MP.user.uid] = MP.user;
+		MP.session.blockedusers = data.user.blocked;
 
 //		if (MP.user && data.users[i].uid == MP.user.uid) MP.user.role = data.users[i].role;
 
@@ -6199,7 +6289,34 @@
 			MP.showRestrictionModal(parseInt($(this).parent().attr('data-uid')));
 		})
 		.on('click','.user-menu .mute',function(){
-			MP.showBlockModal(parseInt($(this).parent().attr('data-uid')));
+			var uid = parseInt($(this).parent().attr('data-uid'));
+
+			if(MP.api.user.isBlocked(uid)) {
+				MP.api.user.unblock(uid, function(err) {
+					if(err) {
+						var messages = {
+							'UserNotBlocked': 'This user is not blocked.',
+						}
+
+						MP.makeAlertModal({
+							content: messages[err] || err,
+						});
+					}
+				});
+			} else {
+				MP.api.user.block(uid, function(err) {
+					if(err) {
+						var messages = {
+							'UserAlreadyBlocked': 'This user is already blocked',
+							'CannotBlockSelf': 'You cannot block yourself!',
+						}
+
+						MP.makeAlertModal({
+							content: messages[err] || err,
+						});
+					}
+				});
+			}
 		})
 		.on('click','.user-menu .set-role',function(){
 			MP.showRoleModal(parseInt($(this).parent().attr('data-uid')));
@@ -7565,6 +7682,10 @@
 					return MP.getRole(role);
 
 				return {};
+			};
+
+			$scope.isBlocked = function(uid) {
+				return MP.api.user.isBlocked(uid);
 			};
 
 			$scope.$watch('roomSettings', function (newVal, oldVal) { $scope.saveUISettings() }, true);
