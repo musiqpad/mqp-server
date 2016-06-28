@@ -19,7 +19,8 @@
     "stop": "node ./mqp.js stop",
     "restart": "node ./mqp.js restart",
     "log": "node ./mqp.js log",
-    "update": "node ./mqp.js update"
+    "update": "node ./mqp.js update",
+    "test": "ava --verbose"
   },
   "dependencies": {
     "basic-logger": "^0.4.4",
@@ -46,5 +47,17 @@
     "ws": "^1.0.1",
     "xoauth2": "^1.1.0",
     "yesno": "0.0.1"
+  },
+  "devDependencies": {
+    "ava": "^0.15.2",
+    "eslint": "^2.13.1",
+    "eslint-config-airbnb": "^9.0.1",
+    "eslint-plugin-import": "^1.9.2",
+    "eslint-plugin-jsx-a11y": "^1.5.3",
+    "eslint-plugin-react": "^5.2.2"
+  },
+  "ava": {
+    "concurrency": 5,
+    "failFast": true
   }
 }
