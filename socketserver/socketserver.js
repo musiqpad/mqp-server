@@ -7,6 +7,7 @@ var request = require('request');
 var util = require('util');
 var extend = require('extend');
 var updateNotifier = require('update-notifier');
+var _ = require('underscore');
 
 //Files
 var config = require('../serverconfig');
@@ -1363,11 +1364,12 @@ var SocketServer = function(server){
 						if (socket.user.activepl){
 							socket.user.playlistCache[ socket.user.activepl ].getExpanded(function(err, plData){
 								tempUser.playlists[ socket.user.activepl ].content = YT.removeThumbs(plData);
-								returnObj.data.user = tempUser,
+								tempUser.playlists[ socket.user.activepl ].num = plData.length;
+								returnObj.data.user = tempUser;
 								socket.sendJSON(returnObj);
 							});
 						}else{
-							returnObj.data.user = tempUser,
+							returnObj.data.user = tempUser;
 							socket.sendJSON(returnObj);
 						}
 
@@ -1940,7 +1942,7 @@ var SocketServer = function(server){
 							};
 							socket.sendJSON(returnObj);
 						});
-					} else if (data.type == 'playlistAddSong'){
+					} else if(data.type == 'playlistAddSong') {
 						if (!data.data.cid){
 							returnObj.data = {
 								error: 'PropsMissing'
@@ -1948,10 +1950,16 @@ var SocketServer = function(server){
 							socket.sendJSON(returnObj);
 							break;
 						}
-						if (!data.data.pos){
+
+						//Set correct playlist position
+						if (data.data.pos != 'top' && data.data.pos != 'bottom'){
 							data.data.pos = 'top';
 						}
+
+						//If an array of CIDs was supplied
 						if (Array.isArray(data.data.cid)) {
+
+							//Check if any CIDs were supplied
 							if (data.data.cid.length == 0) {
 								returnObj.data = {
 									error: 'emptyCidArray'
@@ -1960,48 +1968,34 @@ var SocketServer = function(server){
 
 								break;
 							}
-							var songsAdded = 0;
-							var videos = [];
-
+							//Remove all duplicate CIds
 							data.data.cid.filter(function(e, i, a){
-								return a.indexOf(e) != i;
+								return a.indexOf(e) != i && pl.content.indexOf(e) == -1;
 							});
 
+							//Add data to the playlist
 							for (var i = 0, len = data.data.cid.length; i < len; i++) {
 								var cid = data.data.cid[i];
 
-								if (pl.data.content.indexOf(cid) == -1) {
-									pl.addSong(cid, data.data.pos, function(err, vidData, pos){
-										if (!err){
-											for (var i in vidData) {
-												videos.push(vidData[i]);
-											}
-										} else {
-											console.log(err);
-										}
-
-										if (++songsAdded == data.data.cid.length) {
-											returnObj.data = {
-												video: videos,
-												pos: data.data.pos,
-												plid: pl.id
-											};
-
-											socket.sendJSON(returnObj);
-										}
-									});
-								} else {
-									if (++songsAdded == data.data.cid.length) {
-										returnObj.data = {
-											video: videos,
-											pos: data.data.pos,
-											plid: pl.id
-										};
-
-										socket.sendJSON(returnObj);
-									}
-								}
+								if(data.data.pos == 'top')
+									pl.data.content.unshift(cid);
+								else
+									pl.data.content.push(cid);
 							}
+
+							//Save playlist
+							pl.save();
+
+							//Fetch all song data and return them to client
+							YT.getVideo(data.data.cid, function(err, videos) {
+								returnObj.data = {
+									video: _.values(videos),
+									pos: data.data.pos,
+									plid: pl.id
+								};
+
+								socket.sendJSON(returnObj);
+							});
 						} else {
 							if (pl.data.content.indexOf(data.data.cid) > -1){
 								returnObj.data = {

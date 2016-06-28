@@ -109,7 +109,7 @@ Playlist.prototype.getExpanded = function(callback){
 			if(videoData[id])
 				out.push(videoData[id]);
 			else {
-				that.data.content.splice(i, 1);
+				that.data.content.splice(i--, 1);
 				changed = true;
 			}
 		}

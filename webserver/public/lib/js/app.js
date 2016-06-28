@@ -6683,7 +6683,7 @@
 
 															MP.api.playlist.addSong(pldata.id, songs, function(err, data){
 																MP.makeAlertModal({
-																	content: 'Playlist imported successfully.',
+                                  content: 'Playlist ' + plName + ' imported successfully (imported ' + data.video.length + ').',
 																});
 															});
 														} else {
