@@ -43,7 +43,7 @@
 				songDuration: MP.getDuration(),
 				songProgress: (MP.getDuration() ? MP.getTimeElapsed() / MP.getDuration() : 0),
 				queueList: (function(){ var out = []; var j = 1; for (var i in MP.session.queue.users){out.push({num: j++, user: MP.findUser(MP.session.queue.users[i]) });} return out; })(),
-				queueLength: (MP.session.queue.users ? MP.session.queue.users.length + (MP.session.queue.currentdj ? 1 : 0) : 0),
+				queueLength: (MP.session.queue.users ? MP.session.queue.users.length : 0),
 				snooze: MP.session.snooze,
 				vote: $('.btn-upvote.active').length ? '#A7CA00' : ($('.btn-downvote.active').length ? '#C8303E' : '#925AFF'),
 				allowemojis: MP.session.allowemojis,
