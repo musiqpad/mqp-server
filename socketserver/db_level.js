@@ -1,101 +1,123 @@
-//Modules
-var levelup = require('levelup');
-var path = require('path');
-var util = require('util');
-var fs = require('fs');
-var log = new(require('basic-logger'))({
+// eslint-disable-next-line
+'use strict';
+// Modules
+const levelup = require('levelup');
+const path = require('path');
+const util = require('util');
+const fs = require('fs');
+const log = new(require('basic-logger'))({
     showTimestamp: true,
-    prefix: "LevelDB"
+    prefix: 'LevelDB'
 });
+const nconf = require('nconf');
 
-//Files
-var config = require('../serverconfig.js');
-var Mailer = require('./mailer');
-var DBUtils = require('./database_util');
+// Files
+const Mailer = require('./mailer');
+const DBUtils = require('./database_util');
 
-//Variables
-var currentPID = 0;
-var currentUID = 0;
-var currentCID = 0;
-var expires = 1000 * 60 * 60 * 24 * config.loginExpire;
-var usernames = [];
+// Variables
+let currentPID = 0;
+let currentUID = 0;
+let currentCID = 0;
+const expires = 1000 * 60 * 60 * 24 * nconf.get('loginExpire');
+let usernames = [];
+
+function setupDB(dir, setup, callback) {
+  setup = setup || function () {};
+  callback = callback || function () {};
+
+  return levelup(dir, null, (err, newdb) => {
+    if (err) {
+      log.error('Could not open db');
+      callback(err);
+      return;
+    }
+
+    newdb.get('setup', (err) => {
+      if (err && err.notFound) {
+        newdb.put('setup', 1);
+        setup(newdb);
+        callback(null, newdb);
+      } else {
+        callback(null, newdb);
+      }
+    });
+  });
+}
 
 function LevelDB(callback) {
-    var dbdir = path.resolve(config.db.dbDir || './socketserver/db');
+    const dbdir = path.resolve(nconf.get('db:dbDir') || './socketserver/db');
     try {
       fs.statSync(dbdir);
-    } catch(e) {
+    } catch (e) {
       fs.mkdirSync(dbdir);
     }
-    //PlaylistDB
-    if(!this.PlaylistDB)
-        this.PlaylistDB = setupDB(dbdir + '/playlists',
+    // PlaylistDB
+    if (!this.PlaylistDB) {
+      this.PlaylistDB = setupDB(`${dbdir}/playlists`,
+      // If new DB is created
+      (newdb) => {
+        currentPID = 1;
+        log.debug('PIDCOUNTER set to 1');
+        newdb.put('PIDCOUNTER', 1);
+      },
 
-            //If new DB is created
-            function(newdb) {
-                currentPID = 1;
-                log.debug('PIDCOUNTER set to 1');
-                newdb.put('PIDCOUNTER', 1);
-            },
+      // Callback
+      (err, db) => {
+        if (err) log.error(`Could not open PlaylistDB: ${err}`);
+        if (currentPID !== 0) return;
+        db.get('PIDCOUNTER', (err, val) => {
+          if (err) {
+            throw new Error('Cannot get PIDCOUNTER from UserDB.  Might be corrupt');
+          }
+          currentPID = parseInt(val, 10);
+        });
+      });
+    }
 
-            //Callback
-            function(err, db) {
-                if (err) log.error('Could not open PlaylistDB: ' + err);
+    // RoomDB
+    if (!this.RoomDB) {
+      this.RoomDB = setupDB(`${dbdir}/room`,
+      // If new DB is created
+      () => {},
 
-                if (currentPID != 0) return;
+      // Callback
+      (err, db) => {
+        if (err) throw new Error(`Could not open RoomDB: ${err}`);
+        if (callback) callback(null, db);
+      });
+    }
+    // TokenDB
+    if (!this.TokenDB)
+        this.TokenDB = setupDB(`${dbdir}/tokens`,
 
-                db.get('PIDCOUNTER', function(err, val) {
-                    if (err) {
-                        throw new Error('Cannot get PIDCOUNTER from UserDB.  Might be corrupt');
-                    }
-                    currentPID = parseInt(val);
-                });
-            });
+            // If new DB is created
+            function (newdb) {},
 
-    //RoomDB
-    if(!this.RoomDB)
-        this.RoomDB = setupDB(dbdir + '/room',
-
-            //If new DB is created
-            function(newdb) {},
-
-            //Callback
-            function(err, db) {
-                if (err) throw new Error('Could not open RoomDB: ' + err);
-                if (callback) callback(null, db);
-            });
-
-    //TokenDB
-    if(!this.TokenDB)
-        this.TokenDB = setupDB(dbdir + '/tokens',
-
-            //If new DB is created
-            function(newdb) {},
-
-            //Callback
-            function(err, db) {
+            // Callback
+            function (err, db) {
                 if (err) log.error('Could not open TokenDB: ' + err);
             });
 
-    //UserDB
-    if(!this.UserDB)
-        this.UserDB = setupDB(dbdir + '/users',
+    // UserDB
+    if (!this.UserDB)
+        this.UserDB = setupDB(`${dbdir}/users`,
 
-            //If new DB is created
-            function(newdb) {
+            // If new DB is created
+            function (newdb) {
                 currentUID = 1;
                 log.debug('UIDCOUNTER set to 1');
                 newdb.put('UIDCOUNTER', 1);
             },
 
-            //Callback
-            function(err, newdb) {
+            // Callback
+            function (err, newdb) {
                 if (err) {
                     throw new Error('Could not open UserDB: ' + err);
                 }
                 if (currentUID != 0) return;
 
-                newdb.get('UIDCOUNTER', function(err, val) {
+                newdb.get('UIDCOUNTER', function (err, val) {
                     if (err) {
                         throw new Error('Cannot get UIDCOUNTER from UserDB. Might be corrupt');
                     }
@@ -103,7 +125,7 @@ function LevelDB(callback) {
                 });
 
                 newdb.createReadStream()
-                    .on('data', function(data) {
+                    .on('data', function (data) {
                         if (data.key.indexOf('@') == -1) return;
                         try {
                             var user = JSON.parse(data.value);
@@ -115,88 +137,65 @@ function LevelDB(callback) {
                         user.lastdj = false;
                         newdb.put(data.key, JSON.stringify(user));
                     })
-                    .on('end', function() {
+                    .on('end', function () {
                         return false;
                     });
             });
-	    
-    //ChatDB
-    if(!this.ChatDB)
+
+    // ChatDB
+    if (!this.ChatDB)
         this.ChatDB = setupDB(dbdir + '/chat',
 
-            //If new DB is created
-            function(newdb) {
+            // If new DB is created
+            function (newdb) {
                 currentCID = 1;
                 log.debug('CIDCOUNTER set to 1');
                 newdb.put('CIDCOUNTER', 1);
             },
 
-            //Callback
-            function(err, newdb) {
+            // Callback
+            function (err, newdb) {
                 if (err) {
                     throw new Error('Could not open ChatDB: ' + err);
                 }
                 if (currentCID != 0) return;
 
-                newdb.get('CIDCOUNTER', function(err, val) {
+                newdb.get('CIDCOUNTER', function (err, val) {
                     if (err) {
                         throw new Error('Cannot get CIDCOUNTER from PmDB. Might be corrupt');
                     }
                     currentCID = parseInt(val);
                 });
             });
-            	    
-    //PmDB
-    if(!this.PmDB)
+    // PmDB
+    if (!this.PmDB)
         this.PmDB = setupDB(dbdir + '/pm',
 
-            //If new DB is created
-            function(newdb) {},
+            // If new DB is created
+            function (newdb) {},
 
-            //Callback
-            function(err, newdb) {
+            // Callback
+            function (err, newdb) {
                 if (err) {
                     throw new Error('Could not open PmDB: ' + err);
                 }
             });
-            
-    //IpDB
-    if(!this.IpDB)
+
+    // IpDB
+    if (!this.IpDB)
         this.IpDB = setupDB(dbdir + '/ip',
 
-            //If new DB is created
-            function(newdb) {},
+            // If new DB is created
+            function (newdb) {},
 
-            //Callback
-            function(err, newdb) {
+            // Callback
+            function (err, newdb) {
                 if (err) {
                     throw new Error('Could not open IpDB: ' + err);
                 }
             });
 }
 
-function setupDB(dir, setup, callback){
-    setup = setup || function(){};
-    callback = callback || function(){};
-    
-    return levelup(dir, null, function(err, newdb){
-		if (err){
-			log.error('Could not open db');
-			callback(err);
-			return;
-		}
-		
-		newdb.get("setup", function( err, val ){
-			if (err && err.notFound){
-				newdb.put('setup', 1);
-				setup(newdb);
-				callback(null, newdb);
-			}else{
-				callback(null, newdb);
-			}
-		});
-	});
-}
 
 /**
  * getJSON() gives the callback function a parsed JSON object
@@ -206,10 +205,10 @@ function setupDB(dir, setup, callback){
  * @param {Function} callback
  * @return {Object} this
  */
-LevelDB.prototype.getJSON = function(db, key, callback) {
-    callback = callback || function() {};
+LevelDB.prototype.getJSON = function (db, key, callback) {
+    callback = callback || function () {};
 
-    db.get(key, function(err, val) {
+    db.get(key, function (err, val) {
         if (val) {
             try {
                 val = JSON.parse(val);
@@ -231,17 +230,17 @@ LevelDB.prototype.getJSON = function(db, key, callback) {
  * @param {Function} callback
  * @return {Object} this
  */
-LevelDB.prototype.putJSON = function(db, key, val, callback) {
-    callback = callback || function() {};
+LevelDB.prototype.putJSON = function (db, key, val, callback) {
+    callback = callback || function () {};
     db.put(key, JSON.stringify(val), callback);
     return this;
 };
 
-//PlaylistDB
-LevelDB.prototype.getPlaylist = function(pid, callback) {
+// PlaylistDB
+LevelDB.prototype.getPlaylist = function (pid, callback) {
     var Playlist = require('./playlist');
 
-    this.getJSON(this.PlaylistDB, pid, function(err, data) {
+    this.getJSON(this.PlaylistDB, pid, function (err, data) {
         if (err) {
             callback('PlaylistNotFound');
             return;
@@ -257,7 +256,7 @@ LevelDB.prototype.getPlaylist = function(pid, callback) {
     return this;
 };
 
-LevelDB.prototype.createPlaylist = function(owner, name, callback) {
+LevelDB.prototype.createPlaylist = function (owner, name, callback) {
     var Playlist = require('./playlist');
 
     var pl = new Playlist();
@@ -271,51 +270,51 @@ LevelDB.prototype.createPlaylist = function(owner, name, callback) {
     callback(null, pl);
 };
 
-LevelDB.prototype.deletePlaylist = function(pid, callback) {
+LevelDB.prototype.deletePlaylist = function (pid, callback) {
     this.PlaylistDB.del(pid.toString(), callback);
 };
 
-LevelDB.prototype.putPlaylist = function(pid, data, callback) {
+LevelDB.prototype.putPlaylist = function (pid, data, callback) {
     this.putJSON(this.PlaylistDB, pid, data, callback);
 };
 
-//RoomDB
-LevelDB.prototype.getRoom = function(slug, callback) {
+// RoomDB
+LevelDB.prototype.getRoom = function (slug, callback) {
     this.getJSON(this.RoomDB, slug, callback);
     return this;
 };
 
-LevelDB.prototype.setRoom = function(slug, val, callback) {
+LevelDB.prototype.setRoom = function (slug, val, callback) {
     this.putJSON(this.RoomDB, slug, val, callback);
     return this;
 };
 
-//TokenDB
-LevelDB.prototype.deleteToken = function(tok) {
+// TokenDB
+LevelDB.prototype.deleteToken = function (tok) {
     this.TokenDB.del(tok);
 };
 
-LevelDB.prototype.createToken = function(email) {
+LevelDB.prototype.createToken = function (email) {
     var tok = DBUtils.makePass(email, Date.now());
 
     this.putJSON(this.TokenDB, tok, {
-        email: email,
+        email,
         time: Date.now(),
     });
 
     return tok;
 };
 
-LevelDB.prototype.isTokenValid = function(tok, callback) {
+LevelDB.prototype.isTokenValid = function (tok, callback) {
     var that = this;
 
-    this.getJSON(this.TokenDB, tok, function(err, data) {
+    this.getJSON(this.TokenDB, tok, function (err, data) {
         if (err || data == null) {
             callback('InvalidToken');
             return;
         }
 
-        if (config.loginExpire && (Date.now() - data.time) < expires) {
+        if (nconf.get('loginExpire') && (Date.now() - data.time) < expires) {
             callback(null, data.email);
         } else {
             that.deleteToken(data.token);
@@ -324,7 +323,7 @@ LevelDB.prototype.isTokenValid = function(tok, callback) {
     });
 };
 
-//UserDB
+// UserDB
 function addUsername(un) {
     usernames.push(un.toLowerCase());
 }
@@ -341,7 +340,7 @@ function usernameExists(un) {
     return ((ind = usernames.indexOf(un)) != -1 ? ind : false);
 }
 
-LevelDB.prototype.createUser = function(obj, callback) {
+LevelDB.prototype.createUser = function (obj, callback) {
     var User = require('./user');
     var that = this;
 
@@ -355,7 +354,7 @@ LevelDB.prototype.createUser = function(obj, callback) {
     var inData = defaultCreateObj;
     inData.email = inData.email.toLowerCase();
 
-    //Validation
+    // Validation
     if (!inData.email || !DBUtils.validateEmail(inData.email)) {
         callback('InvalidEmail');
         return;
@@ -373,43 +372,43 @@ LevelDB.prototype.createUser = function(obj, callback) {
         return;
     }
 
-    //Check for existing account
-    this.userEmailExists(inData.email, function(err, res) {
+    // Check for existing account
+    this.userEmailExists(inData.email, function (err, res) {
         if (!err) {
             if (callback) callback('AccountExists');
             return;
         }
 
         var user = new User();
-        
+
         user.data.uid = currentUID++;
         that.UserDB.put('UIDCOUNTER', currentUID);
         user.data.un = inData.un;
         user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
         user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
         user.data.created = Date.now();
-        if (config.room.email.confirmation) user.data.confirmation = DBUtils.makePass(Date.now());
+        if (nconf.get('room:email:confirmation')) user.data.confirmation = DBUtils.makePass(Date.now());
         var updatedUserObj = user.makeDbObj();
 
         var tok = that.createToken(inData.email);
 
-        that.putJSON(that.UserDB, inData.email, updatedUserObj, function(err) {
+        that.putJSON(that.UserDB, inData.email, updatedUserObj, function (err) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            //Send confirmation email
-            if (config.room.email.confirmation) {
+            // Send confirmation email
+            if (nconf.get('room:email:confirmation')) {
                 Mailer.sendEmail('signup', {
                     code: user.data.confirmation,
                     user: inData.un,
-                }, inData.email, function(data) {
+                }, inData.email, function (data) {
                     console.log(data);
                 });
             }
 
-            //Do other ~messy~ stuff
+            // Do other ~messy~ stuff
             addUsername(inData.un);
             user.login(inData.email);
             callback(null, user, tok);
@@ -417,7 +416,7 @@ LevelDB.prototype.createUser = function(obj, callback) {
     });
 };
 
-LevelDB.prototype.loginUser = function(obj, callback) {
+LevelDB.prototype.loginUser = function (obj, callback) {
     var User = require('./user');
     var that = this;
 
@@ -433,7 +432,7 @@ LevelDB.prototype.loginUser = function(obj, callback) {
     if (inData.email && inData.pw) {
         inData.email = inData.email.toLowerCase();
 
-        this.getJSON(this.UserDB, inData.email, function(err, data) {
+        this.getJSON(this.UserDB, inData.email, function (err, data) {
             if ((err && err.notFound) || data == null) {
                 callback('UserNotFound');
                 return;
@@ -452,19 +451,18 @@ LevelDB.prototype.loginUser = function(obj, callback) {
             var tok = that.createToken(inData.email);
             var user = new User();
 
-            user.login(inData.email, data, function() {
-
+            user.login(inData.email, data, function () {
                 callback(null, user, tok);
             });
         });
     } else if (inData.token) {
-        that.isTokenValid(inData.token, function(err, email) {
+        that.isTokenValid(inData.token, function (err, email) {
             if (err) {
                 callback(err);
                 return;
             }
 
-            that.getJSON(that.UserDB, email, function(err, data) {
+            that.getJSON(that.UserDB, email, function (err, data) {
                 if ((err && err.notFound) || data == null) {
                     callback('UserNotFound');
                     return;
@@ -476,8 +474,7 @@ LevelDB.prototype.loginUser = function(obj, callback) {
                 }
 
                 var user = new User();
-                user.login(email, data, function() {
-                    
+                user.login(email, data, function () {
                     callback(null, user);
                 });
             });
@@ -487,39 +484,38 @@ LevelDB.prototype.loginUser = function(obj, callback) {
     }
 };
 
-LevelDB.prototype.putUser = function(email, data, callback) {
+LevelDB.prototype.putUser = function (email, data, callback) {
     this.putJSON(this.UserDB, email, data, callback);
 };
 
-LevelDB.prototype.getUser = function(email, callback){
+LevelDB.prototype.getUser = function (email, callback) {
 	var User = require('./user');
 
-	this.getJSON(this.UserDB, email, function(err, data){
-		if ((err && err.notFound) || data == null) {callback('UserNotFound'); return; }
-		
-		if (err) {callback(err); return; }
-		var user = new User();
-		
-		user.login(email, data, function(){
+	this.getJSON(this.UserDB, email, function (err, data) {
+		if ((err && err.notFound) || data == null) { callback('UserNotFound'); return; }
 
+		if (err) { callback(err); return; }
+		var user = new User();
+
+		user.login(email, data, function () {
 			callback(null, user);
 		});
 	});
 };
 
-LevelDB.prototype.deleteUser = function(email, callback){
+LevelDB.prototype.deleteUser = function (email, callback) {
     var that = this;
-    
-	this.getUser(email, function(err, user){
-		if (err){ if (callback) callback(err); return; }
-		
+
+	this.getUser(email, function (err, user) {
+		if (err) { if (callback) callback(err); return; }
+
         that.UserDB.del(email);
-        
+
 		callback(null, true);
 	});
 };
 
-LevelDB.prototype.getUserByUid = function(uid, opts, callback) {
+LevelDB.prototype.getUserByUid = function (uid, opts, callback) {
     var User = require('./user');
     var done = false;
 
@@ -542,7 +538,7 @@ LevelDB.prototype.getUserByUid = function(uid, opts, callback) {
     var len = 0;
 
     var stream = this.UserDB.createReadStream()
-        .on('data', function(data) {
+        .on('data', function (data) {
             var obj = {};
 
             try {
@@ -555,7 +551,7 @@ LevelDB.prototype.getUserByUid = function(uid, opts, callback) {
                 if (uid.indexOf(obj.uid) > -1) {
                     var user = new User();
 
-                    user.login(data.key, obj, opts, function() {
+                    user.login(data.key, obj, opts, function () {
                         out[obj.uid] = user;
                         len++;
 
@@ -572,13 +568,13 @@ LevelDB.prototype.getUserByUid = function(uid, opts, callback) {
                     stream.destroy();
                     var user = new User();
 
-                    user.login(data.key, obj, opts, function() {
+                    user.login(data.key, obj, opts, function () {
                         callback(null, user);
                     });
                 }
             }
         })
-        .on('end', function() {
+        .on('end', function () {
             if (!done) {
                 if (typeof uid === 'number') {
                     callback('UserNotFound');
@@ -590,7 +586,7 @@ LevelDB.prototype.getUserByUid = function(uid, opts, callback) {
         });
 };
 
-LevelDB.prototype.getUserByName = function(name, opts, callback) {
+LevelDB.prototype.getUserByName = function (name, opts, callback) {
     var User = require('./user');
     var done = false;
 
@@ -600,7 +596,7 @@ LevelDB.prototype.getUserByName = function(name, opts, callback) {
     }
 
     var stream = this.UserDB.createReadStream()
-        .on('data', function(data) {
+        .on('data', function (data) {
             var obj = {};
 
             try {
@@ -615,20 +611,19 @@ LevelDB.prototype.getUserByName = function(name, opts, callback) {
                 stream.destroy();
                 var user = new User();
 
-                user.login(data.key, obj, opts, function() {
+                user.login(data.key, obj, opts, function () {
                     if (callback) callback(null, user);
                 });
             }
         })
-        .on('end', function() {
+        .on('end', function () {
             if (!done && callback)
                 callback('UserNotFound');
         });
 };
 
-LevelDB.prototype.userEmailExists = function(key, callback) {
-    this.getJSON(this.UserDB, key, function(err, data) {
-
+LevelDB.prototype.userEmailExists = function (key, callback) {
+    this.getJSON(this.UserDB, key, function (err, data) {
         if (err && err.notFound) {
             if (callback) callback(err, false);
             return;
@@ -638,38 +633,38 @@ LevelDB.prototype.userEmailExists = function(key, callback) {
     });
 };
 
-//ChatDB
-LevelDB.prototype.logChat = function(uid, msg, special, callback) {
-    this.putJSON(this.ChatDB, currentCID, { uid: uid, msg: msg, special: special });
+// ChatDB
+LevelDB.prototype.logChat = function (uid, msg, special, callback) {
+    this.putJSON(this.ChatDB, currentCID, { uid, msg, special });
     callback(null, currentCID++);
 };
 
-//PmDB
-LevelDB.prototype.logPM = function(from, to, msg, callback) {
+// PmDB
+LevelDB.prototype.logPM = function (from, to, msg, callback) {
     var that = this;
-    var key = Math.min(from, to) + ":" + Math.max(from, to);
-    
-    this.getJSON(this.PmDB, key, function(err, res){
+    var key = Math.min(from, to) + ':' + Math.max(from, to);
+
+    this.getJSON(this.PmDB, key, function (err, res) {
         var out = [];
-        
-        if(!err) out = res;
-        
+
+        if (!err) out = res;
+
         out.push({
             message: msg,
             time: new Date(),
-            from: from,
+            from,
             unread: true,
         });
-        
+
         that.putJSON(that.PmDB, key, out);
     });
 };
 
-LevelDB.prototype.getConversation = function(from, to, callback) {
-    var key = Math.min(from, to) + ":" + Math.max(from, to);
-    
-    this.getJSON(this.PmDB, key, function(err, res){
-        if(err){
+LevelDB.prototype.getConversation = function (from, to, callback) {
+    var key = Math.min(from, to) + ':' + Math.max(from, to);
+
+    this.getJSON(this.PmDB, key, function (err, res) {
+        if (err) {
             callback(null, []);
         } else {
             callback(null, res);
@@ -677,15 +672,15 @@ LevelDB.prototype.getConversation = function(from, to, callback) {
     });
 };
 
-LevelDB.prototype.getConversations = function(uid, callback) {
+LevelDB.prototype.getConversations = function (uid, callback) {
     var that = this;
-    
+
     var out = {};
     var uids;
     uid = uid.toString();
-    
+
     this.PmDB.createReadStream()
-        .on('data', function(data) {
+        .on('data', function (data) {
             if (data.key.indexOf(':') == -1 || (uids = data.key.split(':')).indexOf(uid) == -1) return;
 
             try {
@@ -693,10 +688,10 @@ LevelDB.prototype.getConversations = function(uid, callback) {
             } catch (e) {
                 return;
             }
-            
+
             var unread = 0;
-            convo.map(function(e){
-                if(e.unread && e.from != uid) unread++;
+            convo.map(function (e) {
+                if (e.unread && e.from != uid) unread++;
                 return {
                     messages: e.messages,
                     time: e.time,
@@ -706,15 +701,15 @@ LevelDB.prototype.getConversations = function(uid, callback) {
 
             out[uids[(uids.indexOf(uid) + 1) % 2]] = {
                 user: null,
-                messages: [ convo.pop() ],
-                unread: unread,
+                messages: [convo.pop()],
+                unread,
             };
         })
-        .on('end', function() {
-            var uids = Object.keys(out).map(function(e){ return parseInt(e); });
-            
+        .on('end', function () {
+            var uids = Object.keys(out).map(function (e) { return parseInt(e); });
+
             if (uids.length > 0) {
-                that.getUserByUid(uids, function(err, result){
+                that.getUserByUid(uids, function (err, result) {
                     if (err) {
                         callback(err);
                     } else {
@@ -731,44 +726,46 @@ LevelDB.prototype.getConversations = function(uid, callback) {
         });
 };
 
-LevelDB.prototype.markConversationRead = function(uid, uid2, time) {
+LevelDB.prototype.markConversationRead = function (uid, uid2, time) {
     var that = this;
-    var key = Math.min(uid, uid2) + ":" + Math.max(uid, uid2);
-    
-    this.getJSON(this.PmDB, key, function(err, res) {
-        if(err) return;
-        
-        res.map(function(e){
-            if(e.from == uid2 && new Date(e.time) < new Date(time)) e.unread = false;
+    var key = Math.min(uid, uid2) + ':' + Math.max(uid, uid2);
+
+    this.getJSON(this.PmDB, key, function (err, res) {
+        if (err) return;
+
+        res.map(function (e) {
+            if (e.from == uid2 && new Date(e.time) < new Date(time)) e.unread = false;
             return e;
         });
-        
+
         that.putJSON(that.PmDB, key, res);
     });
 };
 
-//IpDB
-LevelDB.prototype.logIp = function(address, uid) {
-    var that = this;
+// IpDB
+LevelDB.prototype.logIp = function (address, uid) {
+    let that = this;
 
-    this.getJSON(this.IpDB, uid, function(err, res){
-        var out = res || [];
-        
+    this.getJSON(this.IpDB, uid, function (err, res) {
+        let out = res || [];
+
         out.push({
-            address: address,
+            address,
             time: new Date(),
         });
-        
+
         that.putJSON(that.IpDB, uid, out);
     });
 };
 
-LevelDB.prototype.getIpHistory = function(uid, callback) {
-    this.getJSON(this.IpDB, uid, function(err, data) {
-        if(err)
-            callback(err)
-        else
-            callback(null, data.sort(function(a, b){ return a.address > b.address; }).reverse().filter(function(e, i, a){ return i == 0 || a[i - 1].address != e.address; }).sort(function(a, b){ return a.time < b.time; }));
+LevelDB.prototype.getIpHistory = function (uid, callback) {
+    this.getJSON(this.IpDB, uid, (err, data) => {
+        if (err) {
+          callback(err);
+        }
+        else {
+          callback(null, data.sort(function (a, b) { return a.address > b.address; }).reverse().filter(function (e, i, a) { return i == 0 || a[i - 1].address != e.address; }).sort(function (a, b) { return a.time < b.time; }));
+        }
     });
 };
 

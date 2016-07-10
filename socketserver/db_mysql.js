@@ -1,14 +1,14 @@
 //Modules
-var mysql = require('mysql');
-var util = require('util');
-var _ = require('underscore');
-var log = new(require('basic-logger'))({
+const mysql = require('mysql');
+const util = require('util');
+const _ = require('underscore');
+const log = new(require('basic-logger'))({
     showTimestamp: true,
     prefix: "MysqlDB"
 });
+const nconf = require('nconf');
 
 //Files
-var config = require('../serverconfig.js');
 var Hash = require('./hash');
 var Mailer = require('./mailer');
 var DBUtils = require('./database_util');
@@ -21,10 +21,10 @@ var MysqlDB = function(){
 	var that = this;
 
 	var mysqlConfig = {
-		host: config.db.mysqlHost,
-		user: config.db.mysqlUser,
-		password: config.db.mysqlPassword,
-		database: config.db.mysqlDatabase,
+		host: nconf.get('db:mysqlHost'),
+		user: nconf.get('db:mysqlUser'),
+		password: nconf.get('db:mysqlPassword'),
+		database: nconf.get('db:mysqlDatabase'),
 		charset: "UTF8_GENERAL_CI",
 		multipleStatements: true,
 		connectionLimit: 1,
@@ -443,7 +443,7 @@ MysqlDB.prototype.createToken = function(email) {
 };
 
 MysqlDB.prototype.isTokenValid = function(tok, callback) {
-    this.execute("SELECT `token`, `email` FROM `tokens` WHERE ? AND DATEDIFF(NOW(), `created`) < ?;", [{ token: tok, }, config.loginExpire || 365], function(err, res) {
+    this.execute("SELECT `token`, `email` FROM `tokens` WHERE ? AND DATEDIFF(NOW(), `created`) < ?;", [{ token: tok, }, nconf.get('loginExpire') || 365], function(err, res) {
         if (err || res.length == 0) {
             callback('InvalidToken');
             return;
@@ -550,7 +550,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                 user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
                 user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
                 user.data.created = Date.now();
-                if (config.room.email.confirmation) user.data.confirmation = DBUtils.makePass(Date.now());
+                if (nconf.get('room:email:confirmation')) user.data.confirmation = DBUtils.makePass(Date.now());
                 var updatedUserObj = user.makeDbObj();
 
                 var tok = that.createToken(inData.email);
@@ -564,7 +564,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                     }
 
                     //Send confirmation email
-                    if (config.room.email.confirmation) {
+                    if (nconf.get('room:email:confirmation')) {
                         Mailer.sendEmail('signup', {
                             code: user.data.confirmation,
                             user: inData.un,

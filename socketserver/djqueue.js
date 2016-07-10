@@ -1,5 +1,5 @@
 var Roles = require('./role');
-var config = require('../serverconfig');
+const nconf = require('nconf');
 
 var defaultVoteObj = function(){
 	return {
@@ -30,9 +30,9 @@ function djqueue(room){
 	this.currentsong = null;
 	this.songstart = null;
 	this.lasttimer = null;
-	this.limit = config.room.queue.limit;
-	this.cycle = config.room.queue.cycle;
-	this.lock = config.room.queue.lock;
+	this.limit = nconf.get('room:queue:limit');
+	this.cycle = nconf.get('room:queue:cycle');
+	this.lock = nconf.get('room:queue:lock');
 	this.votes = new defaultVoteObj;
 }
 
