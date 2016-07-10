@@ -1,11 +1,11 @@
 // API reference: https://developers.soundcloud.com/docs/api/reference#track
 
-var https = require('https');
-var util = require('util');
-var log = new (require('basic-logger'))({showTimestamp: true, prefix: "SC"});
-var querystring = require('querystring');
-var config = require('../serverconfig');
-var key = config.apis.SC.key;
+const https = require('https');
+const util = require('util');
+const log = new (require('basic-logger'))({showTimestamp: true, prefix: "SC"});
+const querystring = require('querystring');
+const nconf = require('nconf');
+const key = nconf.get('apis:SC:key');
 
 var SC = function(){
 };

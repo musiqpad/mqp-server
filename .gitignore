@@ -12,6 +12,7 @@ webconfig.js
 webserver/public/lib/js/webconfig.js
 pidfile
 log.txt
+config.hjson
 
 # IDE files
 .idea

@@ -1,5 +1,7 @@
-var config = require('../serverconfig.js');
-var roles = config.roles;
+// eslint-disable-next-line
+'use strict';
+const nconf = require('nconf');
+var roles = nconf.get('roles');
 
 // Caching the value so we don't have to loop through something every login
 var roleOrder = null;
@@ -53,20 +55,21 @@ Role.prototype.checkCanGrant = function(inRole, inPerm){
 	return false;
 };
 
-Role.prototype.makeClientObj = function(){
+Role.prototype.makeClientObj = function () {
 	return roles;
 };
 
-Role.prototype.getOrder = function(){
+Role.prototype.getOrder = function () {
 	if (roleOrder) return roleOrder;
-	
-	if (config.roleOrder && Array.isArray(config.roleOrder)){
+
+	let roleOrderTemp = nconf.get('roleOrder');
+	if (roleOrderTemp && Array.isArray(roleOrderTemp)){
 		for (var i in roles){
-			if (config.roleOrder.indexOf(i) == -1) config.roleOrder.push(i);
+			if (roleOrderTemp.indexOf(i) == -1) roleOrderTemp.push(i);
 		}
-		
-		roleOrder = config.roleOrder;
-		return config.roleOrder;
+
+		roleOrder = roleOrderTemp;
+		return roleOrderTemp;
 	} 
 	
 	var temp = [];
@@ -82,8 +85,8 @@ Role.prototype.getOrder = function(){
 Role.prototype.getStaffRoles = function(){
 	if(staffRoles) return staffRoles;
 	
-	if (config.staffRoles && Array.isArray(config.staffRoles)) {
-		staffRoles = config.staffRoles;
+	if (nconf.get('staffRoles') && Array.isArray(nconf.get('staffRoles'))) {
+		staffRoles = nconf.get('staffRoles');
 		return staffRoles;
 	}
 	return [];

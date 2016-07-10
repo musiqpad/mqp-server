@@ -1,13 +1,13 @@
 var NM = require('nodemailer');
 var util = require('util');
-var config = require('../serverconfig');
 var xoauth2 = require('xoauth2');
 var fs = require('fs');
+const nconf = require('nconf');
 
 function Mailer(){
-	//Check if we need to authorize against email server
-	if(config.room.allowrecovery || config.room.email.confirmation){
-		var opts = config.room.email.options;
+	// Check if we need to authorize against email server
+	if (nconf.get('room:allowrecovery') || nconf.get('room:email:confirmation')) {
+		const opts = nconf.get('room:email:options');
 		this.trans = NM.createTransport(((opts || {}).auth || {}).xoauth2 ? util._extend(opts, {
 			auth: {
 				xoauth2: xoauth2.createXOAuth2Generator(opts.auth.xoauth2),
@@ -32,10 +32,10 @@ Mailer.prototype.makeEmailObj = function(type, receiver, opts){
 	
 	//Return email options
 	return {
-	    from: config.room.email.sender,
-	    to: receiver,
-	    subject: type.subject,
-	    html: type.body,
+		from: nconf.get('room:email:sender'),
+		to: receiver,
+		subject: type.subject,
+		html: type.body,
 	};
 };
 

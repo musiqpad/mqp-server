@@ -5,8 +5,8 @@ var http = require('http');
 var log = new (require('basic-logger'))({showTimestamp: true, prefix: "Room"});
 var DJQueue = require('./djqueue.js');
 var Roles = require('./role');
-var config = require('../serverconfig');
 var DB = require('./database');
+const nconf = require('nconf');
 
 var defaultDBObj = function(){
 	return {
@@ -74,7 +74,7 @@ Room.prototype.getRoomMeta = function(){
 };
 
 Room.prototype.makeOwner = function(){
-	if (!config.room.ownerEmail) return;
+	if (!nconf.get('room:ownerEmail')) return;
 
 	var that = this;
 
@@ -523,7 +523,7 @@ Room.prototype.sendMessage = function( sock, message, ext, specdata, callback ){
 					time: Date.now(),
 					cid: cid,
 				});
-				if(that.lastChat.length > config.room.lastmsglimit) that.lastChat.shift();
+				if(that.lastChat.length > nconf.get('room:lastmsglimit')) that.lastChat.shift();
 			}
 		
 			callback(cid);
@@ -608,13 +608,13 @@ Room.prototype.getUsersObj = function(){
 };
 
 Room.prototype.getHistoryObj = function() {
-	return this.data.history.slice(-config.room.history.limit_send).reverse();
+	return this.data.history.slice(-nconf.get('room:history:limit_send')).reverse();
 };
 
 Room.prototype.addToHistory = function(historyObj) {
 	//Limit history
-	if(config.room.history.limit_save !== 0)
-		while(this.data.history.length >= config.room.history.limit_save) {
+	if(nconf.get('room:history:limit_save') !== 0)
+		while (this.data.history.length >= nconf.get('room:history:limit_save')) {
 			this.data.history.shift();
 		}
 
@@ -624,12 +624,12 @@ Room.prototype.addToHistory = function(historyObj) {
 };
 
 Room.prototype.updateLobbyServer = function(song, dj, callback) {
-	if (!config.apis.musiqpad.sendLobbyStats) {
+	if (!nconf.get('apis:musiqpad:sendLobbyStats')) {
 		if (callback) callback();
 		return;
 	}
-	else if (!config.apis.musiqpad.key || config.apis.musiqpad.key == "") {
-		throw "A musiqpad key must be defined in the config for updating the lobby server.";
+	else if (!nconf.get('apis:musiqpad:key') || nconf.get('apis:musiqpad:key') == "") {
+		console.log("A musiqpad key must be defined in the config for updating the lobby server.");
 		return;
 	}
 	var postData = {
@@ -645,7 +645,7 @@ Room.prototype.updateLobbyServer = function(song, dj, callback) {
       	method: 'POST',
       	headers: {
           	'Content-Type': 'application/json',
-          	'apikey': config.apis.musiqpad.key
+          	'apikey': nconf.get('apis:musiqpad:key')
       	}
 	};
 	try {
