@@ -46,6 +46,7 @@ switch (process.argv[2]) {
         // Spawn a new musiqpad daemon process, might need some more settings but I'm waiting for the new config storage for that.
         daemon.daemon(`${__dirname}/start.js`, '--daemon', {
           stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
+          stderr: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
         });
       }
     });
@@ -69,8 +70,8 @@ switch (process.argv[2]) {
         console.log('\nRestarting musiqpad');
         daemon.daemon(`${__dirname}/start.js`, '--daemon', {
           stdout: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
+          stderr: fs.openSync(path.join(process.cwd(), 'log.txt'), 'a'),
         });
-
       } else {
         console.log('musiqpad could not be restarted, as a running instance could not be found.');
       }
