@@ -5,6 +5,7 @@ var log = new(require('basic-logger'))({
     showTimestamp: true,
     prefix: "ServerContainer"
 });
+var fs = require('fs');
 
 var extend = require('extend');
 
@@ -23,8 +24,11 @@ var server = function (params) {
 		}
 	}
 	extend(true, this.settings, params);
-	
+
 	this.start = function() {
+    if(this.settings.config) {
+      fs.writeFileSync('./config.hjson', this.settings.config, 'utf8');
+    }
 		if (this.settings.forever.enabled) {
 			forever.load(this.settings.forever.options);
 			that.pid = forever.start('./start.js');
@@ -35,11 +39,11 @@ var server = function (params) {
 			});
 		}
 	};
-	
+
 	this.stop = function() {
 		stopServer();
 	};
-	
+
 	function stopServer() {
 		if (that.settings.forever.enabled) {
 			forever.stop();

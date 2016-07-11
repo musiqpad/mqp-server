@@ -60,6 +60,18 @@
        <h1>Pad Description</h1>
        Here you can put anything you want in HTML!
       '''
+    tags: { // Tags for Google & co
+      keywords: "musiqpad"
+      description: ""
+      image: "https://cdn.musiqpad.com/img/icon-256.png" // Image on twitter/facebook/slack/...
+      twitter: "@musiqpad" 
+      description: // A one to two sentence description for search engines & co
+        '''
+        
+        '''
+      themeColor: "" // a hex color for the theme on chrome for android
+      favicon: "/pads/lib/img/icon.png"
+    }
   }
   apis: {
     YT: {
@@ -154,7 +166,6 @@
     "bot"
   ]
   
-  
 
   /*
 
@@ -175,14 +186,14 @@
   */
 
   // Defines roles and permissions
-
-  owner: { // REQUIRED ROLE
-    title: "Owner"
-    showtitle: true
-    style: {
-      color: "#F46B40"
-    }
-    permissions: [
+  roles: {
+    owner: { // REQUIRED ROLE
+      title: "Owner"
+      showtitle: true
+      style: {
+        color: "#F46B40"
+      }
+      permissions: [
       "djqueue.join"
       "djqueue.joinlocked"
       "djqueue.leave"
@@ -214,23 +225,23 @@
       "room.whois"
       "room.whois.iphistory"
       "server.checkForUpdates"
-    ]
-    canGrantRoles: [
+      ]
+      canGrantRoles: [
       "dev"
       "coowner"
       "supervisor"
       "bot"
       "regular"
       "default"
-    ]
-  }
-  dev: { // OPTIONAL ROLE FOR MUSIQPAD DEVS
-    title: "Dev"
-    showtitle: true
-    style: {
-      color: "#A77DC2"
+      ]
     }
-    permissions: [
+    dev: { // OPTIONAL ROLE FOR MUSIQPAD DEVS
+      title: "Dev"
+      showtitle: true
+      style: {
+        color: "#A77DC2"
+      }
+      permissions: [
       "djqueue.join"
       "djqueue.joinlocked"
       "djqueue.leave"
@@ -260,24 +271,24 @@
       "room.restrict.mute_silent"
       "room.ratelimit.bypass"
       "room.whois"
-    ]
-    canGrantRoles: [
+      ]
+      canGrantRoles: [
       "dev"
       "coowner"
       "supervisor"
       "bot"
       "regular"
       "default"
-    ]
-    mention: "devs"
-  }
-  coowner: {
-    title: "Co-owner"
-    showtitle: true
-    style: {
-      color: "#89BE6C"
+      ]
+      mention: "devs"
     }
-    permissions: [
+    coowner: {
+      title: "Co-owner"
+      showtitle: true
+      style: {
+        color: "#89BE6C"
+      }
+      permissions: [
       "djqueue.join"
       "djqueue.joinlocked"
       "djqueue.leave"
@@ -308,21 +319,21 @@
       "room.ratelimit.bypass"
       "room.whois"
       "room.whois.iphistory"
-    ]
-    canGrantRoles: [
+      ]
+      canGrantRoles: [
       "supervisor"
       "bot"
       "regular"
       "default"
-    ]
-  }
-  supervisor: {
-    title: "Supervisor"
-    showtitle: true
-    style: {
-      color: "#009CDD"
+      ]
     }
-    permissions: [
+    supervisor: {
+      title: "Supervisor"
+      showtitle: true
+      style: {
+        color: "#009CDD"
+      }
+      permissions: [
       "djqueue.join"
       "djqueue.joinlocked"
       "djqueue.leave"
@@ -350,20 +361,20 @@
       "room.restrict.mute_silent"
       "room.ratelimit.bypass"
       "room.whois"
-    ]
-    canGrantRoles: [
+      ]
+      canGrantRoles: [
       "regular"
       "default"
-    ]
-  }
-  bot: {
-    title: "Bot"
-    showtitle: true
-    badge: "android"
-    style: {
-      color: "#964B74"
+      ]
     }
-    permissions: [
+    bot: {
+      title: "Bot"
+      showtitle: true
+      badge: "android"
+      style: {
+        color: "#964B74"
+      }
+      permissions: [
       "djqueue.skip.other"
       "djqueue.lock"
       "djqueue.cycle"
@@ -375,17 +386,17 @@
       "room.restrict.mute"
       "room.restrict.mute_silent"
       "room.ratelimit.bypass"
-    ]
-    canGrantRoles: [
-    ]
-  }
-  regular: {
-    title: "Regular"
-    showtitle: false
-    style: {
-      color: "#925AFF"
+      ]
+      canGrantRoles: [
+      ]
     }
-    permissions: [
+    regular: {
+      title: "Regular"
+      showtitle: false
+      style: {
+        color: "#925AFF"
+      }
+      permissions: [
       "djqueue.join"
       "djqueue.joinlocked"
       "djqueue.leave"
@@ -396,17 +407,17 @@
       "playlist.delete"
       "playlist.rename"
       "playlist.import"
-    ]
-    canGrantRoles: [
-    ]
-  }
-  default: { // REQUIRED ROLE
-    title: "Default"
-    showtitle: false
-    style: {
-      color: "#ffffff"
+      ]
+      canGrantRoles: [
+      ]
     }
-    permissions: [
+    default: { // REQUIRED ROLE
+      title: "Default"
+      showtitle: false
+      style: {
+        color: "#ffffff"
+      }
+      permissions: [
       "djqueue.join"
       "djqueue.leave"
       "chat.send"
@@ -416,8 +427,9 @@
       "playlist.delete"
       "playlist.rename"
       "playlist.import"
-    ]
-    canGrantRoles: [
-    ]
+      ]
+      canGrantRoles: [
+      ]
+    }
   }
 }

@@ -17,9 +17,10 @@ The base for creating a self-hosted pad.
 2. Download the [latest stable version](https://github.com/musiqpad/mqp-server/releases/latest)
 3. Unzip it in the location you want to install
 4. Open a terminal and `npm install --production` it
-5. Copy the `serverconfig.example.js` to create the file `serverconfig.js`
-6. Start the server by running `npm start`
-7. If everything went well, there should be no error messages.
+5. Start the server by running `npm start`
+6. If everything went well, there should be no error messages!
+
+To change the settings, edit the config.hjson file!
 
 If you want to start musiqpad using an application manager like forever, start the app.js file. To see server logs, run `npm run log` You can also download the latest pre-release [here](https://github.com/musiqpad/mqp-server/releases) (rc = release candidate, exp = experimental)
 
@@ -57,7 +58,8 @@ Params:
             debug: false,
             stream: false
         }
-    }
+    },
+    config: fs.readFileSync('config.hjson'), // example config: config.example.hjson
 }
 ```
 
