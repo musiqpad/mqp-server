@@ -42,6 +42,15 @@ Mailer.prototype.sendEmail = function (type, opts, receiver, callback) {
 		room: nconf.get('room'),
 	});
 
+	switch(type) {
+		case 'signup':
+			type.subject = 'Welcome to musiqpad!';
+			break;
+		case 'recovery':
+			type.subject = 'Password recovery';
+			break;
+	}
+
 	const emailObj = {
 		from: nconf.get('room:mail:sender'),
 		to: receiver,
