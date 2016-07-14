@@ -28,7 +28,7 @@
     greet: "Welcome to musiqpad!"
     bg: ""                            // Background image file path. Accepts external images. If this is undefined the default background will be used.
     maxCon: 0
-    ownerEmail: "mail@explodingcamera.com" // This needs to be set then the server restarted to take effect.
+    ownerEmail: "user@domain.tld" // This needs to be set then the server restarted to take effect.
     guestCanSeeChat: true
     bannedCanSeeChat: false
     lastmsglimit: 6// How many messages a user can see after joining.
@@ -45,15 +45,49 @@
       limit_save: 0
       limit_send: 50
     }
-    email: {
+    mail: {
       confirmation: false// Whether to force user to confirm his email address before he is able to do anything
-      sender: "your@email.tld"
+      sender: "user@domain.tld" // Domain should point to this box when using direct mode
+      
+      // DIRECT PROBABLY WON'T WORK BECAUSE YOUR IP DOESN'T HAVE A GOOD REPUTATION!
+      
+      transport: "direct" // 'smtp', 'direct' or 'xoauth'
+      options: {}
       /*
-        description: Email server setup please refer to https://github.com/nodemailer/nodemailer documention on what the options are supports xOAuth 2.0
-        default: {}
-      */
+      EXAMPLES:
+      
+      -- SMTP --
+      transport: "smtp"
       options: {
+        service: "gmail"
+        auth: {
+          user: "mail@somewebsite.com",
+          pass: "pass",
+        }
       }
+      ----------
+      
+      -- XOAUTH2 --
+      transport: "xoauth"
+      options: {
+        service: "gmail"
+        auth: {
+          xoauth: {
+            user: '{username}'
+            clientId: '{Client ID}'
+            clientSecret: '{Client Secret}'
+            refreshToken: '{refresh-token}'
+            accessToken: '{cached access token}
+          }
+        }
+      }
+      -------------
+      
+      -- DIRECT --
+      transport: "direct"
+      options: {}
+      -------------
+      */
     }
     description:
       '''

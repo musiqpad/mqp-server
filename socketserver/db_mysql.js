@@ -10,7 +10,7 @@ const nconf = require('nconf');
 
 //Files
 var Hash = require('./hash');
-var Mailer = require('./mailer');
+const Mailer = require('./mail/Mailer');
 var DBUtils = require('./database_util');
 var Roles = require('./role.js');
 
@@ -550,7 +550,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                 user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
                 user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
                 user.data.created = Date.now();
-                if (nconf.get('room:email:confirmation')) user.data.confirmation = DBUtils.makePass(Date.now());
+                if (nconf.get('room:mail:confirmation')) user.data.confirmation = DBUtils.makePass(Date.now());
                 var updatedUserObj = user.makeDbObj();
 
                 var tok = that.createToken(inData.email);
@@ -564,7 +564,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                     }
 
                     //Send confirmation email
-                    if (nconf.get('room:email:confirmation')) {
+                    if (nconf.get('room:mail:confirmation')) {
                         Mailer.sendEmail('signup', {
                             code: user.data.confirmation,
                             user: inData.un,

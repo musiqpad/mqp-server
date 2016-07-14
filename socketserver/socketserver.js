@@ -17,7 +17,7 @@ const nconf = require('nconf');
 var DB = require("./database");
 var Room = require('./room');
 var User = require('./user');
-var Mailer = require('./mailer');
+var Mailer = require('./mail/Mailer');
 var YT = require('./YT');
 var Roles = require('./role');
 var Hash = require('./hash');
@@ -425,6 +425,7 @@ var SocketServer = function(server){
 						break;
 					}
 
+					console.log("Sending recovery email");
 					var sendRecovery = function(user){
 						//Generate new code and send email
 						user.recovery = Hash.md5(Date.now() + '', user.un);
@@ -434,6 +435,7 @@ var SocketServer = function(server){
 							email: data.data.email,
 							timeout: (new Date().addDays(1)).toISOString().replace(/T/, ' ').replace(/\..+/, '') + ' UTC',
 						}, data.data.email, function(err, data){
+							console.log("Recovery email send!");
 							if(err){
 								returnObj.data = {
 									error: 'EmailAuthIssue',
