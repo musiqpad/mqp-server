@@ -34,7 +34,7 @@ var Mailer = function () {
       }
     }
 	}
-}
+};
 
 Mailer.prototype.sendEmail = function (type, opts, receiver, callback) {
 	const html = ejs.render(fs.readFileSync(`socketserver/mail/templates/${type}.html`, 'utf8'), {
@@ -42,19 +42,20 @@ Mailer.prototype.sendEmail = function (type, opts, receiver, callback) {
 		room: nconf.get('room'),
 	});
 
+	var subject;
 	switch(type) {
 		case 'signup':
-			type.subject = 'Welcome to musiqpad!';
+			subject = 'Welcome to musiqpad!';
 			break;
 		case 'recovery':
-			type.subject = 'Password recovery';
+			subject = 'Password recovery';
 			break;
 	}
 
 	const emailObj = {
 		from: nconf.get('room:mail:sender'),
 		to: receiver,
-		subject: type.subject,
+		subject,
 		html,
 	};
 
