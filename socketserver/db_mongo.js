@@ -1,4 +1,3 @@
-// eslint-disable-next-line
 'use strict';
 // Modules
 const mongodb = require('mongodb').MongoClient;

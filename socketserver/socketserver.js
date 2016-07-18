@@ -1,4 +1,3 @@
-// eslint-disable-next-line
 'use strict';
 //Modules
 var ws = require('ws');
