@@ -1,8 +1,8 @@
-var https = require('https');
-var util = require('util');
-var log = new (require('basic-logger'))({showTimestamp: true, prefix: "YT"});
-var querystring = require('querystring');
-var Duration = require("durationjs");
+const https = require('https');
+const util = require('util');
+const log = new (require('basic-logger'))({showTimestamp: true, prefix: "YT"});
+const querystring = require('querystring');
+const Duration = require("durationjs");
 const nconf = require('nconf');
 const key = nconf.get('apis:YT:key');
 

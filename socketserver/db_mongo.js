@@ -3,14 +3,15 @@
 const mongodb = require('mongodb').MongoClient;
 const util = require('util');
 const log = new(require('basic-logger'))({
-    showTimestamp: true,
-    prefix: 'MongoDB'
+	showTimestamp: true,
+	prefix: 'MongoDB'
 });
 
 // Files
 const nconf = require('nconf');
-const Mailer = require('./mail/Mailer');
-const DBUtils = require('./database_util');
+const Mailer = require('./mail/mailer');
+const DBUtils = require('./utils').db;
+const User = require('./user');
 
 // Variables
 const expires = 1000 * 60 * 60 * 24 * nconf.get('loginExpire');
@@ -21,7 +22,6 @@ let ready = false;
 
 let playlistscol = null;
 let roomcol = null;
-let tokenscol = null;
 let userscol = null;
 let chatcol = null;
 let pmscol = null;
@@ -77,23 +77,6 @@ function createCollectionsIfNoExist(callback) {
             });
         } else {
             roomcol = col;
-            if (++step == total) callback();
-        }
-    });
-
-    db.collection('tokens', {
-        strict: true
-    }, function (err, col) {
-        if (err) {
-            db.createCollection('tokens', function (errc, result) {
-                if (errc)
-                    throw new Error('Failed to create the tokens collection');
-
-                tokenscol = result;
-                if (++step == total) callback();
-            });
-        } else {
-            tokenscol = col;
             if (++step == total) callback();
         }
     });
@@ -400,51 +383,6 @@ MongoDB.prototype.setRoom = function (slug, val, callback) {
     return this;
 };
 
-// TokenDB
-MongoDB.prototype.deleteToken = function (tok) {
-    dbQueue(function () {
-        tokenscol.remove({
-            tok
-        }, function () {});
-    });
-};
-
-MongoDB.prototype.createToken = function (email) {
-    var tok = DBUtils.makePass(email, Date.now());
-
-    dbQueue(function () {
-        tokenscol.insert({
-            tok,
-            email,
-            time: Date.now(),
-        }, function () {});
-    });
-
-    return tok;
-};
-
-MongoDB.prototype.isTokenValid = function (tok, callback) {
-    var that = this;
-
-    dbQueue(function () {
-        tokenscol.findOne({
-            tok
-        }, function (err, data) {
-            if (err || data == null) {
-                callback('InvalidToken');
-                return;
-            }
-
-            if (nconf.get('loginExpire') && (Date.now() - data.time) < expires) {
-                callback(null, data.email);
-            } else {
-                that.deleteToken(data.token);
-                callback('InvalidToken');
-            }
-        });
-    });
-};
-
 // UserDB
 function addUsername(un) {
     usernames.push(un.toLowerCase());
@@ -458,7 +396,6 @@ function usernameExists(un) {
 }
 
 MongoDB.prototype.createUser = function (obj, callback) {
-    var User = require('./user');
     var that = this;
 
     var defaultCreateObj = {
@@ -484,10 +421,6 @@ MongoDB.prototype.createUser = function (obj, callback) {
         callback('UsernameExists');
         return;
     }
-    if (!inData.pw || inData.pw == 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') {
-        callback('PasswordBlank');
-        return;
-    }
 
     dbQueue(function () {
         // Check for existing account
@@ -502,17 +435,13 @@ MongoDB.prototype.createUser = function (obj, callback) {
 
                 user.data.uid = currentUID;
                 user.data.un = inData.un;
-                user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
-                user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
+                user.data.pw = inData.pw;
                 user.data.created = Date.now();
-                if (nconf.get('room:mail:confirmation')) {
-                  user.data.confirmation = DBUtils.makePass(Date.now());
-                }
+								if (nconf.get('room:mail:confirmation')) user.data.confirmation = DBUtils.randomBytes(18, 'base64');
+
                 var updatedUserObj = user.makeDbObj();
                 updatedUserObj._id = currentUID;
                 updatedUserObj.email = inData.email;
-
-                var tok = that.createToken(inData.email);
 
                 userscol.insert(updatedUserObj, function (error, data) {
                     if (error) {
@@ -533,89 +462,34 @@ MongoDB.prototype.createUser = function (obj, callback) {
                     // Do other ~messy~ stuff
                     addUsername(inData.un);
                     user.login(inData.email);
-                    callback(null, user, tok);
+										callback(null, user, inData.email);
                 });
             });
         });
     });
 };
 
-MongoDB.prototype.loginUser = function (obj, callback) {
-    var User = require('./user');
-    var that = this;
+MongoDB.prototype.loginUser = function (email, callback) {
+	if (email) {
+		email = email.toLowerCase();
+		dbQueue(() => {
+			userscol.findOne({ email }, { _id: 0 }, (err, data) => {
+				if (err) {
+					callback(err);
+					return;
+				}
+				if (!data) {
+					callback('UserNotFound');
+					return;
+				}
 
-    var defaultLoginObj = {
-        email: null,
-        pw: null,
-        token: null,
-    };
-    util._extend(defaultLoginObj, obj);
-
-    var inData = defaultLoginObj;
-
-    dbQueue(function () {
-        if (inData.email && inData.pw) {
-            inData.email = inData.email.toLowerCase();
-
-            userscol.findOne({
-                email: inData.email
-            }, {
-                _id: 0
-            }, function (err, data) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-
-                if (!data) {
-                    callback('UserNotFound');
-                    return;
-                }
-
-                if (DBUtils.makePass(inData.pw, data.salt) != data.pw) {
-                    callback('IncorrectPassword');
-                    return;
-                }
-
-                var tok = that.createToken(inData.email);
-                var user = new User();
-
-                user.login(inData.email, data, function () {
-                    callback(null, user, tok);
-                });
-            });
-        } else if (inData.token) {
-            that.isTokenValid(inData.token, function (err, email) {
-                if (err) {
-                    callback(err);
-                    return;
-                }
-
-                userscol.findOne({
-                    email
-                }, {
-                    _id: 0
-                }, function (err, data) {
-                    if (err) {
-                        callback(err);
-                        return;
-                    }
-
-                    if (!data) {
-                        callback('UserNotFound');
-                        return;
-                    }
-
-                    var user = new User();
-                    user.login(email, data, function () {
-                        callback(null, user);
-                    });
-                });
-            });
-        } else {
-            callback('InvalidArgs');
-        }
-    });
+				const user = new User();
+				user.login(email, data, () => {
+					callback(null, user, email);
+				});
+			});
+		});
+	}
 };
 
 MongoDB.prototype.putUser = function (email, data, callback) {
@@ -636,8 +510,6 @@ MongoDB.prototype.putUser = function (email, data, callback) {
 };
 
 MongoDB.prototype.getUser = function (email, callback) {
-    var User = require('./user');
-
     dbQueue(function () {
         userscol.findOne({
             email
@@ -683,8 +555,6 @@ MongoDB.prototype.deleteUser = function (email, callback) {
 };
 
 MongoDB.prototype.getUserByUid = function (uid, opts, callback) {
-    var User = require('./user');
-
     if (typeof opts === 'function') {
         callback = opts;
         opts = {};
@@ -741,8 +611,6 @@ MongoDB.prototype.getUserByUid = function (uid, opts, callback) {
 };
 
 MongoDB.prototype.getUserByName = function (name, opts, callback) {
-    var User = require('./user');
-
     if (typeof opts === 'function') {
         callback = opts;
         opts = {};
@@ -954,4 +822,4 @@ MongoDB.prototype.getIpHistory = function (uid, callback) {
     });
 };
 
-module.exports = new MongoDB();
+module.exports = MongoDB;

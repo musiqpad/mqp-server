@@ -1,5 +1,13 @@
 {
-	/*
+	/*                   _                       _ 
+	 _ __ ___  _   _ ___(_) __ _ _ __   __ _  __| |
+	| '_ ` _ \| | | / __| |/ _` | '_ \ / _` |/ _` |
+	| | | | | | |_| \__ \ | (_| | |_) | (_| | (_| |
+	|_| |_| |_|\__,_|___/_|\__, | .__/ \__,_|\__,_|
+	                          |_|_|                
+
+	 More infos about the config syntax: https://hjson.org/	 
+	 
 	 Set this flag to false to disable web server hosting or true to enable web server hosting.
 	 This is useful if you want to host static files in another web server such as nginx.
 	 
@@ -101,7 +109,7 @@
 			twitter: "@musiqpad" 
 			description: // A one to two sentence description for search engines & co
 				'''
-				
+				Real time music streaming and chat with friends. Musiqpad is a place where people can discover new music.
 				'''
 			themeColor: "" // a hex color for the theme on chrome for android
 			favicon: "/pads/lib/img/icon.png"
@@ -129,9 +137,8 @@
 		}
 	}
 
-	// The amount of time users stay logged in for before having to login again in days.
-	// 0 = login every time
-	loginExpire: 7
+	// The amount of time users stay logged in for before having to login again, eg "2 days", "10h", "7d"
+	loginExpire: "5d",
 	db: {
 		dbType: "level"   				      // Values "level" for LevelDB, "mysql" for MySQL and "mongo" for MongoDB
 		dbDir: "./socketserver/db"	    // Only used for LevelDB. Directory to save databases.  Default is ./socketserver/db
@@ -413,17 +420,36 @@
 				color: "#964B74"
 			}
 			permissions: [
+			"djqueue.join"
+			"djqueue.joinlocked"
+			"djqueue.leave"
+			"djqueue.skip.self"
 			"djqueue.skip.other"
 			"djqueue.lock"
 			"djqueue.cycle"
+			"djqueue.limit"
 			"djqueue.move"
+			"djqueue.playLiveVideos"
+			"djqueue.limit.bypass"
+			"djqueue.lock.bypass"
 			"chat.send"
+			"chat.private"
 			"chat.delete"
 			"chat.specialMention"
+			"chat.broadcast"
+			"chat.staff"
+			"playlist.create"
+			"playlist.delete"
+			"playlist.rename"
+			"playlist.import"
+			"playlist.shuffle"
+			"room.grantroles"
 			"room.restrict.ban"
 			"room.restrict.mute"
 			"room.restrict.mute_silent"
 			"room.ratelimit.bypass"
+			"room.whois"
+			"room.whois.iphistory"
 			]
 			canGrantRoles: [
 			]
@@ -470,4 +496,5 @@
 			]
 		}
 	}
+	tokenSecret: "" // This should be a random string that needs to be kept private. Automatically generated if empty. 
 }

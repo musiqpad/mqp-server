@@ -7,6 +7,7 @@ const https = require('https');
 const fs = require('fs');
 const nconf = require('nconf');
 const ejs = require('ejs');
+const helmet = require('helmet');
 
 const app = express();
 let server2 = null;
@@ -42,6 +43,9 @@ app.set('view engine', 'html');
 app.set('views', `${__dirname}/public`);
 app.engine('html', ejs.renderFile);
 app.use(compression());
+app.use(helmet.frameguard());
+app.use(helmet.xssFilter());
+app.use(helmet.hidePoweredBy());
 
 app.get(['/', '/index.html'], (req, res) => {
 	res.render('index', {

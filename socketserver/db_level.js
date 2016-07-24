@@ -11,8 +11,9 @@ const log = new(require('basic-logger'))({
 const nconf = require('nconf');
 
 // Files
-var Mailer = require('./mail/Mailer');
-const DBUtils = require('./database_util');
+const Mailer = require('./mail/mailer');
+const DBUtils = require('./utils').db;
+const User = require('./user');
 
 // Variables
 let currentPID = 0;
@@ -86,18 +87,7 @@ function LevelDB(callback) {
         if (callback) callback(null, db);
       });
     }
-    // TokenDB
-    if (!this.TokenDB)
-        this.TokenDB = setupDB(`${dbdir}/tokens`,
-
-            // If new DB is created
-            function (newdb) {},
-
-            // Callback
-            function (err, db) {
-                if (err) log.error('Could not open TokenDB: ' + err);
-            });
-
+    
     // UserDB
     if (!this.UserDB)
         this.UserDB = setupDB(`${dbdir}/users`,
@@ -212,7 +202,7 @@ LevelDB.prototype.getJSON = function (db, key, callback) {
             try {
                 val = JSON.parse(val);
             } catch (e) {
-                console.log('Database key "' + key + '" returned malformed JSON object');
+                console.log('Database key ' + key + ' returned malformed JSON object');
                 val = null;
             }
         }
@@ -288,40 +278,6 @@ LevelDB.prototype.setRoom = function (slug, val, callback) {
     return this;
 };
 
-// TokenDB
-LevelDB.prototype.deleteToken = function (tok) {
-    this.TokenDB.del(tok);
-};
-
-LevelDB.prototype.createToken = function (email) {
-    var tok = DBUtils.makePass(email, Date.now());
-
-    this.putJSON(this.TokenDB, tok, {
-        email,
-        time: Date.now(),
-    });
-
-    return tok;
-};
-
-LevelDB.prototype.isTokenValid = function (tok, callback) {
-    var that = this;
-
-    this.getJSON(this.TokenDB, tok, function (err, data) {
-        if (err || data == null) {
-            callback('InvalidToken');
-            return;
-        }
-
-        if (nconf.get('loginExpire') && (Date.now() - data.time) < expires) {
-            callback(null, data.email);
-        } else {
-            that.deleteToken(data.token);
-            callback('InvalidToken');
-        }
-    });
-};
-
 // UserDB
 function addUsername(un) {
     usernames.push(un.toLowerCase());
@@ -340,7 +296,6 @@ function usernameExists(un) {
 }
 
 LevelDB.prototype.createUser = function (obj, callback) {
-    var User = require('./user');
     var that = this;
 
     var defaultCreateObj = {
@@ -366,10 +321,6 @@ LevelDB.prototype.createUser = function (obj, callback) {
         callback('UsernameExists');
         return;
     }
-    if (!inData.pw || inData.pw == 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855') {
-        callback('PasswordBlank');
-        return;
-    }
 
     // Check for existing account
     this.userEmailExists(inData.email, function (err, res) {
@@ -383,13 +334,10 @@ LevelDB.prototype.createUser = function (obj, callback) {
         user.data.uid = currentUID++;
         that.UserDB.put('UIDCOUNTER', currentUID);
         user.data.un = inData.un;
-        user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
-        user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
+        user.data.pw = inData.pw;
         user.data.created = Date.now();
-        if (nconf.get('room:mail:confirmation')) user.data.confirmation = DBUtils.makePass(Date.now());
+        if (nconf.get('room:mail:confirmation')) user.data.confirmation = DBUtils.randomBytes(18, 'base64');
         var updatedUserObj = user.makeDbObj();
-
-        var tok = that.createToken(inData.email);
 
         that.putJSON(that.UserDB, inData.email, updatedUserObj, function (err) {
             if (err) {
@@ -410,77 +358,29 @@ LevelDB.prototype.createUser = function (obj, callback) {
             // Do other ~messy~ stuff
             addUsername(inData.un);
             user.login(inData.email);
-            callback(null, user, tok);
+            callback(null, user, inData.email);
         });
     });
 };
 
-LevelDB.prototype.loginUser = function (obj, callback) {
-    var User = require('./user');
-    var that = this;
-
-    var defaultLoginObj = {
-        email: null,
-        pw: null,
-        token: null,
-    };
-    util._extend(defaultLoginObj, obj);
-
-    var inData = defaultLoginObj;
-
-    if (inData.email && inData.pw) {
-        inData.email = inData.email.toLowerCase();
-
-        this.getJSON(this.UserDB, inData.email, function (err, data) {
-            if ((err && err.notFound) || data == null) {
-                callback('UserNotFound');
-                return;
-            }
-
-            if (err) {
-                callback(err);
-                return;
-            }
-
-            if (DBUtils.makePass(inData.pw, data.salt) != data.pw) {
-                callback('IncorrectPassword');
-                return;
-            }
-
-            var tok = that.createToken(inData.email);
-            var user = new User();
-
-            user.login(inData.email, data, function () {
-                callback(null, user, tok);
-            });
-        });
-    } else if (inData.token) {
-        that.isTokenValid(inData.token, function (err, email) {
-            if (err) {
-                callback(err);
-                return;
-            }
-
-            that.getJSON(that.UserDB, email, function (err, data) {
-                if ((err && err.notFound) || data == null) {
-                    callback('UserNotFound');
-                    return;
-                }
-
-                if (err) {
-                    callback(err);
-                    return;
-                }
-
-                var user = new User();
-                user.login(email, data, function () {
-                    callback(null, user);
-                });
-            });
-        });
-    } else {
-        callback('InvalidArgs');
-    }
+LevelDB.prototype.loginUser = function (email, callback) {
+	if (email) {
+		email = email.toLowerCase();
+		this.getJSON(this.UserDB, email, (err, data) => {
+			if ((err && err.notFound) || data == null) {
+				callback('UserNotFound');
+				return;
+			}
+			if (err) {
+				callback(err);
+				return;
+			}
+			const user = new User();
+			user.login(email, data, () => {
+				callback(null, user, email);
+			});
+		});
+	}
 };
 
 LevelDB.prototype.putUser = function (email, data, callback) {
@@ -488,8 +388,6 @@ LevelDB.prototype.putUser = function (email, data, callback) {
 };
 
 LevelDB.prototype.getUser = function (email, callback) {
-	var User = require('./user');
-
 	this.getJSON(this.UserDB, email, function (err, data) {
 		if ((err && err.notFound) || data == null) { callback('UserNotFound'); return; }
 
@@ -515,7 +413,6 @@ LevelDB.prototype.deleteUser = function (email, callback) {
 };
 
 LevelDB.prototype.getUserByUid = function (uid, opts, callback) {
-    var User = require('./user');
     var done = false;
 
     if (typeof opts === 'function') {
@@ -586,7 +483,6 @@ LevelDB.prototype.getUserByUid = function (uid, opts, callback) {
 };
 
 LevelDB.prototype.getUserByName = function (name, opts, callback) {
-    var User = require('./user');
     var done = false;
 
     if (typeof opts === 'function') {
@@ -768,4 +664,4 @@ LevelDB.prototype.getIpHistory = function (uid, callback) {
     });
 };
 
-module.exports = new LevelDB();
+module.exports = LevelDB;

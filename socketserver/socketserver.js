@@ -1,27 +1,24 @@
 'use strict';
 //Modules
-var ws = require('ws');
-var http = require('http');
-var https = require('https');
-var Duration = require('durationjs');
-var request = require('request');
-var util = require('util');
-var extend = require('extend');
-var updateNotifier = require('update-notifier');
-var _ = require('underscore');
+const ws = require('ws');
+const http = require('http');
+const https = require('https');
+const Duration = require('durationjs');
+const request = require('request');
+const extend = require('extend');
+const updateNotifier = require('update-notifier');
 const fs = require('fs-extra');
 const nconf = require('nconf');
+const crypto = require('crypto');
 
 //Files
-var DB = require("./database");
-var Room = require('./room');
-var User = require('./user');
-var Mailer = require('./mail/Mailer');
-var YT = require('./YT');
-var Roles = require('./role');
-var Hash = require('./hash');
-var log = new (require('basic-logger'))({showTimestamp: true, prefix: "SocketServer"});
-var WebSocketServer = ws.Server;
+const DB = require("./database");
+const Room = require('./room');
+const Mailer = require('./mail/Mailer');
+const YT = require('./YT');
+const Roles = require('./role');
+const log = new (require('basic-logger'))({showTimestamp: true, prefix: "SocketServer"});
+const WebSocketServer = ws.Server;
 
 
 ws.prototype.sendJSON = function(obj){
@@ -427,7 +424,7 @@ var SocketServer = function(server){
 					console.log("Sending recovery email");
 					var sendRecovery = function(user){
 						//Generate new code and send email
-						user.recovery = Hash.md5(Date.now() + '', user.un);
+						user.recovery = utils.db.randomBytes(36, 'base64');
 						Mailer.sendEmail('recovery', {
 							user: user.un,
 							code: user.recovery.code,

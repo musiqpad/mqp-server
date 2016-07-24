@@ -1,7 +1,7 @@
-var util = require('util');
-var DB = require('./database');
-var YT = require('./YT');
-var log = new (require('basic-logger'))({showTimestamp: true, prefix: "Playlist"});
+const util = require('util');
+const DB = require('./database');
+const YT = require('./YT');
+const log = new (require('basic-logger'))({showTimestamp: true, prefix: "Playlist"});
 
 
 // Every user obj starts with this, then gets extended by what's in the db

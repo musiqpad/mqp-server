@@ -4,6 +4,7 @@
 const nconf = require('nconf');
 const fs = require('fs-extra');
 const hjson = require('hjson');
+const crypto = require('crypto');
 
 const hjsonWrapper = {
   parse: (text) => hjson.parse(text, { keepWsc: true, }),
@@ -13,6 +14,12 @@ if (!fileExistsSync('config.hjson')) {
   fs.copySync('config.example.hjson', 'config.hjson');
 }
 nconf.argv().env().file({ file: 'config.hjson', format: hjsonWrapper });
+
+if (!nconf.get('tokenSecret')) {
+	const random = crypto.randomBytes(256);
+	nconf.set('tokenSecret', random.toString('hex'));
+	nconf.save();
+}
 
 // Modules
 const SocketServer = require('./socketserver/socketserver');
