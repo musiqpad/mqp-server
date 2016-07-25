@@ -45,7 +45,7 @@ function dbQueue(callback) {
 
 function createCollectionsIfNoExist(callback) {
     var step = 0;
-    var total = 7;
+    var total = 6;
 
     db.collection('playlists', {
         strict: true
