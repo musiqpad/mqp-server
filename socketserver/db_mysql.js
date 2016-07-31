@@ -13,6 +13,7 @@ const Mailer = require('./mail/mailer');
 const DBUtils = require('./utils').db;
 const Roles = require('./role.js');
 const User = require('./user');
+const _ = require('lodash');
 
 let db = null;
 let pool = null;
@@ -43,7 +44,7 @@ const MysqlDB = function(){
 					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
 					    `email` VARCHAR(254) UNIQUE NOT NULL DEFAULT 'NULL',\
 					    `un` VARCHAR(20) UNIQUE NOT NULL DEFAULT 'NULL',\
-					    `pw` VARCHAR(32) NOT NULL DEFAULT 'NULL',\
+					    `pw` VARCHAR(60) NOT NULL DEFAULT 'NULL',\
 					    `salt` VARCHAR(10),\
 					    `activepl` INTEGER UNSIGNED NULL DEFAULT NULL,\
 				        `created` DATETIME NULL,\
@@ -56,6 +57,7 @@ const MysqlDB = function(){
 					    `lastdj` TINYINT(1) NOT NULL DEFAULT 0,\
 					    PRIMARY KEY (`id`)\
 					);\
+          ALTER TABLE `users` MODIFY `pw` VARCHAR(60);\
 					\
 					CREATE TABLE IF NOT EXISTS `playlists` (\
 					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
