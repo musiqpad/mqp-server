@@ -14,7 +14,7 @@ const crypto = require('crypto');
 //Files
 const DB = require("./database");
 const Room = require('./room');
-const Mailer = require('./mail/Mailer');
+const Mailer = require('./mail/mailer');
 const YT = require('./YT');
 const Roles = require('./role');
 const log = new (require('basic-logger'))({showTimestamp: true, prefix: "SocketServer"});
