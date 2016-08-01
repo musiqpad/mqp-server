@@ -2,9 +2,26 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, initial-scale=0.8">
-		<meta name="theme-color" content="1C1C1F">
-		<title>musiqpad - join us!</title>
+		<meta http-equiv="x-ua-compatible" content="ie=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<% if (tags) { -%>
+		<meta name="theme-color" content="<%- tags.themeColor -%>">
+		<meta property="twitter:site" content="<%- tags.twitter -%>" />
+		<meta property="twitter:card" content="summary" />
+		<meta property="twitter:title" content="<%- room.name -%>" />
+		<meta property="og:title" content="<%- room.name -%>" />
+		<meta property="og:description" content="<%- tags.description -%>" />
+		<meta property="og:image" content="<%- tags.image -%>" />
+		<meta property="twitter:image" content="<%- tags.image -%>" />
+		<% } else { -%>
+		<% } -%>
+		<meta name="generator" content="musiqpad">
+		<title><%- room.name -%></title>
+		<% if (scripts.css) { -%>
+			<% scripts.css.forEach(function(url){ -%>
+				<link rel="stylesheet" type="text/css" href="<%- url -%>">
+			<% }); -%>
+		<% } -%>
 		<link rel="shortcut icon" type="image/png" href="/pads/lib/img/icon.png" id="dynamic-favicon"/>
 		<link rel="stylesheet" href="https://cdn.jsdelivr.net/emojione/2.0.0/assets/css/emojione.min.css"/>
 		<link href="https://cdn.musiqpad.com/css/mdi.min.css" media="all" rel="stylesheet" type="text/css" />
@@ -745,5 +762,10 @@
 		<script src="https://www.youtube.com/iframe_api"></script>
 		<script src="config"></script>
 		<script src="/pads/lib/js/app.js"></script>
+		<% if (scripts.js) { -%>
+			<% scripts.js.forEach(function(url){ -%>
+		<script src="<%- url %>"></script>
+			<% }); -%>
+		<% } -%>
 	</body>
 </html>

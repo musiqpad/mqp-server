@@ -1,10 +1,10 @@
-var https = require('https');
-var util = require('util');
-var log = new (require('basic-logger'))({showTimestamp: true, prefix: "YT"});
-var querystring = require('querystring');
-var Duration = require("durationjs");
-var config = require('../serverconfig');
-var key = key = config.apis.YT.key;
+const https = require('https');
+const util = require('util');
+const log = new (require('basic-logger'))({showTimestamp: true, prefix: "YT"});
+const querystring = require('querystring');
+const Duration = require("durationjs");
+const nconf = require('nconf');
+const key = nconf.get('apis:YT:key');
 
 https.globalAgent.keepAlive = true;
 https.globalAgent.keepAliveMsecs = 60e3;
@@ -146,7 +146,7 @@ YT.prototype.search = function(query, callback){
 		key: key
 	};
 	
-	if (config.apis.YT.restrictSearchToMusic)
+	if (nconf.get('apis:YT:restrictSearchToMusic'))
 		inObj.videoCategoryId = 10; // This is restricting the search to things categorized as music
 	
 	var url = "https://www.googleapis.com/youtube/v3/search?" + querystring.stringify(inObj);

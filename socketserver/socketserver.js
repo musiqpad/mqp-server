@@ -1,25 +1,24 @@
+'use strict';
 //Modules
-var ws = require('ws');
-var http = require('http');
-var https = require('https');
-var Duration = require('durationjs');
-var request = require('request');
-var util = require('util');
-var extend = require('extend');
-var updateNotifier = require('update-notifier');
-var _ = require('underscore');
+const ws = require('ws');
+const http = require('http');
+const https = require('https');
+const Duration = require('durationjs');
+const request = require('request');
+const extend = require('extend');
+const updateNotifier = require('update-notifier');
+const fs = require('fs-extra');
+const nconf = require('nconf');
+const crypto = require('crypto');
 
 //Files
-var config = require('../serverconfig');
-var DB = require("./database");
-var Room = require('./room');
-var User = require('./user');
-var Mailer = require('./mailer');
-var YT = require('./YT');
-var Roles = require('./role');
-var Hash = require('./hash');
-var log = new (require('basic-logger'))({showTimestamp: true, prefix: "SocketServer"});
-var WebSocketServer = ws.Server;
+const DB = require("./database");
+const Room = require('./room');
+const Mailer = require('./mail/Mailer');
+const YT = require('./YT');
+const Roles = require('./role');
+const log = new (require('basic-logger'))({showTimestamp: true, prefix: "SocketServer"});
+const WebSocketServer = ws.Server;
 
 
 ws.prototype.sendJSON = function(obj){
@@ -195,23 +194,27 @@ var SocketServer = function(server){
 	if (server){
 		settings.server = server;
 	}else{
-		var port = config.socketServer.port || undefined;
-		var ip = config.socketServer.host || undefined;
+		var port = nconf.get('socketServer:port') || undefined;
+		var ip = nconf.get('socketServer:host') || undefined;
 
-		if (config.certificate && config.certificate.key && config.certificate.cert){
-			settings.server = https.createServer(config.certificate).listen(port,ip);
-		}else{
+		if (nconf.get('useSSL') && nconf.get('certificate') && nconf.get('certificate:key') && nconf.get('certificate:cert')) {
+			let certificates = {
+				key: fs.readFileSync(nconf.get('certificate:key')),
+				cert: fs.readFileSync(nconf.get('certificate:cert')),
+			}
+			settings.server = https.createServer(certificates).listen(port, ip);
+		} else {
 			settings.server = http.createServer().listen(port,ip);
 		}
 	}
 
 	this.wss = new WebSocketServer(settings);
-	log.info('Socket server listening on port ' + (config.socketServer.port || config.webServer.port));
+	log.info('Socket server listening on port ' + (nconf.get('socketServer:port') || nconf.get('webServer:port')));
 
 //	this.wss = new WebSocketServer({ port: config.socketServer.port });
 //	log.info('Socket server listening on port ' + config.socketServer.port);
 
-	this.room = new Room(this, config.room);
+	this.room = new Room(this, nconf.get('room'));
 
 	// Keepalive packets.  This.... is messy.
 	setInterval( function(){
@@ -361,7 +364,7 @@ var SocketServer = function(server){
 				} else if(socket.room && that.room.isUserRestricted(socket.user.uid, 'BAN')){
 					returnObj.data = { error: 'UserBanned' };
 					
-				} else if((Date.now() - socket.user.created) <= config.room.signupcd){
+				} else if((Date.now() - socket.user.created) <= nconf.get('room:signupcd')){
 					returnObj.data = { error: 'UserOnCooldown' };
 					
 				} else if(socket.user.confirmation){
@@ -401,7 +404,7 @@ var SocketServer = function(server){
 					}
 					*/
 					//Check if recovery is enabled
-					if (!(config.room.allowrecovery)){
+					if (!(nconf.get('room:allowrecovery'))){
 						returnObj.data = {
 							error: 'RecoveryDisabled'
 						};
@@ -418,15 +421,17 @@ var SocketServer = function(server){
 						break;
 					}
 
+					console.log("Sending recovery email");
 					var sendRecovery = function(user){
 						//Generate new code and send email
-						user.recovery = Hash.md5(Date.now() + '', user.un);
+						user.recovery = utils.db.randomBytes(36, 'base64');
 						Mailer.sendEmail('recovery', {
 							user: user.un,
 							code: user.recovery.code,
 							email: data.data.email,
 							timeout: (new Date().addDays(1)).toISOString().replace(/T/, ' ').replace(/\..+/, '') + ' UTC',
 						}, data.data.email, function(err, data){
+							console.log("Recovery email send!");
 							if(err){
 								returnObj.data = {
 									error: 'EmailAuthIssue',
@@ -664,16 +669,16 @@ var SocketServer = function(server){
 							votes: that.room.queue.makeVoteObj(),
 							vote: that.room.queue.getUserVote( socket ),
 						},
-						historylimit: config.room.history.limit_send,
+						historylimit: nconf.get('room:history:limit_send'),
 						roles: Roles.makeClientObj(),
 						roleOrder: Roles.getOrder(),
 						staffRoles: Roles.getStaffRoles(),
-						lastChat: ((!socket.user && !config.room.guestCanSeeChat) || (that.room.isUserRestricted((socket.user || {}).uid, 'BAN') && !config.room.bannedCanSeeChat)) ? [] : that.room.makePrevChatObj(),
+						lastChat: ((!socket.user && !nconf.get('room:guestCanSeeChat')) || (that.room.isUserRestricted((socket.user || {}).uid, 'BAN') && !nconf.get('room:bannedCanSeeChat'))) ? [] : that.room.makePrevChatObj(),
 						time: new Date().getTime(),
-						captchakey: config.apis.reCaptcha.key,
-						allowemojis: config.room.allowemojis,
-						description: config.room.description,
-						recaptcha: config.room.recaptcha,
+						captchakey: nconf.get('apis:reCaptcha:key'),
+						allowemojis: nconf.get('room:allowemojis'),
+						description: nconf.get('room:description'),
+						recaptcha: nconf.get('room:recaptcha'),
 					};
 
 					socket.sendJSON(returnObj);
@@ -1380,12 +1385,12 @@ var SocketServer = function(server){
 					if(data.type == 'login'){
 							DB.loginUser(data.data, callback);
 					} else {
-						if(config.room.recaptcha){
+						if (nconf.get('room:recaptcha')) {
 							request.post(
 								'https://www.google.com/recaptcha/api/siteverify',
 								{
 									form: {
-										secret: config.apis.reCaptcha.secret,
+										secret: nconf.get('apis:reCaptcha:secret'),
 										response: data.data.captcha,
 										remoteip: socket.upgradeReq.connection.remoteAddress,
 									}

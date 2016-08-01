@@ -1,13 +1,14 @@
-var util = require('util');
-var DB = require('./database');
-var DBUtils = require('./database_util');
+'use strict'
+const util = require('util');
+let DB;
+const utils = require('./utils');
 
 // Every user obj starts with this, then gets extended by what's in the db
 var defaultObj = function(){
 	return {
 		uid: 0,
 		un: "",
-		pw: "", // MD5(SHA256(pass) + SALT)
+		pw: "", 
 		role: null,
 		activepl: null,
 		created: 0,
@@ -85,6 +86,7 @@ function removeFields(obj, fields){
  *
  */
 function User(){
+	DB = require('./database');
 	this.userExists = false;
 	this.data = new defaultObj;
 }
@@ -270,10 +272,8 @@ Object.defineProperty( User.prototype, 'pw', {
 		return this.data.pw;
 	},
 	set: function(val) {
-		
-		this.data.pw = DBUtils.makePass(val, this.data.salt);
+		this.data.pw = utils.hash.bcrypt(val);
 		this.updateUser();
-		
 		return this;
 	}
 });

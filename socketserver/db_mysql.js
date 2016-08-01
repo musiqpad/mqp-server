@@ -1,30 +1,31 @@
+'use strict';
 //Modules
-var mysql = require('mysql');
-var util = require('util');
-var _ = require('underscore');
-var log = new(require('basic-logger'))({
+const mysql = require('mysql');
+const util = require('util');
+const log = new(require('basic-logger'))({
     showTimestamp: true,
     prefix: "MysqlDB"
 });
+const nconf = require('nconf');
 
 //Files
-var config = require('../serverconfig.js');
-var Hash = require('./hash');
-var Mailer = require('./mailer');
-var DBUtils = require('./database_util');
-var Roles = require('./role.js');
+const Mailer = require('./mail/mailer');
+const DBUtils = require('./utils').db;
+const Roles = require('./role.js');
+const User = require('./user');
+const _ = require('lodash');
 
-var db = null;
-var pool = null;
+let db = null;
+let pool = null;
 
-var MysqlDB = function(){
-	var that = this;
+const MysqlDB = function(){
+	const that = this;
 
-	var mysqlConfig = {
-		host: config.db.mysqlHost,
-		user: config.db.mysqlUser,
-		password: config.db.mysqlPassword,
-		database: config.db.mysqlDatabase,
+	const mysqlConfig = {
+		host: nconf.get('db:mysqlHost'),
+		user: nconf.get('db:mysqlUser'),
+		password: nconf.get('db:mysqlPassword'),
+		database: nconf.get('db:mysqlDatabase'),
 		charset: "UTF8_GENERAL_CI",
 		multipleStatements: true,
 		connectionLimit: 1,
@@ -43,7 +44,7 @@ var MysqlDB = function(){
 					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
 					    `email` VARCHAR(254) UNIQUE NOT NULL DEFAULT 'NULL',\
 					    `un` VARCHAR(20) UNIQUE NOT NULL DEFAULT 'NULL',\
-					    `pw` VARCHAR(32) NOT NULL DEFAULT 'NULL',\
+					    `pw` VARCHAR(60) NOT NULL DEFAULT 'NULL',\
 					    `salt` VARCHAR(10),\
 					    `activepl` INTEGER UNSIGNED NULL DEFAULT NULL,\
 				        `created` DATETIME NULL,\
@@ -56,6 +57,7 @@ var MysqlDB = function(){
 					    `lastdj` TINYINT(1) NOT NULL DEFAULT 0,\
 					    PRIMARY KEY (`id`)\
 					);\
+          ALTER TABLE `users` MODIFY `pw` VARCHAR(60);\
 					\
 					CREATE TABLE IF NOT EXISTS `playlists` (\
 					    `id` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,\
@@ -429,36 +431,9 @@ MysqlDB.prototype.setRoom = function(slug, val, callback) {
     return that;
 };
 
-//TokenDB
-MysqlDB.prototype.deleteToken = function(tok) {
-    this.execute("DELETE FROM `tokens` WHERE ?;", { token: tok, });
-};
-
-MysqlDB.prototype.createToken = function(email) {
-    var tok = DBUtils.makePass(email, Date.now());
-
-    this.execute("DELETE FROM `tokens` WHERE ?; INSERT INTO `tokens` SET ?;", [ { email: email, }, { token: tok, email: email, created: new Date() } ]);
-
-    return tok;
-};
-
-MysqlDB.prototype.isTokenValid = function(tok, callback) {
-    this.execute("SELECT `token`, `email` FROM `tokens` WHERE ? AND DATEDIFF(NOW(), `created`) < ?;", [{ token: tok, }, config.loginExpire || 365], function(err, res) {
-        if (err || res.length == 0) {
-            callback('InvalidToken');
-            return;
-        }
-
-        callback(null, res[0].email);
-    });
-};
-
 //UserDB
 MysqlDB.prototype.getUserNoLogin = function(uid, callback){
     var that = this;
-
-	var User = require('./user');
-
 	this.execute("SELECT `salt`, `lastdj`, `uptime`, `recovery`, UNIX_TIMESTAMP(`recovery_timeout`) as `recovery_timeout`, `confirmation`, `badge_top`, `badge_bottom`, `created`, `activepl`, `pw`, `un`, `id` FROM `users` WHERE ?", { id: uid, }, function(err, res){
         if (err || res.length == 0) { callback('UserNotFound'); return; }
 
@@ -506,7 +481,6 @@ MysqlDB.prototype.usernameExists = function(name, callback){
 };
 
 MysqlDB.prototype.createUser = function(obj, callback) {
-    var User = require('./user');
     var that = this;
 
     var defaultCreateObj = {
@@ -547,13 +521,10 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                 var user = new User();
 
                 user.data.un = inData.un;
-                user.data.salt = DBUtils.makePass(Date.now()).slice(0, 10);
-                user.data.pw = DBUtils.makePass(inData.pw, user.data.salt);
+                user.data.pw = inData.pw;
                 user.data.created = Date.now();
-                if (config.room.email.confirmation) user.data.confirmation = DBUtils.makePass(Date.now());
+                if (nconf.get('room:mail:confirmation')) user.data.confirmation = DBUtils.randomBytes(18, 'base64');
                 var updatedUserObj = user.makeDbObj();
-
-                var tok = that.createToken(inData.email);
 
                 delete updatedUserObj.uid;
 
@@ -564,7 +535,7 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                     }
 
                     //Send confirmation email
-                    if (config.room.email.confirmation) {
+                    if (nconf.get('room:mail:confirmation')) {
                         Mailer.sendEmail('signup', {
                             code: user.data.confirmation,
                             user: inData.un,
@@ -576,71 +547,30 @@ MysqlDB.prototype.createUser = function(obj, callback) {
                     //Login user
                     user.data.uid = id;
                     user.login(inData.email);
-                    callback(null, user, tok);
+                    callback(null, user, inData.email);
                 });
             });
         }
     });
 };
 
-MysqlDB.prototype.loginUser = function(obj, callback) {
-    var User = require('./user');
-    var that = this;
-
-    var defaultLoginObj = {
-        email: null,
-        pw: null,
-        token: null,
-    };
-    util._extend(defaultLoginObj, obj);
-    var inData = defaultLoginObj;
-
-    if (inData.email && inData.pw) {
-        inData.email = inData.email.toLowerCase();
-        that.execute("SELECT `id` FROM `users` WHERE ?;", { email: inData.email, }, function(err, res) {
-            if(err || res.length == 0) callback("UserNotFound");
-            else {
-                that.getUserNoLogin(res[0].id, function(err, data) {
-                    if (DBUtils.makePass(inData.pw, data.salt) != data.pw) {
-                        callback('IncorrectPassword');
-                        return;
-                    }
-
-                    var tok = that.createToken(inData.email);
-
-                    var user = new User();
-
-                    user.login(inData.email, data, function() {
-
-                        callback(null, user, tok);
-                    });
-                });
-            }
-        });
-    } else if (inData.token) {
-        that.isTokenValid(inData.token, function(err, email) {
-            if (err) {
-                callback(err);
-                return;
-            }
-
-            that.execute("SELECT `id` FROM `users` WHERE ?;", { email: email, }, function(err, res) {
-                if(err || res.length == 0) callback("UserNotFound");
-                else {
-                    that.getUserNoLogin(res[0].id, function(err, data) {
-                        var user = new User();
-
-                        user.login(email, data, function() {
-
-                            callback(null, user);
-                        });
-                    });
-                }
-            });
-        });
-    } else {
-        callback('InvalidArgs');
-    }
+MysqlDB.prototype.loginUser = function (email, callback) {
+	const that = this;
+	if (email) {
+		email = email.toLowerCase();
+		that.execute('SELECT `id` FROM `users` WHERE ?;', { email }, (err, res) => {
+			if (err || res.length === 0) {
+				callback('UserNotFound');
+			}	else {
+				that.getUserNoLogin(res[0].id, (err, data) => {
+					const user = new User();
+					user.login(email, data, () => {
+						callback(null, user, email);
+					});
+				});
+			}
+		});
+	}
 };
 
 MysqlDB.prototype.putUser = function(email, data, callback) {
@@ -679,9 +609,6 @@ MysqlDB.prototype.putUser = function(email, data, callback) {
 
 MysqlDB.prototype.getUser = function(email, callback){
     var that = this;
-
-    var User = require('./user');
-
     this.execute("SELECT `id` FROM `users` WHERE ?;", { email: email, }, function(err, res) {
         if(err || res.length == 0){
             callback('UserNotFound');
@@ -722,9 +649,6 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
             return;
         }
     }
-
-    var User = require('./user');
-
     if(Array.isArray(uid)){
         var out = {};
         var initialized = 0;
@@ -764,9 +688,6 @@ MysqlDB.prototype.getUserByUid = function(uid, opts, callback) {
 
 MysqlDB.prototype.getUserByName = function(name, opts, callback) {
     var that = this;
-
-    var User = require('./user');
-
     if (typeof opts === 'function') {
         callback = opts;
         opts = {};
@@ -889,4 +810,4 @@ MysqlDB.prototype.getIpHistory = function(uid, callback) {
      });
 };
 
-module.exports = new MysqlDB;
+module.exports = MysqlDB;
