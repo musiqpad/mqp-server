@@ -13,7 +13,7 @@ const hjsonWrapper = {
 if (!fileExistsSync('config.hjson')) {
   fs.copySync('config.example.hjson', 'config.hjson');
 }
-nconf.argv().env().file({ file: 'config.hjson', format: hjsonWrapper });
+nconf.file({ file: 'config.hjson', format: hjsonWrapper }).argv().env();
 
 if (!nconf.get('tokenSecret')) {
 	const random = crypto.randomBytes(256);
