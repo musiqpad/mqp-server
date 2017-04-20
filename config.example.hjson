@@ -179,7 +179,7 @@
 		"room.grantroles": Ability to change user roles (requires canGrantPerms property)
 		"room.restrict.ban": Ability to ban and unban users
 		"room.restrict.mute": Ability to mute and unmute users
-		"room.restrict.mute_silent": Ability to shadow mute and unmute users
+		"room.restrict.silent_mute": Ability to shadow mute and unmute users
 		"room.ratelimit.bypass": Will bypass ratelimit
 		"room.whois": Possibility to request additional information about a user
 		"room.whois.iphistory": Possibility to request all IP addresses that the user logged from since account creation
@@ -265,7 +265,7 @@
 			"room.grantroles"
 			"room.restrict.ban"
 			"room.restrict.mute"
-			"room.restrict.mute_silent"
+			"room.restrict.silent_mute"
 			"room.ratelimit.bypass"
 			"room.whois"
 			"room.whois.iphistory"
@@ -313,7 +313,7 @@
 			"room.grantroles"
 			"room.restrict.ban"
 			"room.restrict.mute"
-			"room.restrict.mute_silent"
+			"room.restrict.silent_mute"
 			"room.ratelimit.bypass"
 			"room.whois"
 			]
@@ -360,7 +360,7 @@
 			"room.grantroles"
 			"room.restrict.ban"
 			"room.restrict.mute"
-			"room.restrict.mute_silent"
+			"room.restrict.silent_mute"
 			"room.ratelimit.bypass"
 			"room.whois"
 			"room.whois.iphistory"
@@ -403,7 +403,7 @@
 			"room.grantroles"
 			"room.restrict.ban"
 			"room.restrict.mute"
-			"room.restrict.mute_silent"
+			"room.restrict.silent_mute"
 			"room.ratelimit.bypass"
 			"room.whois"
 			]
@@ -446,7 +446,7 @@
 			"room.grantroles"
 			"room.restrict.ban"
 			"room.restrict.mute"
-			"room.restrict.mute_silent"
+			"room.restrict.silent_mute"
 			"room.ratelimit.bypass"
 			"room.whois"
 			"room.whois.iphistory"
