@@ -1993,8 +1993,12 @@ var SocketServer = function(server){
 
 							//Fetch all song data and return them to client
 							YT.getVideo(data.data.cid, function(err, videos) {
+								var _videos = Object.keys(videos).map(function (key) {
+								    return videos[key];
+								});
+
 								returnObj.data = {
-									video: _.values(videos),
+									video: _videos,
 									pos: data.data.pos,
 									plid: pl.id
 								};
