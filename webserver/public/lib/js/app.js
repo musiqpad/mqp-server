@@ -1906,7 +1906,7 @@
 			if(!MP.session.allowemojis) return;
 
 			//Basic
-			$.getJSON("https://raw.githubusercontent.com/Ranks/emojione/master/emoji.json", function(data) {
+			$.getJSON("https://raw.githubusercontent.com/Ranks/emojione/2.2.7/emoji.json", function(data) {
 				for(var e in data){
 					//MP.emotes[e] = MP.emotes[e] || "https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic/" + e + ".png";
 					MP.emotes["Basic"][e] = MP.emotes["Basic"][e] || { url: "https://raw.githubusercontent.com/Ranks/emojione/master/assets/png/" + data[e].unicode + ".png" };
@@ -1916,7 +1916,7 @@
 						for(var ee in data[e].aliases){
 							ee = data[e].aliases[ee].slice(1, -1);
 							//MP.emotes[ee] = MP.emotes[ee] || "https://raw.githubusercontent.com/Ranks/emojify.js/master/dist/images/basic/" + e + ".png";
-							MP.emotes["Basic"][ee] = MP.emotes["Basic"][ee] || { url: "https://raw.githubusercontent.com/Ranks/emojione/master/assets/png/" + data[e].unicode + ".png", style: 'max-width: 24px; max-height: 24px;', };
+							MP.emotes["Basic"][ee] = MP.emotes["Basic"][ee] || { url: "https://raw.githubusercontent.com/Ranks/emojione/2.2.7/assets/png/" + data[e].unicode + ".png", style: 'max-width: 24px; max-height: 24px;', };
 						}
 
 					//ASCII aliases
@@ -2385,7 +2385,7 @@
 			ban: {
 				description: 'Ban a user',
 				staff: true,
-                permission: 'room.restrict.ban',
+                                permission: 'room.restrict.ban',
 				exec: function(arr){
 					arr.shift();
 
@@ -2397,14 +2397,14 @@
 
 					if (!user)	return;
 
-					MP.showBanModal(user.uid);
+					MP.showRestrictionModal(user.uid);
 				},
 			},
 
 			role: {
 				description: 'Sets user role',
 				staff: true,
-                permission: 'room.grantroles',
+                                permission: 'room.grantroles',
 				exec: function(arr){
 					arr.shift();
 
@@ -2422,18 +2422,20 @@
 
 			mute: {
 				description: 'Mute a user',
+                                staff: true,
+				permission: 'room.restrict.mute',
 				exec: function(arr){
 					arr.shift();
 
 					if (arr.length == 0 || typeof arr[0] != 'string' || arr[0].charAt(0)!='@'){
-						return API.chat.log('<br>Try /mute @username', 'Ignore user');
+						return API.chat.log('<br>Try /mute @username', 'Mute user');
 					}
 
 					var user = MP.api.room.getUserByName(arr[0].substring(1));
 
 					if (!user)	return;
 
-					MP.showMuteModal(user.uid);
+					MP.showRestrictionModal(user.uid);
 				},
 			},
 
